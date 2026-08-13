@@ -8,6 +8,8 @@ const migrationDir = path.join(ROOT, "supabase/migrations");
 const sqlFiles = fs.readdirSync(migrationDir).filter((name) => /^000[1-5]_.*\.sql$/.test(name)).sort();
 const sql = sqlFiles.map((name) => fs.readFileSync(path.join(migrationDir, name), "utf8")).join("\n");
 const lower = sql.toLowerCase();
+const allSql = fs.readdirSync(migrationDir).filter((name) => /^\d{4}_.*\.sql$/.test(name)).sort().map((name) => fs.readFileSync(path.join(migrationDir, name), "utf8")).join("\n");
+const allLower = allSql.toLowerCase();
 
 const tableExists = (table) => new RegExp(`create\\s+table\\s+public\\.${table}\\b`, "i").test(sql);
 const hasRevoke = (table, roles) => roles.every((role) => new RegExp(`revoke\\s+all\\s+on\\s+public\\.${table}\\s+from[^;]*\\b${role}\\b`, "i").test(sql));
@@ -63,13 +65,13 @@ const results = [
 for (const table of boundary.appendOnlyTables) {
   results.push(check(`${table} has append-only mutation trigger`, () => {
     const marker = `${table}_append_only`;
-    assert(lower.includes(marker.toLowerCase()), `${marker} missing`);
+    assert(allLower.includes(marker.toLowerCase()), `${marker} missing`);
   }));
 }
 
 for (const column of boundary.forbiddenCommercialAuthorityColumns) {
   results.push(check(`forbidden legacy authority column absent: ${column}`, () => {
-    assert(!lower.includes(column.toLowerCase()), `${column} found in V2 schema`);
+    assert(!allLower.includes(column.toLowerCase()), `${column} found in V2 schema`);
   }));
 }
 

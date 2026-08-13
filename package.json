@@ -1,6 +1,6 @@
 {
   "name": "marketroute-v2",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "engines": {
     "node": ">=20.11.0"
@@ -15,14 +15,18 @@
     "constitution:legacy": "node scripts/validate-no-legacy.mjs",
     "constitution:authority": "node scripts/validate-authority-manifest.mjs",
     "constitution:adversarial": "node tests/adversarial/build1-constitution.mjs",
-    "constitution:check": "npm run constitution:architecture && npm run constitution:ai && npm run constitution:legacy && npm run constitution:authority && npm run constitution:schema && npm run constitution:sql && npm run constitution:adversarial && npm run constitution:database-adversarial && npm run constitution:evidence && npm run constitution:evidence-sql && npm run constitution:evidence-adversarial && npm run constitution:evidence-db-adversarial",
+    "constitution:check": "npm run constitution:architecture && npm run constitution:ai && npm run constitution:legacy && npm run constitution:authority && npm run constitution:schema && npm run constitution:sql && npm run constitution:adversarial && npm run constitution:database-adversarial && npm run constitution:evidence && npm run constitution:evidence-sql && npm run constitution:evidence-adversarial && npm run constitution:evidence-db-adversarial && npm run constitution:truth && npm run constitution:truth-sql && npm run constitution:truth-adversarial && npm run constitution:truth-db-adversarial",
     "constitution:schema": "node scripts/validate-build2-schema.mjs",
     "constitution:sql": "node scripts/validate-build2-sql-safety.mjs",
     "constitution:database-adversarial": "node tests/adversarial/build2-database-boundaries.mjs",
     "constitution:evidence": "node scripts/validate-build3-evidence.mjs",
     "constitution:evidence-sql": "node scripts/validate-build3-sql-safety.mjs",
     "constitution:evidence-adversarial": "node tests/adversarial/build3-evidence-provenance.mjs",
-    "constitution:evidence-db-adversarial": "node tests/adversarial/build3-database-boundaries.mjs"
+    "constitution:evidence-db-adversarial": "node tests/adversarial/build3-database-boundaries.mjs",
+    "constitution:truth": "node scripts/validate-build4-truth.mjs",
+    "constitution:truth-sql": "node scripts/validate-build4-sql-safety.mjs",
+    "constitution:truth-adversarial": "node tests/adversarial/build4-truth-engine.mjs",
+    "constitution:truth-db-adversarial": "node tests/adversarial/build4-database-boundaries.mjs"
   },
   "dependencies": {
     "next": "^15.5.21",

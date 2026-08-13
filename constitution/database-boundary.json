@@ -1,6 +1,6 @@
 {
-  "version": "MRV2-DB-BOUNDARY-1.1.0",
-  "build": 3,
+  "version": "MRV2-DB-BOUNDARY-1.2.0",
+  "build": 4,
   "principles": {
     "evidenceIsNotAuthority": true,
     "reasoningIsNotAuthority": true,
@@ -15,7 +15,18 @@
     "dependenceFamilyOwnedByEvidence": true,
     "sourceIdentityIsImmutable": true,
     "fingerprintCollisionsFailClosed": true,
-    "truthNotImplementedYet": true
+    "truthImplementedAsNonAuthoritativeReasoning": true,
+    "truthProbabilityRequiresEmpiricalCalibration": true,
+    "truthProbabilityCurrentlyNull": true,
+    "truthCategoricalStateCannotUseContinuousThresholds": true,
+    "truthDependenceFamiliesCollapsedBeforeCorroboration": true,
+    "truthFreshnessUsesEvaluationReferenceTime": true,
+    "truthPersistenceIsRpcWriteOnly": true,
+    "genericReasoningDirectDmlForbidden": true,
+    "truthIndexIsNotProbability": true,
+    "truthPropositionIdentityTenantNeutral": true,
+    "truthEntityContradictionPrecedesPositive": true,
+    "globalTruthClaimsReusableWithinTenantEvaluation": true
   },
   "backendOwnedEvidenceTables": [
     "companies",
@@ -60,7 +71,9 @@
     "authority_events",
     "opportunity_human_reviews",
     "ai_usage_events",
-    "audit_events"
+    "audit_events",
+    "truth_claim_snapshots",
+    "truth_entity_snapshots"
   ],
   "forbiddenCommercialAuthorityColumns": [
     "opportunity_score",
@@ -73,5 +86,14 @@
     "engagement_confidence",
     "match_label",
     "fit_breakdown"
+  ],
+  "nonAuthoritativeTruthTables": [
+    "truth_claim_snapshots",
+    "truth_entity_snapshots"
+  ],
+  "truthPolicyTables": [
+    "truth_claim_policy_registry",
+    "truth_claim_policy_bindings",
+    "truth_entity_profile_registry"
   ]
 }
