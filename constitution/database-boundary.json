@@ -1,6 +1,6 @@
 {
-  "version": "MRV2-DB-BOUNDARY-1.12.0",
-  "build": 12,
+  "version": "MRV2-DB-BOUNDARY-1.13.0",
+  "build": 13,
   "principles": {
     "evidenceIsNotAuthority": true,
     "reasoningIsNotAuthority": true,
@@ -127,7 +127,19 @@
     "engagementMessageApprovalMutationSerializedWithClaim": true,
     "engagementDeliveryClaimFairAcrossOpportunities": true,
     "engagementGenerationBriefUsesCurrentR4SatisfiedFacts": true,
-    "engagementReviewDiagnosticsPrimitiveOnly": true
+    "engagementReviewDiagnosticsPrimitiveOnly": true,
+    "canonicalApplicationReadModelBuild13": true,
+    "canonicalApplicationReadModelIsReadOnly": true,
+    "canonicalApplicationReadModelServiceRoleOnly": true,
+    "canonicalApplicationReadModelReusesAuthorityEnvelope": true,
+    "canonicalApplicationReadModelCurrentTimeGuarded": true,
+    "canonicalApplicationReadModelNoWeightedAuthority": true,
+    "browserDirectCanonicalAuthorityReadForbidden": true,
+    "uiAuthorityReconstructionForbidden": true,
+    "applicationReadContractVersioned": true,
+    "applicationReadIncludesTruthR4R5R6ResearchWorkflowEngagement": true,
+    "applicationClaimProvenanceCurrentLineageScoped": true,
+    "applicationMainReadsDoNotEmbedRawEvidence": true
   },
   "backendOwnedEvidenceTables": [
     "companies",

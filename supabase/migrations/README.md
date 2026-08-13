@@ -19,3 +19,8 @@ Build 10 keeps exactly three authority writers. Research is not authority and ca
 - Build 11: `0014_opportunity_engine.sql` — non-authoritative opportunity projection, authority-ready materialisation, system reviewability synchronisation and dimensional/Pareto product semantics.
 
 Build 11 keeps exactly three authority writers. Opportunity state is a product projection, not commercial authority.
+
+- Build 12: `0015_engagement_engine.sql` — path-bound engagement generation/review/approval/queue/delivery with live send-time R4/R5/R6 recheck and reconciliation-safe delivery semantics.
+- Build 13: `0016_canonical_application_read_model.sql` — service-role-only canonical application read model for command centre, campaign, company intelligence, engagement and lineage-scoped claim provenance.
+
+Build 13 keeps exactly three authority writers. The read model is presentation composition only and performs no authority, workflow or engagement mutation.

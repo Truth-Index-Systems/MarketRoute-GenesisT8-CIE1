@@ -1,6 +1,6 @@
 {
   "name": "marketroute-v2",
-  "version": "0.12.0",
+  "version": "0.13.0",
   "private": true,
   "engines": {
     "node": ">=20.11.0"
@@ -15,7 +15,7 @@
     "constitution:legacy": "node scripts/validate-no-legacy.mjs",
     "constitution:authority": "node scripts/validate-authority-manifest.mjs",
     "constitution:adversarial": "node tests/adversarial/build1-constitution.mjs",
-    "constitution:check": "npm run constitution:architecture && npm run constitution:ai && npm run constitution:legacy && npm run constitution:authority && npm run constitution:schema && npm run constitution:sql && npm run constitution:adversarial && npm run constitution:database-adversarial && npm run constitution:evidence && npm run constitution:evidence-sql && npm run constitution:evidence-adversarial && npm run constitution:evidence-db-adversarial && npm run constitution:truth && npm run constitution:truth-sql && npm run constitution:truth-adversarial && npm run constitution:truth-db-adversarial && npm run constitution:seller && npm run constitution:seller-sql && npm run constitution:seller-adversarial && npm run constitution:seller-db-adversarial && npm run constitution:r4 && npm run constitution:r4-sql && npm run constitution:r4-adversarial && npm run constitution:r4-db-adversarial && npm run constitution:r5 && npm run constitution:r5-sql && npm run constitution:r5-adversarial && npm run constitution:r5-db-adversarial && npm run constitution:r6 && npm run constitution:r6-sql && npm run constitution:r6-adversarial && npm run constitution:r6-db-adversarial && npm run constitution:lifecycle && npm run constitution:lifecycle-sql && npm run constitution:lifecycle-adversarial && npm run constitution:lifecycle-db-adversarial && npm run constitution:research && npm run constitution:research-sql && npm run constitution:research-adversarial && npm run constitution:research-db-adversarial && npm run constitution:opportunity && npm run constitution:opportunity-sql && npm run constitution:opportunity-adversarial && npm run constitution:opportunity-db-adversarial && npm run constitution:engagement && npm run constitution:engagement-sql && npm run constitution:engagement-adversarial && npm run constitution:engagement-db-adversarial",
+    "constitution:check": "npm run constitution:architecture && npm run constitution:ai && npm run constitution:legacy && npm run constitution:authority && npm run constitution:schema && npm run constitution:sql && npm run constitution:adversarial && npm run constitution:database-adversarial && npm run constitution:evidence && npm run constitution:evidence-sql && npm run constitution:evidence-adversarial && npm run constitution:evidence-db-adversarial && npm run constitution:truth && npm run constitution:truth-sql && npm run constitution:truth-adversarial && npm run constitution:truth-db-adversarial && npm run constitution:seller && npm run constitution:seller-sql && npm run constitution:seller-adversarial && npm run constitution:seller-db-adversarial && npm run constitution:r4 && npm run constitution:r4-sql && npm run constitution:r4-adversarial && npm run constitution:r4-db-adversarial && npm run constitution:r5 && npm run constitution:r5-sql && npm run constitution:r5-adversarial && npm run constitution:r5-db-adversarial && npm run constitution:r6 && npm run constitution:r6-sql && npm run constitution:r6-adversarial && npm run constitution:r6-db-adversarial && npm run constitution:lifecycle && npm run constitution:lifecycle-sql && npm run constitution:lifecycle-adversarial && npm run constitution:lifecycle-db-adversarial && npm run constitution:research && npm run constitution:research-sql && npm run constitution:research-adversarial && npm run constitution:research-db-adversarial && npm run constitution:opportunity && npm run constitution:opportunity-sql && npm run constitution:opportunity-adversarial && npm run constitution:opportunity-db-adversarial && npm run constitution:engagement && npm run constitution:engagement-sql && npm run constitution:engagement-adversarial && npm run constitution:engagement-db-adversarial && npm run constitution:read-model && npm run constitution:read-model-sql && npm run constitution:read-model-adversarial && npm run constitution:read-model-db-adversarial",
     "constitution:schema": "node scripts/validate-build2-schema.mjs",
     "constitution:sql": "node scripts/validate-build2-sql-safety.mjs",
     "constitution:database-adversarial": "node tests/adversarial/build2-database-boundaries.mjs",
@@ -58,7 +58,11 @@
     "constitution:engagement": "node scripts/validate-build12-engagement-engine.mjs",
     "constitution:engagement-sql": "node scripts/validate-build12-sql-safety.mjs",
     "constitution:engagement-adversarial": "node tests/adversarial/build12-engagement-engine.mjs",
-    "constitution:engagement-db-adversarial": "node tests/adversarial/build12-database-boundaries.mjs"
+    "constitution:engagement-db-adversarial": "node tests/adversarial/build12-database-boundaries.mjs",
+    "constitution:read-model": "node scripts/validate-build13-read-model.mjs",
+    "constitution:read-model-sql": "node scripts/validate-build13-sql-safety.mjs",
+    "constitution:read-model-adversarial": "node tests/adversarial/build13-read-model.mjs",
+    "constitution:read-model-db-adversarial": "node tests/adversarial/build13-database-boundaries.mjs"
   },
   "dependencies": {
     "next": "^15.5.21",

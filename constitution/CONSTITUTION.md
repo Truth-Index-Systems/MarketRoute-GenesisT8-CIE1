@@ -90,3 +90,21 @@ A new `opportunities` workflow row may be materialised only when the exact curre
 Opportunity semantics are categorical and dimensional. `ACTIONABLE`, `RESEARCH_REQUIRED`, `REVALIDATION_REQUIRED`, `NOT_ADMISSIBLE`, and `NOT_APPLICABLE` are derived from the authority lifecycle. Truth coverage, evidence sufficiency, freshness, coherence, structural route count, and authorised access-point count remain separate dimensions. MarketRoute V2 has no weighted opportunity score.
 
 Pareto comparison is permitted only as a non-authoritative product-ordering aid among already `ACTIONABLE` profiles. It may identify dominance or incomparability across independent dimensions; it may not create commercial authority, change R4/R5/R6, change workflow, or grant execution permission. `Truth Index` is presented as an epistemic diagnostic and is deliberately excluded from Pareto comparison to avoid double-counting its maximin aggregation.
+
+## Build 12 state
+
+Build 12 introduces no new authority writer. Engagement is downstream of founder-approved opportunity workflow and the current R4 → R5 → R6 authority envelope.
+
+Engagement strategy, language generation, categorical AI self-review, message approval, queueing and delivery are separate append-only stages. AI quality authority is categorical (`PASS`, `REWRITE`, `BLOCK`); numeric diagnostics are telemetry only. `HUMAN_ONLY` is the default campaign policy, while `AUTOPILOT` cannot bypass founder opportunity approval or current authority.
+
+Queueing and send-time delivery re-prove the live authority envelope. A queued message is historical intent, not permanent send permission. Campaign, organisation, seller and target lifecycle, current human message decision, current strategy path and current R4/R5/R6 state are rechecked before delivery. Unknown or abandoned provider state becomes `RECONCILIATION_REQUIRED` and is never automatically retried.
+
+## Build 13 state
+
+Build 13 introduces no authority writer and no mutation capability. It establishes `MRV2-APPLICATION-READ-1.0.0` as the canonical server-side presentation contract.
+
+The application read model reuses the exact current authority envelope and the existing Opportunity, Research, Workflow and Engagement predicates. It may present current R4 boundaries, R5 paths, R6 bindings, Truth dimensions, research pressure and workflow/engagement history, but it may not re-decide commercial authority, infer workflow state, grant execution permission or introduce weighted scoring.
+
+Canonical read RPCs are `service_role`-only. Direct browser access to authority/read-model persistence is forbidden. Future UI surfaces consume the application service rather than querying Supabase authority tables or reconstructing readiness themselves.
+
+Raw evidence is not embedded in command-centre, campaign or company payloads. A separate bounded `CLAIM_PROVENANCE` resource may reveal the evidence/source trace for a Truth claim only when that exact Truth snapshot belongs to the current R4, R5 or R6 lineage for the requested organisation/campaign/company. Historical or unrelated snapshot IDs fail closed.

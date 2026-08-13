@@ -1,9 +1,9 @@
 const principles = [
-  "Evidence before authority",
-  "Unknown never means false",
-  "AI interprets; deterministic systems govern",
-  "Workflow state is not authority state",
-  "No V1 runtime dependency",
+  "Truth is read, never reconstructed",
+  "R4 → R5 → R6 remains the only authority chain",
+  "Workflow and authority remain independent",
+  "Research and engagement stay downstream",
+  "The browser never reads authority tables directly",
 ];
 
 export default function Home() {
@@ -11,13 +11,13 @@ export default function Home() {
     <main className="shell">
       <div className="grid" aria-hidden="true" />
       <section className="hero">
-        <div className="eyebrow"><span /> MARKETROUTE V2 · BUILD 3</div>
-        <h1>Evidence<br /><em>before judgement.</em></h1>
+        <div className="eyebrow"><span /> MARKETROUTE V2 · BUILD 13</div>
+        <h1>One state.<br /><em>One source.</em></h1>
         <p className="lede">
-          Canonical sources, immutable provenance and deterministic evidence identity. MarketRoute can now accumulate research without turning raw evidence into commercial judgement.
+          MarketRoute now exposes a single canonical application contract for Truth, commercial reality, route authority, contact authority, research, workflow and engagement—without asking the interface to recreate the intelligence underneath it.
         </p>
-        <div className="route" aria-label="Constitutional authority path">
-          <span>Evidence</span><i /><span>Truth</span><i /><span>Authority</span><i /><span>Action</span>
+        <div className="route" aria-label="Canonical application read path">
+          <span>Genesis</span><i /><span>Read Model</span><i /><span>Application</span><i /><span>Interface</span>
         </div>
       </section>
       <section className="principles">
