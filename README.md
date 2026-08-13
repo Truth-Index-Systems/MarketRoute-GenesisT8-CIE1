@@ -4,22 +4,20 @@ Constitutional rebuild of MarketRoute.
 
 ## Current build
 
-**Build 11 — Opportunity Engine**
+**Build 12 — Engagement Engine**
 
 The live authority spine remains unchanged:
 
-`Seller Genome + Target Truth → R4 Commercial Reality → Relationship Truth/Graph → R5 Route Authority → Contact Truth → R6 Contact Authority → derived authority lifecycle`
+`Seller Genome + Target Truth → R4 Commercial Reality → Relationship Truth/Graph → R5 Route Authority → Contact Truth → R6 Contact Authority → derived authority lifecycle → Opportunity projection`
 
-Exactly three authority writers exist: R4, R5 and R6. Build 10 adds **no authority writer** and does not mutate human workflow.
+Exactly three authority writers exist: **R4, R5 and R6**. Build 12 adds no fourth authority writer.
 
-Genesis now derives research pressure from the current R4/R5/R6 lifecycle, creates deterministic append-only research plans, enforces campaign budgets/concurrency, acquires evidence through a vendor-neutral provider boundary, and returns every research finding through the existing Evidence/Truth pipeline before R4/R5/R6 may change.
+Build 12 turns an already-approved, currently executable opportunity into a path-bound engagement strategy, provider-generated language, categorical AI self-review, human/autopilot message policy, append-only queue lineage and a single-shot delivery job. Queueing and delivery permission are always re-derived from the live authority envelope.
 
-Research priority is categorical, not weighted: `DECISION_BLOCKER → CURRENTNESS_REPAIR → EXPIRING_SOON → ENRICHMENT`. Numeric money/concurrency controls are resource governance only. Deterministic R4/R5/R6 revalidation is zero-cost and remains possible even when the AI research budget is exhausted.
+AI review is categorical only: `PASS / REWRITE / BLOCK`. Numeric diagnostics are telemetry and cannot cross an execution threshold. The default campaign engagement policy is `HUMAN_ONLY`; `AUTOPILOT` still requires the opportunity itself to have been founder-approved and to remain executable.
 
-Autonomy is protected by a single scheduler lease, heartbeat, bounded work execution, 180-second provider abort contract, attempt-scoped budget reservations, bounded retries, six-hour unchanged-gap cooldown, and conservative abandoned-attempt recovery.
+Generation uses a structured commercial brief: seller objective and offering descriptions, current R4-satisfied target facts, exact R6-authorised route/contact and authority fingerprints. Raw webpage excerpts are not passed into the engagement prompt boundary.
 
-Build 10 intentionally ships a **provider interface, not a vendor-specific OpenAI/search implementation**. Wiring a chosen provider later does not alter Genesis authority semantics.
+The delivery path requires an active organisation, campaign, seller business and target company; re-checks the current R4/R5/R6 envelope immediately before claim; serialises policy/review mutations against claims; preserves FIFO within an opportunity while avoiding cross-opportunity head-of-line blocking; and requires a provider idempotency key. Unknown or abandoned delivery state is never automatically retried—it becomes `RECONCILIATION_REQUIRED`.
 
-## Build 11 — Opportunity Engine
-
-Build 11 converts the current R4/R5/R6 authority envelope into a product-layer opportunity profile without introducing an opportunity score or a fourth authority writer. New opportunity rows materialise only from `AUTHORITY_READY`; system reviewability remains separate from human approval; and non-authoritative Pareto comparison is available for actionable opportunity sets.
+The external language and delivery providers remain vendor-neutral interfaces. Build 12 does not hard-wire OpenAI, SendGrid, LinkedIn or another vendor into Genesis authority semantics.

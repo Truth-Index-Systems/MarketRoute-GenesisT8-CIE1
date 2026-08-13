@@ -5,7 +5,7 @@ import { ROOT, assert, check, printResults, readJson, relative, sourceFiles } fr
 const manifest = readJson("constitution/authority-manifest.json");
 const writers=new Map(manifest.authorityWriters.map((w)=>[w.writerKey,w]));
 const results = [
-  check("schema has advanced to Build 9", () => assert(manifest.schemaBuild >= 9, `schemaBuild=${manifest.schemaBuild}`)),
+  check("schema has advanced to Build 12", () => assert(manifest.schemaBuild >= 12, `schemaBuild=${manifest.schemaBuild}`)),
   check("R4 authority writer remains declared", () => { const w=writers.get("marketroute.r4.commercial-reality"); assert(w?.authorityStage === "COMMERCIAL_REALITY", "R4 writer missing"); }),
   check("R5 relationship graph writer is declared", () => { const w=writers.get("marketroute.r5.relationship-graph"); assert(w?.authorityStage === "ROUTE_AUTHORITY", "R5 writer missing"); }),
   check("R6 contact authority writer is declared", () => { const w=writers.get("marketroute.r6.contact-truth"); assert(w?.authorityStage === "CONTACT_AUTHORITY", "R6 writer missing"); }),
@@ -27,4 +27,4 @@ results.push(check("Build 2 migration foundation 0001-0005 remains intact", () =
   const sql=fs.readdirSync(path.join(ROOT,"supabase/migrations")).filter((n)=>n.endsWith(".sql")).sort();
   const foundation=sql.filter((n)=>/^000[1-5]_/.test(n)); assert(foundation.length===5, `foundation changed: ${foundation.join(",")}`);
 }));
-printResults("MarketRoute V2 Build 9 — authority manifest", results);
+printResults("MarketRoute V2 Build 12 — authority manifest", results);

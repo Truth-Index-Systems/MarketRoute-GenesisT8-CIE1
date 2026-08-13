@@ -1,0 +1,34 @@
+import assert from "node:assert/strict";import fs from "node:fs";import os from "node:os";import path from "node:path";import {execFileSync} from "node:child_process";import {pathToFileURL} from "node:url";
+const root=process.cwd(),temp=fs.mkdtempSync(path.join(os.tmpdir(),"mrv2-b12-"));
+try{
+ execFileSync("tsc",["--target","ES2022","--module","NodeNext","--moduleResolution","NodeNext","--strict","--skipLibCheck","--outDir",temp,path.join(root,"core/evidence/contracts.ts"),path.join(root,"core/evidence/canonical.ts"),path.join(root,"core/evidence/index.ts"),path.join(root,"core/engagement/contracts.ts"),path.join(root,"core/engagement/engine.ts"),path.join(root,"core/engagement/index.ts")],{stdio:"pipe"});
+ const m=await import(pathToFileURL(path.join(temp,"engagement/engine.js")).href);const tests=[];const test=(n,f)=>tests.push({n,f});
+ const ctx=(over={})=>({opportunityId:"11111111-1111-4111-8111-111111111111",organisationId:"22222222-2222-4222-8222-222222222222",campaignId:"33333333-3333-4333-8333-333333333333",companyId:"44444444-4444-4444-8444-444444444444",companyName:"Acme",canonicalDomain:"acme.example",pathFingerprint:"a".repeat(64),accessPointId:"55555555-5555-4555-8555-555555555555",accessPointKind:"PERSONAL_EMAIL",accessPointValue:"jane@acme.example",routeMode:"NAMED_CONTACT",personId:"66666666-6666-4666-8666-666666666666",personName:"Jane Doe",sellerObjectiveKey:"acquire_customers",sellerObjectiveStatement:"Start a commercial conversation",sellerOfferingLabels:["Market intelligence"],authorityEnvelopeFingerprint:"b".repeat(64),r6AuthorityRecordId:"77777777-7777-4777-8777-777777777777",r6AuthorityFingerprint:"c".repeat(64),evaluatedAt:"2026-08-13T22:00:00.000Z",executableNow:true,...over});
+ test("personal email maps to EMAIL",()=>assert.equal(m.engagementChannelForAccessPointKind("PERSONAL_EMAIL"),"EMAIL"));
+ test("department form maps to CONTACT_FORM",()=>assert.equal(m.engagementChannelForAccessPointKind("DEPARTMENT_FORM"),"CONTACT_FORM"));
+ test("LinkedIn maps categorically",()=>assert.equal(m.engagementChannelForAccessPointKind("LINKEDIN"),"LINKEDIN"));
+ test("unknown access point fails closed",()=>assert.throws(()=>m.engagementChannelForAccessPointKind("FAX"),/UNSUPPORTED/));
+ test("strategy requires executable opportunity",()=>assert.throws(()=>m.buildEngagementStrategy(ctx({executableNow:false})),/REQUIRES_EXECUTABLE/));
+ test("named route requires person",()=>assert.throws(()=>m.buildEngagementStrategy(ctx({personId:null})),/NAMED_ROUTE_PERSON_REQUIRED/));
+ test("organisational route forbids invented person",()=>assert.throws(()=>m.buildEngagementStrategy(ctx({routeMode:"ORGANISATIONAL_ROUTE"})),/ORGANISATIONAL_ROUTE_PERSON_FORBIDDEN/));
+ test("organisational route with no person works",()=>assert.equal(m.buildEngagementStrategy(ctx({routeMode:"ORGANISATIONAL_ROUTE",personId:null,accessPointKind:"GENERIC_EMAIL",accessPointValue:"hello@acme.example"})).routeMode,"ORGANISATIONAL_ROUTE"));
+ test("strategy fingerprint deterministic",()=>assert.equal(m.buildEngagementStrategy(ctx()).strategyFingerprint,m.buildEngagementStrategy(ctx()).strategyFingerprint));
+ test("route change changes strategy fingerprint",()=>assert.notEqual(m.buildEngagementStrategy(ctx()).strategyFingerprint,m.buildEngagementStrategy(ctx({pathFingerprint:"d".repeat(64)})).strategyFingerprint));
+ test("authority change changes strategy fingerprint",()=>assert.notEqual(m.buildEngagementStrategy(ctx()).strategyFingerprint,m.buildEngagementStrategy(ctx({r6AuthorityFingerprint:"e".repeat(64)})).strategyFingerprint));
+ test("email requires subject",()=>assert.throws(()=>m.canonicaliseEngagementMessage("EMAIL",{bodyText:"Hello"}),/EMAIL_SUBJECT_REQUIRED/));
+ test("email message canonicalises",()=>assert.deepEqual(m.canonicaliseEngagementMessage("EMAIL",{subjectText:"  Hello  ",bodyText:"  Body  "}),{subjectText:"Hello",bodyText:"Body"}));
+ test("non email subject forbidden",()=>assert.throws(()=>m.canonicaliseEngagementMessage("LINKEDIN",{subjectText:"Subject",bodyText:"Hello"}),/NON_EMAIL_SUBJECT_FORBIDDEN/));
+ test("PASS can carry zero diagnostic score",()=>{const r=m.canonicaliseEngagementReview({verdict:"PASS",reasonCodes:[],diagnostics:{clarityScore:0}});assert.equal(r.verdict,"PASS");assert.equal(m.engagementReviewAllowsProgress(r),true)});
+ test("PASS can carry 100 diagnostic score with same authority",()=>{const r=m.canonicaliseEngagementReview({verdict:"PASS",reasonCodes:[],diagnostics:{clarityScore:100}});assert.equal(m.engagementReviewAllowsProgress(r),true)});
+ test("REWRITE cannot pass because score is high",()=>{const r=m.canonicaliseEngagementReview({verdict:"REWRITE",reasonCodes:["TOO_LONG"],diagnostics:{clarityScore:100}});assert.equal(m.engagementReviewAllowsProgress(r),false)});
+ test("BLOCK requires reason",()=>assert.throws(()=>m.canonicaliseEngagementReview({verdict:"BLOCK",reasonCodes:[]}),/NONPASS_REASON_REQUIRED/));
+ test("duplicate review reasons collapse",()=>assert.deepEqual(m.canonicaliseEngagementReview({verdict:"REWRITE",reasonCodes:["too_long","TOO_LONG"]}).reasonCodes,["TOO_LONG"]));
+ test("diagnostic cannot masquerade as execution authority",()=>assert.throws(()=>m.canonicaliseEngagementReview({verdict:"PASS",reasonCodes:[],diagnostics:{executionPermission:true}}),/DIAGNOSTIC_KEY_INVALID/));
+ test("human queue requires explicit human approval",()=>assert.equal(m.engagementQueueEligible({opportunityExecutableNow:true,strategyCurrent:true,reviewVerdict:"PASS",policyMode:"HUMAN_ONLY",humanApprovalDecision:null}),false));
+ test("human approved PASS may queue",()=>assert.equal(m.engagementQueueEligible({opportunityExecutableNow:true,strategyCurrent:true,reviewVerdict:"PASS",policyMode:"HUMAN_ONLY",humanApprovalDecision:"APPROVE"}),true));
+ test("autopilot PASS may queue",()=>assert.equal(m.engagementQueueEligible({opportunityExecutableNow:true,strategyCurrent:true,reviewVerdict:"PASS",policyMode:"AUTOPILOT"}),true));
+ test("autopilot cannot bypass stale authority",()=>assert.equal(m.engagementQueueEligible({opportunityExecutableNow:false,strategyCurrent:true,reviewVerdict:"PASS",policyMode:"AUTOPILOT"}),false));
+ test("autopilot cannot bypass BLOCK",()=>assert.equal(m.engagementQueueEligible({opportunityExecutableNow:true,strategyCurrent:true,reviewVerdict:"BLOCK",policyMode:"AUTOPILOT"}),false));
+ test("human approval cannot bypass REWRITE",()=>assert.equal(m.engagementQueueEligible({opportunityExecutableNow:true,strategyCurrent:true,reviewVerdict:"REWRITE",policyMode:"HUMAN_ONLY",humanApprovalDecision:"APPROVE"}),false));
+ let passed=0;console.log("\nMarketRoute V2 Build 12 — Engagement engine adversarial gate");for(const {n,f} of tests){try{await f();passed++;console.log(`PASS  ${n}`)}catch(e){console.error(`FAIL  ${n}: ${e instanceof Error?e.message:e}`)}}console.log(`\n${passed}/${tests.length} PASS`);if(passed!==tests.length)process.exitCode=1;
+}finally{fs.rmSync(temp,{recursive:true,force:true});}

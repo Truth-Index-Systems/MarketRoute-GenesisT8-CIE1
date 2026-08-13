@@ -1,6 +1,6 @@
 {
-  "version": "MRV2-DB-BOUNDARY-1.11.0",
-  "build": 11,
+  "version": "MRV2-DB-BOUNDARY-1.12.0",
+  "build": 12,
   "principles": {
     "evidenceIsNotAuthority": true,
     "reasoningIsNotAuthority": true,
@@ -105,7 +105,29 @@
     "opportunityWeightedScoreForbidden": true,
     "opportunityParetoOrderingIsProductOnly": true,
     "systemReviewabilityMayOnlyMutatePreHumanStates": true,
-    "humanOpportunityStatesPreservedBySystemSync": true
+    "humanOpportunityStatesPreservedBySystemSync": true,
+    "engagementEngineBuild12": true,
+    "engagementIsNotAuthority": true,
+    "engagementStrategyBindsCurrentR6Path": true,
+    "engagementGenerationUsesStructuredContext": true,
+    "engagementReviewCategoricalOnly": true,
+    "engagementNumericDiagnosticsTelemetryOnly": true,
+    "engagementHumanOnlyDefault": true,
+    "engagementAutopilotCannotBypassOpportunityApproval": true,
+    "engagementQueueRequiresCurrentAuthority": true,
+    "engagementSendGateRechecksCurrentAuthority": true,
+    "engagementSendGateDerivedNotAuthorityWriter": true,
+    "engagementDeliveryAtMostOneInFlightPerOpportunity": true,
+    "engagementAbandonedDeliveryNeedsReconciliation": true,
+    "engagementProviderIdempotencyKeyRequired": true,
+    "engagementFirstDeliveryAdvancesWorkflowToEngaged": true,
+    "engagementRequiresActiveOrganisationCampaignSellerAndTarget": true,
+    "engagementLatestHumanApprovalControlsSend": true,
+    "engagementPolicyMutationSerializedWithClaim": true,
+    "engagementMessageApprovalMutationSerializedWithClaim": true,
+    "engagementDeliveryClaimFairAcrossOpportunities": true,
+    "engagementGenerationBriefUsesCurrentR4SatisfiedFacts": true,
+    "engagementReviewDiagnosticsPrimitiveOnly": true
   },
   "backendOwnedEvidenceTables": [
     "companies",
@@ -168,7 +190,14 @@
     "research_plan_runs",
     "research_work_units",
     "research_budget_events",
-    "opportunity_sync_events"
+    "opportunity_sync_events",
+    "campaign_engagement_policy_events",
+    "engagement_strategies",
+    "engagement_messages",
+    "engagement_ai_reviews",
+    "engagement_message_approvals",
+    "engagement_queue_items",
+    "engagement_delivery_events"
   ],
   "forbiddenCommercialAuthorityColumns": [
     "opportunity_score",
@@ -214,5 +243,15 @@
     "research_plan_runs",
     "research_work_units",
     "research_budget_events"
+  ],
+  "engagementTables": [
+    "campaign_engagement_policy_events",
+    "engagement_strategies",
+    "engagement_messages",
+    "engagement_ai_reviews",
+    "engagement_message_approvals",
+    "engagement_queue_items",
+    "engagement_delivery_jobs",
+    "engagement_delivery_events"
   ]
 }
