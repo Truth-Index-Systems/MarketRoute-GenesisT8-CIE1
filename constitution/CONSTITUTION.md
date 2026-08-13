@@ -45,3 +45,11 @@ Business relationships such as `partners_with`, `supplies`, `customer_of`, and `
 R5 proves structural reachability only. A path containing a person or personal access point is marked `CONTACT_TRUTH_REQUIRED`; Build 7 does not grant current identity, employment, role, or channel ownership. Build 8 owns that contact authority.
 
 R5 has no numeric score, confidence, probability, weight, strength, or rank. PostgreSQL independently verifies the exact reachable relationship universe, exact current Truth snapshot for every relationship, the structural endpoint set, path directionality, canonical ontology metadata, parent R4 fingerprint, time validity, and the final authority fingerprint. New route-relevant relationships, new relationship evidence, Truth expiry, or stale R4 authority make R5 non-current without waiting for a scheduler.
+
+## Build 8 state
+
+Build 8 introduces the third authority writer: `marketroute.r6.contact-truth` / `CONTACT_AUTHORITY`.
+
+R6 consumes only a current R5 structural route. Organisational routes remain executable at the contact layer without inventing a named person. Any path that contains a person or personal channel must prove, through the generic Truth Engine, the exact person identity, current employment with the employer structurally present on that path, at least one current role at that employer, and ownership of the exact terminal channel. A different employer, competing identity, competing channel owner, stale/contradicted claim, archived person, or missing structural person/employer keeps the path at `CONTACT_TRUTH_REQUIRED`.
+
+Contact authority is categorical (`CONTACT_AUTHORISED`, `CONTACT_RESEARCH_REQUIRED`, `CONTACT_NOT_APPLICABLE`). Numeric contact confidence, scores, ranks, probabilities and weights are forbidden authority inputs. PostgreSQL independently re-derives the contact-claim universe, validates the exact Truth snapshots, recomputes bindings/decision/fingerprints, and caps R6 validity at eight hours or the earlier parent/Truth boundary.

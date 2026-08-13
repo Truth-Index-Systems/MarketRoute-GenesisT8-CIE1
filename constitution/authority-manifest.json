@@ -1,6 +1,6 @@
 {
   "version": "MRV2-CONSTITUTION-1.0.0",
-  "status": "RELATIONSHIP_GRAPH_R5_ACTIVE",
+  "status": "CONTACT_TRUTH_R6_ACTIVE",
   "authorityWriters": [
     {
       "writerKey": "marketroute.r4.commercial-reality",
@@ -8,7 +8,11 @@
       "writerVersion": "1.0.0",
       "coreModule": "core/commercial-reality",
       "persistenceRpc": "marketroute_persist_commercial_reality_r4_v1",
-      "decisionCodes": ["COMMERCIAL_CANDIDATE", "RESEARCH_REQUIRED", "NOT_ADMISSIBLE"],
+      "decisionCodes": [
+        "COMMERCIAL_CANDIDATE",
+        "RESEARCH_REQUIRED",
+        "NOT_ADMISSIBLE"
+      ],
       "numericAuthority": false,
       "databaseRecomputesDecision": true,
       "databaseRecomputesFingerprint": true,
@@ -20,16 +24,40 @@
       "writerVersion": "1.0.0",
       "coreModule": "core/relationships",
       "persistenceRpc": "marketroute_persist_route_authority_r5_v1",
-      "decisionCodes": ["ROUTE_STRUCTURALLY_OPEN", "ROUTE_RESEARCH_REQUIRED", "ROUTE_NOT_APPLICABLE"],
+      "decisionCodes": [
+        "ROUTE_STRUCTURALLY_OPEN",
+        "ROUTE_RESEARCH_REQUIRED",
+        "ROUTE_NOT_APPLICABLE"
+      ],
       "numericAuthority": false,
       "databaseRecomputesDecision": true,
       "databaseRecomputesFingerprint": true,
       "timeBound": true,
       "relationshipTruthRequired": true,
       "contactTruthDeferred": true
+    },
+    {
+      "writerKey": "marketroute.r6.contact-truth",
+      "authorityStage": "CONTACT_AUTHORITY",
+      "writerVersion": "1.0.0",
+      "coreModule": "core/contacts",
+      "persistenceRpc": "marketroute_persist_contact_authority_r6_v1",
+      "decisionCodes": [
+        "CONTACT_AUTHORISED",
+        "CONTACT_RESEARCH_REQUIRED",
+        "CONTACT_NOT_APPLICABLE"
+      ],
+      "numericAuthority": false,
+      "databaseRecomputesDecision": true,
+      "databaseRecomputesFingerprint": true,
+      "timeBound": true,
+      "contactTruthRequired": true,
+      "organisationalRoutesNeedNoPerson": true
     }
   ],
-  "declaredFutureAuthorityStages": ["contact-authority"],
+  "declaredFutureAuthorityStages": [
+    "execution-permission"
+  ],
   "rules": {
     "authorityMustBeDeclared": true,
     "databaseIsPersistenceBoundary": true,
@@ -41,5 +69,5 @@
     "databaseMustRecomputeAuthorityFingerprint": true,
     "databaseMustRecomputeAuthorityDecision": true
   },
-  "schemaBuild": 7
+  "schemaBuild": 8
 }

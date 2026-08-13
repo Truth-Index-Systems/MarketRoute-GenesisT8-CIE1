@@ -4,9 +4,9 @@ const contracts=fs.readFileSync(path.join(ROOT,"core/relationships/contracts.ts"
 const canonical=fs.readFileSync(path.join(ROOT,"core/relationships/canonical.ts"),"utf8");
 const graph=fs.readFileSync(path.join(ROOT,"core/relationships/graph.ts"),"utf8");
 const manifest=readJson("constitution/authority-manifest.json"); const db=readJson("constitution/database-boundary.json"); const pkg=readJson("package.json"); const results=[];
-results.push(check("Build 7 advances authority to exactly R4+R5",()=>assert(manifest.authorityWriters.length===2,"writer count")));
+results.push(check("Build 7 R4+R5 writers remain declared in successor builds",()=>{assert(manifest.authorityWriters.some(w=>w.writerKey==="marketroute.r4.commercial-reality"),"R4");assert(manifest.authorityWriters.some(w=>w.writerKey==="marketroute.r5.relationship-graph"),"R5");}));
 results.push(check("R5 writer is route authority",()=>{const w=manifest.authorityWriters.find(w=>w.writerKey==="marketroute.r5.relationship-graph");assert(w?.authorityStage==="ROUTE_AUTHORITY","R5 writer");}));
-results.push(check("contact authority remains future",()=>assert(manifest.declaredFutureAuthorityStages.includes("contact-authority"),"contact future")));
+results.push(check("Build 7 contact deferral is satisfied by future or active R6",()=>assert(manifest.declaredFutureAuthorityStages.includes("contact-authority")||manifest.authorityWriters.some(w=>w.writerKey==="marketroute.r6.contact-truth"),"contact succession")));
 results.push(check("R5 decisions are categorical",()=>{for(const x of ["ROUTE_STRUCTURALLY_OPEN","ROUTE_RESEARCH_REQUIRED","ROUTE_NOT_APPLICABLE"])assert(contracts.includes(`"${x}"`),x);}));
 results.push(check("relationship ontology is explicit",()=>{for(const x of ["partners_with","supplies","customer_of","uses_technology_from","employs","has_access_point","introduced_by"])assert(canonical.includes(`${x}:`),x);}));
 results.push(check("directionality is ontology owned",()=>assert(canonical.includes('direction:"DIRECTED"')&&canonical.includes('direction:"UNDIRECTED"'),"direction")));

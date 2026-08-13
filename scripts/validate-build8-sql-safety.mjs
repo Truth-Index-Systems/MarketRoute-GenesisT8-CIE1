@@ -1,0 +1,15 @@
+import fs from "node:fs";import path from "node:path";import {ROOT,assert,check,printResults} from "./lib/constitution.mjs";
+const sql=fs.readFileSync(path.join(ROOT,"supabase/migrations/0011_contact_truth_and_authority_r6.sql"),"utf8");const apply=fs.readFileSync(path.join(ROOT,"APPLY-IN-SUPABASE-MARKETROUTE-V2-BUILD8.sql"),"utf8");const r=[];
+r.push(check("migration is atomic",()=>assert(sql.trim().startsWith("BEGIN;")&&sql.trim().endsWith("COMMIT;"),"transaction")));
+r.push(check("standalone SQL equals migration",()=>assert(sql===apply,"parity")));
+r.push(check("no changed RETURNS TABLE function is CREATE OR REPLACE from older build",()=>assert(!/marketroute_get_r5_context_v1|marketroute_persist_route_authority_r5_v1/.test(sql),"R5 replacement")));
+r.push(check("R6 RPC has unique new name",()=>assert(sql.includes("marketroute_persist_contact_authority_r6_v1"),"RPC")));
+r.push(check("R6 table has finite revalidation check",()=>assert(sql.includes("CHECK(next_revalidation_at>reference_time)"),"revalidation")));
+r.push(check("authority stage is CONTACT_AUTHORITY",()=>assert(sql.includes("'CONTACT_AUTHORITY'"),"stage")));
+r.push(check("no numeric score columns",()=>{for(const x of ["contact_score","contact_confidence","role_confidence","overall_confidence"])assert(!sql.toLowerCase().includes(x),x)}));
+r.push(check("service role direct R6 writes revoked",()=>assert(sql.includes("REVOKE ALL ON public.contact_authority_r6_records"),"revoke")));
+r.push(check("internal helper PUBLIC grants absent",()=>assert(!/GRANT EXECUTE ON FUNCTION public\.marketroute_r6_(claim_universe|expected|path_structure)/.test(sql),"helper grant")));
+r.push(check("public execution explicitly revoked",()=>assert(sql.includes("REVOKE ALL ON FUNCTION public.marketroute_r6_expected_v1(jsonb) FROM PUBLIC"),"public revoke")));
+r.push(check("PostgREST reload included",()=>assert(sql.includes("NOTIFY pgrst,'reload schema'"),"reload")));
+r.push(check("release registry advances to Build 8",()=>assert(/VALUES\('MARKETROUTE_V2_BUILD8_CONTACT_TRUTH_R6',8,'MRV2-CONSTITUTION-1\.0\.0'/.test(sql),"release")));
+printResults("MarketRoute V2 Build 8 — SQL safety gate",r);
