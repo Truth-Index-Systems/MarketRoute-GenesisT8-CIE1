@@ -27,6 +27,8 @@ MarketRoute exists to research markets, identify commercially admissible compani
 - `/ui`: presentation components consuming application read models only.
 - `/app`: Next.js routing/composition only.
 
-## Build 1 state
+## Build 2 state
 
-There are deliberately **zero authority writers** and **zero database migrations** in Build 1. Product authority begins only after its owning build defines and tests it.
+There are deliberately **zero authority writers**. Build 2 adds the fresh V2 persistence constitution only: identity/tenancy, canonical evidence, non-authoritative reasoning, locked authority storage, separate human workflow, scheduler primitives, observability and append-only audit history.
+
+Authority tables are persistence targets, not capability. Direct authority DML is revoked from client roles and `service_role`; future authority builds must register a writer by migration and write through a security-definer boundary that re-proves its authority contract. Workflow mutation is likewise not enabled in Build 2.

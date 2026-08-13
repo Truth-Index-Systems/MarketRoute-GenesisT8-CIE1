@@ -2,7 +2,9 @@
   "name": "marketroute-v2",
   "version": "0.1.0",
   "private": true,
-  "engines": { "node": ">=20.11.0" },
+  "engines": {
+    "node": ">=20.11.0"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -13,7 +15,10 @@
     "constitution:legacy": "node scripts/validate-no-legacy.mjs",
     "constitution:authority": "node scripts/validate-authority-manifest.mjs",
     "constitution:adversarial": "node tests/adversarial/build1-constitution.mjs",
-    "constitution:check": "npm run constitution:architecture && npm run constitution:ai && npm run constitution:legacy && npm run constitution:authority && npm run constitution:adversarial"
+    "constitution:check": "npm run constitution:architecture && npm run constitution:ai && npm run constitution:legacy && npm run constitution:authority && npm run constitution:schema && npm run constitution:sql && npm run constitution:adversarial && npm run constitution:database-adversarial",
+    "constitution:schema": "node scripts/validate-build2-schema.mjs",
+    "constitution:sql": "node scripts/validate-build2-sql-safety.mjs",
+    "constitution:database-adversarial": "node tests/adversarial/build2-database-boundaries.mjs"
   },
   "dependencies": {
     "next": "^15.5.21",

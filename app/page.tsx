@@ -11,10 +11,10 @@ export default function Home() {
     <main className="shell">
       <div className="grid" aria-hidden="true" />
       <section className="hero">
-        <div className="eyebrow"><span /> MARKETROUTE V2 · BUILD 1</div>
-        <h1>Constitution<br /><em>before product.</em></h1>
+        <div className="eyebrow"><span /> MARKETROUTE V2 · BUILD 2</div>
+        <h1>Schema<br /><em>before authority.</em></h1>
         <p className="lede">
-          A clean foundation for evidence-qualified commercial intelligence. No legacy runtime, no compatibility layer, no hidden scoring authority.
+          A clean persistence boundary for evidence, reasoning, workflow and future authority. No V1 tables, no hidden score fields, and zero authority writers.
         </p>
         <div className="route" aria-label="Constitutional authority path">
           <span>Evidence</span><i /><span>Truth</span><i /><span>Authority</span><i /><span>Action</span>

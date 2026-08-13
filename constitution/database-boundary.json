@@ -1,0 +1,64 @@
+{
+  "version": "MRV2-DB-BOUNDARY-1.0.0",
+  "build": 2,
+  "principles": {
+    "evidenceIsNotAuthority": true,
+    "reasoningIsNotAuthority": true,
+    "workflowIsNotAuthority": true,
+    "authorityIsAppendOnly": true,
+    "authorityIsTimeBound": true,
+    "authorityDirectDmlForbidden": true,
+    "authorityWriterRegistryStartsEmpty": true,
+    "authorityFingerprintMustEventuallyBeRecomputedAtPersistenceBoundary": true,
+    "rawEvidenceMayContainAnomalies": true
+  },
+  "backendOwnedEvidenceTables": [
+    "companies",
+    "people",
+    "organisation_company_scopes",
+    "source_records",
+    "source_acquisitions",
+    "evidence_items",
+    "claims",
+    "claim_supersessions",
+    "claim_evidence_links"
+  ],
+  "nonAuthoritativeReasoningTables": [
+    "reasoning_runs",
+    "reasoning_artifacts"
+  ],
+  "lockedAuthorityTables": [
+    "authority_writer_registry",
+    "authority_records",
+    "authority_events"
+  ],
+  "workflowTables": [
+    "opportunities",
+    "opportunity_human_reviews"
+  ],
+  "appendOnlyTables": [
+    "source_acquisitions",
+    "evidence_items",
+    "claims",
+    "claim_supersessions",
+    "claim_evidence_links",
+    "reasoning_artifacts",
+    "authority_records",
+    "authority_events",
+    "opportunity_human_reviews",
+    "ai_usage_events",
+    "audit_events"
+  ],
+  "forbiddenCommercialAuthorityColumns": [
+    "opportunity_score",
+    "company_fit",
+    "business_fit",
+    "route_quality",
+    "route_confidence",
+    "is_viable",
+    "overall_confidence",
+    "engagement_confidence",
+    "match_label",
+    "fit_breakdown"
+  ]
+}
