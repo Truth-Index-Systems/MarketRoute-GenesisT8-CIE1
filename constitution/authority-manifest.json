@@ -1,6 +1,6 @@
 {
   "version": "MRV2-CONSTITUTION-1.0.0",
-  "status": "SCHEMA_FOUNDATION",
+  "status": "EVIDENCE_PROVENANCE_FOUNDATION",
   "authorityWriters": [],
   "declaredFutureAuthorityStages": [
     "commercial-reality",
@@ -17,5 +17,5 @@
     "directAuthorityDmlForbidden": true,
     "databaseMustRecomputeAuthorityFingerprint": true
   },
-  "schemaBuild": 2
+  "schemaBuild": 3
 }

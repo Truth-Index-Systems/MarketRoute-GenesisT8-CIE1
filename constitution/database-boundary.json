@@ -1,6 +1,6 @@
 {
-  "version": "MRV2-DB-BOUNDARY-1.0.0",
-  "build": 2,
+  "version": "MRV2-DB-BOUNDARY-1.1.0",
+  "build": 3,
   "principles": {
     "evidenceIsNotAuthority": true,
     "reasoningIsNotAuthority": true,
@@ -10,12 +10,25 @@
     "authorityDirectDmlForbidden": true,
     "authorityWriterRegistryStartsEmpty": true,
     "authorityFingerprintMustEventuallyBeRecomputedAtPersistenceBoundary": true,
-    "rawEvidenceMayContainAnomalies": true
+    "rawEvidenceMayContainAnomalies": true,
+    "evidenceRuntimeIsRpcWriteOnly": true,
+    "dependenceFamilyOwnedByEvidence": true,
+    "sourceIdentityIsImmutable": true,
+    "fingerprintCollisionsFailClosed": true,
+    "truthNotImplementedYet": true
   },
   "backendOwnedEvidenceTables": [
     "companies",
     "people",
     "organisation_company_scopes",
+    "source_records",
+    "source_acquisitions",
+    "evidence_items",
+    "claims",
+    "claim_supersessions",
+    "claim_evidence_links"
+  ],
+  "evidenceRpcOnlyWriteTables": [
     "source_records",
     "source_acquisitions",
     "evidence_items",

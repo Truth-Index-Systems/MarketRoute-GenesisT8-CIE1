@@ -4,8 +4,8 @@ import { ROOT, assert, check, printResults, readJson, relative, sourceFiles } fr
 
 const manifest = readJson("constitution/authority-manifest.json");
 const results = [
-  check("constitution is at schema-foundation state", () => assert(manifest.status === "SCHEMA_FOUNDATION", `status=${manifest.status}`)),
-  check("Build 2 still declares zero authority writers", () => assert(manifest.authorityWriters.length === 0, "Build 2 must have zero authority writers")),
+  check("constitution has advanced beyond Build 1 without introducing authority", () => assert(manifest.schemaBuild >= 2, `schemaBuild=${manifest.schemaBuild}`)),
+  check("pre-authority builds still declare zero authority writers", () => assert(manifest.authorityWriters.length === 0, "authority writer introduced before R4")),
   check("future R4/R5/R6 stages remain declared conceptually", () => {
     const expected = ["commercial-reality", "route-authority", "contact-authority"];
     for (const item of expected) assert(manifest.declaredFutureAuthorityStages.includes(item), `${item} missing`);
@@ -22,11 +22,12 @@ results.push(check("no authority implementation exists before declaration", () =
   assert(authorityFiles.length === 0, `undeclared authority implementation: ${authorityFiles.map(relative).join(", ")}`);
 }));
 
-results.push(check("Build 2 owns exactly five fresh SQL migrations", () => {
+results.push(check("Build 2 migration foundation 0001-0005 remains intact", () => {
   const migrationDir = path.join(ROOT, "supabase/migrations");
   const sql = fs.readdirSync(migrationDir).filter((name) => name.endsWith(".sql")).sort();
-  assert(sql.length === 5, `expected 5 migrations: ${sql.join(", ")}`);
-  assert(sql[0].startsWith("0001_") && sql[4].startsWith("0005_"), `unexpected migration range: ${sql.join(", ")}`);
+  const foundation = sql.filter((name) => /^000[1-5]_/.test(name));
+  assert(foundation.length === 5, `Build 2 foundation changed: ${foundation.join(", ")}`);
+  assert(foundation[0].startsWith("0001_") && foundation[4].startsWith("0005_"), `unexpected Build 2 migration range: ${foundation.join(", ")}`);
 }));
 
 printResults("MarketRoute V2 Build 2 — authority manifest", results);
