@@ -108,3 +108,11 @@ The application read model reuses the exact current authority envelope and the e
 Canonical read RPCs are `service_role`-only. Direct browser access to authority/read-model persistence is forbidden. Future UI surfaces consume the application service rather than querying Supabase authority tables or reconstructing readiness themselves.
 
 Raw evidence is not embedded in command-centre, campaign or company payloads. A separate bounded `CLAIM_PROVENANCE` resource may reveal the evidence/source trace for a Truth claim only when that exact Truth snapshot belongs to the current R4, R5 or R6 lineage for the requested organisation/campaign/company. Historical or unrelated snapshot IDs fail closed.
+
+## Build 14 state
+
+Build 14 introduces no authority writer, database mutation, reasoning rule or workflow transition. It establishes the MarketRoute V2 visual design system and `/app` application shell only.
+
+The presentation system uses the MarketRoute blue brand (`#2F8CFF`, `#76B6FF`) on the dark intelligence workspace. Colour, badges, gauges, progress bars, route diagrams and status treatments are presentational mappings of already-supplied semantic state; they may never infer or alter Truth, R4, R5, R6, workflow, research priority or execution permission.
+
+The product namespace is `/app`. The public `/` route remains an acquisition surface and is reserved for the full Build-16 landing experience. Build-14 application data is explicitly marked non-authoritative preview data. Build 15 must replace it with the canonical Build-13 application read contract rather than connecting UI components directly to Supabase or authority tables.

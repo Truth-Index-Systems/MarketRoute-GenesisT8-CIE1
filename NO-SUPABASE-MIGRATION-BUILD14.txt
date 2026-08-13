@@ -1,0 +1,7 @@
+MarketRoute V2 Build 14 is presentation-only.
+
+No Supabase migration is required.
+The latest canonical database migration remains:
+0016_canonical_application_read_model.sql
+
+Deploy the Build 14 repository to Vercel only.
