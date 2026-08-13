@@ -31,14 +31,16 @@ MarketRoute exists to research markets, identify commercially admissible compani
 - `/ui`: presentation components consuming application read models only.
 - `/app`: Next.js routing/composition only.
 
-## Build 4 state
+## Build 5 state
 
-There are deliberately **zero commercial authority writers**. Builds 1–3 establish the clean repository, fresh persistence constitution and evidence/provenance runtime. Build 4 adds non-authoritative Truth reasoning only.
+There are deliberately **zero commercial authority writers**. Builds 1–4 establish the clean repository, persistence constitution, evidence/provenance runtime and non-authoritative Truth Engine. Build 5 adds first-party seller semantic context only.
 
-Truth claim states are categorical: `KNOWN`, `SUPPORTED`, `UNRESOLVED`, `CONTRADICTED`, and `STALE`. `KNOWN` requires multiple independent current evidence families under a versioned policy; an explicit current contradiction always wins. Continuous evidence strength, balance, sufficiency and freshness metrics are diagnostic and cannot change the categorical state.
+The Seller Commercial Genome separates machine-semantic meaning from explanatory prose. Its eight declared dimensions are offerings, capabilities, commercial objectives, delivery, service geography, target characteristics, buyer assumptions and constraints. Each dimension is explicitly `DECLARED`, `EXPLICIT_NONE` or `UNKNOWN`; unknowns remain questions rather than being silently treated as absence.
 
-Truth probability remains `NULL / UNCALIBRATED` until an empirical calibration layer exists. The Truth Index is a maximin epistemic-readiness measure across declared required boundaries, not a probability of correctness.
+Seller semantics are first-party declared context, not external Truth and not commercial authority. AI may extract and canonicalise seller meaning under a versioned semantic contract, but output keys resembling confidence, probability, score, rank, fit, viability, authority or priority are constitutionally forbidden. Unrecognised semantic fields fail closed.
 
-Global and tenant-private claims may represent the same tenant-neutral proposition. Proposition identity is distinct from tenant-scoped claim identity so shared research can be reused without creating false contradiction. Genuine competing propositions or explicit current contradiction remain fail-closed.
+Seller genome persistence is append-only and RPC-write-only. PostgreSQL independently validates the canonical semantic shape and computes both an exact content fingerprint and a machine-semantic fingerprint. Explanatory wording may change without changing semantic identity; a genuine semantic change must change semantic identity.
 
-Truth snapshots are append-only and RPC-write-only. PostgreSQL independently re-derives categorical Truth and metrics from stored evidence before accepting a snapshot and computes persisted fingerprints itself.
+Campaign seller context selection is an append-only founder-intent event. Each selection binds an exact genome snapshot and objective key. Idempotency is request-scoped: retrying the same `selection_request_id` deduplicates, while a later intentional re-selection with a new request ID creates a new current event even if it returns to a previously selected objective.
+
+Build 5 does not create R4, route authority, contact authority, opportunity authority, ranking or execution permission. The authority writer registry remains empty. Build 6 is the first build permitted to introduce a commercial authority writer, and it must consume persisted campaign seller context plus target Truth through an explicit mandatory-boundary constitution.

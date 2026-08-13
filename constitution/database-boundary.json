@@ -1,6 +1,6 @@
 {
-  "version": "MRV2-DB-BOUNDARY-1.2.0",
-  "build": 4,
+  "version": "MRV2-DB-BOUNDARY-1.3.0",
+  "build": 5,
   "principles": {
     "evidenceIsNotAuthority": true,
     "reasoningIsNotAuthority": true,
@@ -26,7 +26,16 @@
     "truthIndexIsNotProbability": true,
     "truthPropositionIdentityTenantNeutral": true,
     "truthEntityContradictionPrecedesPositive": true,
-    "globalTruthClaimsReusableWithinTenantEvaluation": true
+    "globalTruthClaimsReusableWithinTenantEvaluation": true,
+    "sellerGenomeIsNotAuthority": true,
+    "sellerGenomeSemanticsSeparatedFromProse": true,
+    "sellerGenomeSourceMaterialAppendOnly": true,
+    "sellerGenomePersistenceRpcOnly": true,
+    "sellerGenomeSemanticFingerprintDatabaseComputed": true,
+    "sellerGenomeContentFingerprintDatabaseComputed": true,
+    "campaignSellerContextIsAppendOnlySelection": true,
+    "campaignSellerContextHasExactAndSemanticLineage": true,
+    "sellerAiCannotEmitAuthorityScores": true
   },
   "backendOwnedEvidenceTables": [
     "companies",
@@ -73,7 +82,10 @@
     "ai_usage_events",
     "audit_events",
     "truth_claim_snapshots",
-    "truth_entity_snapshots"
+    "truth_entity_snapshots",
+    "seller_genome_source_materials",
+    "seller_commercial_genome_snapshots",
+    "campaign_seller_context_selections"
   ],
   "forbiddenCommercialAuthorityColumns": [
     "opportunity_score",
@@ -95,5 +107,10 @@
     "truth_claim_policy_registry",
     "truth_claim_policy_bindings",
     "truth_entity_profile_registry"
+  ],
+  "sellerGenomeTables": [
+    "seller_genome_source_materials",
+    "seller_commercial_genome_snapshots",
+    "campaign_seller_context_selections"
   ]
 }
