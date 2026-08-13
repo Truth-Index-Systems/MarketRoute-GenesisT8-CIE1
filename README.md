@@ -4,16 +4,34 @@ Constitutional rebuild of MarketRoute.
 
 ## Current build
 
-**Build 14 — MarketRoute Design System + Application Shell**
+**Build 15 — Core Application UI**
 
-The live intelligence and authority architecture from Builds 1–13 is unchanged. Exactly three authority writers exist: **R4 Commercial Reality, R5 Route Authority and R6 Contact Authority**. Build 14 is presentation-only.
+Build 15 turns the Build-14 blue application shell into the first live MarketRoute product surface. The intelligence architecture remains unchanged: exactly three authority writers exist — **R4 Commercial Reality, R5 Route Authority and R6 Contact Authority**. The UI consumes the canonical Build-13 application read contract and does not reconstruct Truth, authority or execution state.
 
-Build 14 establishes the MarketRoute blue visual system and long-term route structure:
+Live product routes:
 
-- `/` — public acquisition surface (full landing page arrives in Build 16)
-- `/app` — product/application shell
-- `/design-system` — temporary Build-14 visual reference
+- `/app` — Founder Command Centre
+- `/app/campaigns` — campaign intelligence
+- `/app/companies` — company intelligence index
+- `/app/opportunities` — opportunity workspace index
+- `/app/opportunities/[campaignId]/[companyId]` — flagship Opportunity Workspace
+- `/app/research` — Genesis research operations
+- `/app/engagement` — engagement state and delivery pipeline
+- `/login` — server-mediated Supabase Auth sign-in
+- `/onboarding` — first-workspace creation for authenticated users without an organisation
 
-The `/app` preview exercises reusable Truth, authority, route, research and provenance components with data explicitly labelled **non-authoritative preview data**. It does not call Supabase, does not call the canonical application read service, and does not reconstruct authority. Build 15 will replace the preview data with Build-13 canonical application reads and create the full product pages.
+Build 15 adds migration `0017_core_application_ui_read_indexes.sql`. It introduces **read-only, service-role-only** application indexes for company lists, research activity, engagement lists, route display and provenance claim discovery. It does not add an authority writer or mutate Truth, R4/R5/R6, workflow, research or engagement.
 
-Primary MarketRoute colours are `#2F8CFF` and `#76B6FF` on the near-black `#05080D` workspace.
+### Required server environment
+
+```text
+SUPABASE_URL=
+SUPABASE_SERVICE_ROLE_KEY=
+SUPABASE_ANON_KEY=
+```
+
+`NEXT_PUBLIC_SUPABASE_ANON_KEY` may be used as the anon-key fallback, but the application itself keeps authentication server-mediated. The service-role key is never sent to browser code.
+
+Build 15 expects an existing Supabase Auth user. Public signup/acquisition belongs to Build 16.
+
+Primary MarketRoute colours remain `#2F8CFF` and `#76B6FF` on the near-black `#05080D` workspace.

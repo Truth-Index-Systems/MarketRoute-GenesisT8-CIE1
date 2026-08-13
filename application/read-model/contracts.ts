@@ -4,7 +4,7 @@ export type JsonPrimitive = string | number | boolean | null;
 export type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue };
 export type JsonObject = { [key: string]: JsonValue };
 
-export type ApplicationResourceType = "COMMAND_CENTRE" | "CAMPAIGN" | "COMPANY_INTELLIGENCE" | "CLAIM_PROVENANCE";
+export type ApplicationResourceType = "COMMAND_CENTRE" | "CAMPAIGN" | "COMPANY_INTELLIGENCE" | "CLAIM_PROVENANCE" | "COMPANY_INDEX" | "RESEARCH_ACTIVITY" | "ENGAGEMENT_INDEX" | "PROVENANCE_CLAIM_INDEX" | "ROUTE_DISPLAY";
 
 export interface CanonicalReadBase {
   contractVersion: typeof APPLICATION_READ_CONTRACT_VERSION;
@@ -73,3 +73,48 @@ export interface ClaimProvenanceReadModel extends CanonicalReadBase {
   returnedEvidenceCount: number;
   truncated: boolean;
 }
+
+
+export interface CompanyIndexReadModel extends CanonicalReadBase {
+  resourceType: "COMPANY_INDEX";
+  organisationId: string;
+  campaignId: string;
+  totalCount: number;
+  offset: number;
+  limit: number;
+  returnedCount: number;
+  companies: JsonObject[];
+}
+
+export interface ResearchActivityReadModel extends CanonicalReadBase {
+  resourceType: "RESEARCH_ACTIVITY";
+  organisationId: string;
+  campaignId: string;
+  policy: JsonObject;
+  budget: JsonObject;
+  plans: JsonObject[];
+  workUnits: JsonObject[];
+  schedulerRuns: JsonObject[];
+}
+
+export interface EngagementIndexReadModel extends CanonicalReadBase {
+  resourceType: "ENGAGEMENT_INDEX";
+  organisationId: string;
+  campaignId: string;
+  policyMode: "HUMAN_ONLY" | "AUTOPILOT";
+  totalCount: number;
+  offset: number;
+  limit: number;
+  returnedCount: number;
+  items: JsonObject[];
+}
+
+export interface ProvenanceClaimIndexReadModel extends CanonicalReadBase {
+  resourceType: "PROVENANCE_CLAIM_INDEX";
+  organisationId: string;
+  campaignId: string;
+  companyId: string;
+  claims: JsonObject[];
+}
+
+export interface RouteDisplayReadModel extends CanonicalReadBase { resourceType:"ROUTE_DISPLAY"; organisationId:string; campaignId:string; companyId:string; r5Decision:string; r6Decision:string; paths:JsonObject[]; }

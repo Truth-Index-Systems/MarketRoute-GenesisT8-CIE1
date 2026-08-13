@@ -10,3 +10,8 @@ export { AuthorityStack } from "./intelligence/authority-stack";
 export { RoutePath } from "./intelligence/route-path";
 export { ResearchPressure } from "./intelligence/research-pressure";
 export { ProvenanceTrail } from "./intelligence/provenance-trail";
+export { PageHeader } from "./application/page-header";
+export { CampaignSwitcher } from "./application/campaign-switcher";
+export { EmptyState } from "./application/empty-state";
+export { IntelligenceTable } from "./application/intelligence-table";
+export { ProvenanceDrawer } from "./application/provenance-drawer";

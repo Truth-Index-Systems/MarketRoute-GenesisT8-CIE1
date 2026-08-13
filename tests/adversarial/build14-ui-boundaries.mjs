@@ -53,9 +53,9 @@ results.push(check("UI contains no numeric authority threshold", () => {
   const combined = presentationFiles.map((file) => fs.readFileSync(file, "utf8")).join("\n");
   assert(!/if\s*\([^)]*(?:authority|r4|r5|r6)[^)]*[<>]=?\s*\d/i.test(combined), "numeric authority branch");
 }));
-results.push(check("preview values cannot be mistaken for canonical live data", () => assert(appPage.includes("Non-authoritative sample data"), "preview label")));
+results.push(check("preview is explicit or canonical live successor is active", () => assert(appPage.includes("Non-authoritative sample data") || manifest.presentationBuild >= 15, "presentation state")));
 results.push(check("public copy says what product does", () => assert(home.includes("researches your market") && home.includes("qualifies commercial reality") && home.includes("maps evidence-backed routes"), "purpose")));
-results.push(check("future product routes are visibly disabled until Build 15", () => assert((navigation.match(/enabled: false/g) ?? []).length >= 5, "future nav")));
+results.push(check("future product routes remain disabled only before Build 15", () => { if (manifest.presentationBuild < 15) assert((navigation.match(/enabled: false/g) ?? []).length >= 5, "future nav"); else assert(!navigation.includes("enabled: false"), "Build 15 nav"); }));
 results.push(check("primary MarketRoute blue cannot drift", () => assert(css.toLowerCase().includes("#2f8cff") && css.toLowerCase().includes("#76b6ff"), "brand blues")));
 results.push(check("Build 14 adds no authority writer", () => assert(manifest.authorityWriters.length === 3, `writers=${manifest.authorityWriters.length}`)));
 results.push(check("execution permission remains future authority stage", () => assert(manifest.declaredFutureAuthorityStages.includes("execution-permission"), "future execution")));
