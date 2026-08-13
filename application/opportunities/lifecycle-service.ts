@@ -1,4 +1,4 @@
-import { AuthorityLifecycleRepository, authorityLifecycleRepositoryFromEnvironment, type AuthorityEnvelope } from "../../platform/database/authority-lifecycle-repository.js";
+import { AuthorityLifecycleRepository, authorityLifecycleRepositoryFromEnvironment, type AuthorityEnvelope } from "../../platform/database/authority-lifecycle-repository";
 
 export class OpportunityLifecycleService {
   constructor(private readonly repository:AuthorityLifecycleRepository){}

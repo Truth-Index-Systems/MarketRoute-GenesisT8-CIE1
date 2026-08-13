@@ -1,4 +1,4 @@
-import type { JsonObject, JsonValue } from "./contracts.js";
+import type { JsonObject, JsonValue } from "./contracts";
 
 export function asObject(value:unknown):JsonObject { return value&&typeof value==="object"&&!Array.isArray(value)?value as JsonObject:{}; }
 export function asArray(value:unknown):JsonValue[] { return Array.isArray(value)?value as JsonValue[]:[]; }

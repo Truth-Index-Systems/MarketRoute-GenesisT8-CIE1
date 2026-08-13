@@ -1,3 +1,3 @@
-export * from "./contracts.js";
-export * from "./validation.js";
-export * from "./service.js";
+export * from "./contracts";
+export * from "./validation";
+export * from "./service";

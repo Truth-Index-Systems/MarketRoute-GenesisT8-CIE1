@@ -8,7 +8,7 @@ import {
   type EngagementChannel,
   type EngagementReviewCandidate,
   type EngagementStrategyContext,
-} from "../../core/engagement/index.js";
+} from "../../core/engagement/index";
 
 export interface EngagementGenerationProviderResult {
   contractVersion: typeof ENGAGEMENT_GENERATION_CONTRACT_VERSION;

@@ -1,8 +1,8 @@
-import { canonicaliseContactClaim, evaluateContactAuthority, type RawContactClaimInput } from "../../core/contacts/index.js";
-import type { AcquisitionInput, EvidencePolarity, RawEvidenceInput, RawSourceInput } from "../../core/evidence/index.js";
-import { ContactAuthorityRepository, contactAuthorityRepositoryFromEnvironment } from "../../platform/database/contact-authority-repository.js";
-import { EvidenceService, evidenceServiceFromEnvironment } from "../evidence/service.js";
-import { TruthService, truthServiceFromEnvironment } from "../truth/service.js";
+import { canonicaliseContactClaim, evaluateContactAuthority, type RawContactClaimInput } from "../../core/contacts/index";
+import type { AcquisitionInput, EvidencePolarity, RawEvidenceInput, RawSourceInput } from "../../core/evidence/index";
+import { ContactAuthorityRepository, contactAuthorityRepositoryFromEnvironment } from "../../platform/database/contact-authority-repository";
+import { EvidenceService, evidenceServiceFromEnvironment } from "../evidence/service";
+import { TruthService, truthServiceFromEnvironment } from "../truth/service";
 
 export class ContactAuthorityService {
   constructor(private readonly repository:ContactAuthorityRepository,private readonly evidence:EvidenceService,private readonly truth:TruthService){}

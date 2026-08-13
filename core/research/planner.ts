@@ -1,4 +1,4 @@
-import { sha256Hex, stableJson } from "../evidence/index.js";
+import { sha256Hex, stableJson } from "../evidence/index";
 import {
   RESEARCH_PLANNER_VERSION,
   RESEARCH_SEMANTICS_VERSION,
@@ -7,7 +7,7 @@ import {
   type ResearchPlannerContext,
   type ResearchTier,
   type ResearchWorkUnit,
-} from "./contracts.js";
+} from "./contracts";
 
 const TIER_ORDER: Record<ResearchTier, number> = {
   DECISION_BLOCKER: 0,

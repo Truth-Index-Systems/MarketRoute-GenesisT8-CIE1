@@ -1,5 +1,5 @@
-import type { ResearchPlan, ResearchPlannerContext } from "../../core/research/index.js";
-import { PostgrestRpcClient, databaseConfigFromEnvironment } from "./postgrest-rpc.js";
+import type { ResearchPlan, ResearchPlannerContext } from "../../core/research/index";
+import { PostgrestRpcClient, databaseConfigFromEnvironment } from "./postgrest-rpc";
 
 export interface PersistedResearchPlan { planId:string; createdWorkUnits:number; planFingerprint:string; deduplicated:boolean; }
 export interface ClaimedResearchWork {

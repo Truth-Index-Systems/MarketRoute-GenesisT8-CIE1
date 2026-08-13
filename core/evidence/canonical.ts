@@ -9,7 +9,7 @@ import {
   type RawClaimInput,
   type RawEvidenceInput,
   type RawSourceInput,
-} from "./contracts.js";
+} from "./contracts";
 
 const TRACKING_PARAMS = new Set([
   "fbclid",

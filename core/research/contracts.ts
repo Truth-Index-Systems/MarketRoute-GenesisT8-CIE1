@@ -1,6 +1,6 @@
-import type { AcquisitionInput, EvidencePolarity, RawClaimInput, RawEvidenceInput, RawSourceInput } from "../evidence/contracts.js";
-import type { RawRelationshipInput } from "../relationships/contracts.js";
-import type { RawContactClaimInput } from "../contacts/contracts.js";
+import type { AcquisitionInput, EvidencePolarity, RawClaimInput, RawEvidenceInput, RawSourceInput } from "../evidence/contracts";
+import type { RawRelationshipInput } from "../relationships/contracts";
+import type { RawContactClaimInput } from "../contacts/contracts";
 export const RESEARCH_PLANNER_VERSION = "MRV2-RESEARCH-PLANNER-1.0.0" as const;
 export const RESEARCH_SEMANTICS_VERSION = "MRV2-RESEARCH-SEMANTICS-1.0.0" as const;
 export const RESEARCH_PROVIDER_TIMEOUT_MS = 180_000 as const;

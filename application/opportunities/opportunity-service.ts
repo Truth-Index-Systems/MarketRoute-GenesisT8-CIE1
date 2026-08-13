@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
-import { buildOpportunityProfile, opportunityParetoFrontier, type OpportunityProfile } from "../../core/opportunities/index.js";
-import { OpportunityRepository, opportunityRepositoryFromEnvironment } from "../../platform/database/opportunity-repository.js";
+import { buildOpportunityProfile, opportunityParetoFrontier, type OpportunityProfile } from "../../core/opportunities/index";
+import { OpportunityRepository, opportunityRepositoryFromEnvironment } from "../../platform/database/opportunity-repository";
 
 export class OpportunityService {
   constructor(private readonly repository:OpportunityRepository){}

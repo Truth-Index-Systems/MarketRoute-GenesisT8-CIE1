@@ -1,5 +1,5 @@
-import { sha256Hex, stableJson } from "../evidence/index.js";
-import type { CanonicalConstraintSemantic, SellerGenomeSemanticPayload } from "../seller-genome/contracts.js";
+import { sha256Hex, stableJson } from "../evidence/index";
+import type { CanonicalConstraintSemantic, SellerGenomeSemanticPayload } from "../seller-genome/contracts";
 import {
   COMMERCIAL_REALITY_BOUNDARY_CONSTITUTION_VERSION,
   COMMERCIAL_REALITY_ENGINE_VERSION,
@@ -13,7 +13,7 @@ import {
   type CommercialRealityEvaluation,
   type CommercialRealityTruthSnapshot,
   type HardConstraintRequirement,
-} from "./contracts.js";
+} from "./contracts";
 
 const HOUR_MS = 3_600_000;
 

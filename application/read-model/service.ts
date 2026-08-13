@@ -1,6 +1,6 @@
-import { ApplicationReadRepository, applicationReadRepositoryFromEnvironment } from "../../platform/database/application-read-repository.js";
-import type { CampaignReadModel, ClaimProvenanceReadModel, CommandCentreReadModel, CompanyIntelligenceReadModel, EngagementReadModel, CompanyIndexReadModel, ResearchActivityReadModel, EngagementIndexReadModel, ProvenanceClaimIndexReadModel, RouteDisplayReadModel } from "./contracts.js";
-import { assertCanonicalApplicationRead, assertCanonicalEngagementRead } from "./validation.js";
+import { ApplicationReadRepository, applicationReadRepositoryFromEnvironment } from "../../platform/database/application-read-repository";
+import type { CampaignReadModel, ClaimProvenanceReadModel, CommandCentreReadModel, CompanyIntelligenceReadModel, EngagementReadModel, CompanyIndexReadModel, ResearchActivityReadModel, EngagementIndexReadModel, ProvenanceClaimIndexReadModel, RouteDisplayReadModel } from "./contracts";
+import { assertCanonicalApplicationRead, assertCanonicalEngagementRead } from "./validation";
 
 function currentIso(value?:string):string {
   const date=value?new Date(value):new Date();

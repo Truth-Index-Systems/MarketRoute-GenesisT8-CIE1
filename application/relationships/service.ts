@@ -1,8 +1,8 @@
-import { canonicaliseGraphNode, canonicaliseRelationship, evaluateRouteAuthority, type RawRelationshipInput, type RouteAuthorityEvaluation } from "../../core/relationships/index.js";
-import type { AcquisitionInput, EvidencePolarity, RawEvidenceInput, RawSourceInput } from "../../core/evidence/index.js";
-import { RelationshipRepository, relationshipRepositoryFromEnvironment } from "../../platform/database/relationship-repository.js";
-import { EvidenceService, evidenceServiceFromEnvironment } from "../evidence/service.js";
-import { TruthService, truthServiceFromEnvironment } from "../truth/service.js";
+import { canonicaliseGraphNode, canonicaliseRelationship, evaluateRouteAuthority, type RawRelationshipInput, type RouteAuthorityEvaluation } from "../../core/relationships/index";
+import type { AcquisitionInput, EvidencePolarity, RawEvidenceInput, RawSourceInput } from "../../core/evidence/index";
+import { RelationshipRepository, relationshipRepositoryFromEnvironment } from "../../platform/database/relationship-repository";
+import { EvidenceService, evidenceServiceFromEnvironment } from "../evidence/service";
+import { TruthService, truthServiceFromEnvironment } from "../truth/service";
 
 export interface RelationshipServiceDependencies { repository:RelationshipRepository; evidenceService:EvidenceService; truthService:TruthService; }
 

@@ -1,5 +1,5 @@
-import type { SellerGenomeSemanticPayload } from "../seller-genome/contracts.js";
-import type { TruthState } from "../truth/contracts.js";
+import type { SellerGenomeSemanticPayload } from "../seller-genome/contracts";
+import type { TruthState } from "../truth/contracts";
 
 export const COMMERCIAL_REALITY_ENGINE_VERSION = "MRV2-R4-1.0.0" as const;
 export const COMMERCIAL_REALITY_SEMANTICS_VERSION = "MRV2-R4-SEM-1.0.0" as const;

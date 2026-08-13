@@ -3,13 +3,13 @@ import {
   canonicaliseSellerGenome,
   type CanonicalSellerGenome,
   type SellerGenomeExtractionEnvelope,
-} from "../../core/seller-genome/index.js";
+} from "../../core/seller-genome/index";
 import {
   validateSellerGenomeExtractionEnvelope,
   type SellerGenomeSemanticExtractor,
   type SellerGenomeSourceMaterial,
-} from "../../platform/ai/seller-genome-extractor.js";
-import { SellerGenomeRepository } from "../../platform/database/seller-genome-repository.js";
+} from "../../platform/ai/seller-genome-extractor";
+import { SellerGenomeRepository } from "../../platform/database/seller-genome-repository";
 
 export interface PersistedSellerGenome {
   genome: CanonicalSellerGenome;

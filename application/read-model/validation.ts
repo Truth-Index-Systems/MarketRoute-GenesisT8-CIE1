@@ -1,4 +1,4 @@
-import { APPLICATION_READ_CONTRACT_VERSION } from "./contracts.js";
+import { APPLICATION_READ_CONTRACT_VERSION } from "./contracts";
 
 const FORBIDDEN_NORMALISED_AUTHORITY_KEYS = new Set([
   "opportunityscore","companyfit","businessfit","routequality","routeconfidence","isviable",

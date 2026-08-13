@@ -1,9 +1,9 @@
-import { sha256Hex, stableJson } from "../evidence/index.js";
+import { sha256Hex, stableJson } from "../evidence/index";
 import {
   ROUTE_AUTHORITY_ENGINE_VERSION, ROUTE_AUTHORITY_MAX_HOURS, ROUTE_AUTHORITY_SEMANTICS_VERSION,
   ROUTE_AUTHORITY_WRITER_KEY, ROUTE_AUTHORITY_WRITER_VERSION, ROUTE_GRAPH_MAX_DEPTH, ROUTE_GRAPH_MAX_PATHS, ROUTE_GRAPH_MAX_RELATIONSHIPS,
   type RouteAuthorityContext, type RouteAuthorityEvaluation, type RouteGraphRelationship, type RoutePath,
-} from "./contracts.js";
+} from "./contracts";
 
 const PERSONAL_ACCESS=new Set(["PERSONAL_EMAIL","LINKEDIN","PERSONAL_PHONE"]);
 const HOUR=3_600_000;

@@ -1,9 +1,9 @@
-import { RESEARCH_PROVIDER_TIMEOUT_MS, assertResearchProviderResultSafe, type ResearchProvider, type ResearchWorkUnit } from "../../core/research/index.js";
-import { ResearchRepository } from "../../platform/database/research-repository.js";
-import { EvidenceService } from "../evidence/service.js";
-import { RelationshipService } from "../relationships/service.js";
-import { ContactAuthorityService } from "../contacts/service.js";
-import { CommercialRealityService } from "../commercial-reality/service.js";
+import { RESEARCH_PROVIDER_TIMEOUT_MS, assertResearchProviderResultSafe, type ResearchProvider, type ResearchWorkUnit } from "../../core/research/index";
+import { ResearchRepository } from "../../platform/database/research-repository";
+import { EvidenceService } from "../evidence/service";
+import { RelationshipService } from "../relationships/service";
+import { ContactAuthorityService } from "../contacts/service";
+import { CommercialRealityService } from "../commercial-reality/service";
 
 export interface ResearchWorkerDependencies {repository:ResearchRepository;provider:ResearchProvider;evidence:EvidenceService;relationships:RelationshipService;contacts:ContactAuthorityService;r4:CommercialRealityService;}
 export class ResearchWorker {

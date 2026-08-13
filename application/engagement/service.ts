@@ -8,15 +8,15 @@ import {
   engagementMessageFingerprint,
   engagementReviewAllowsProgress,
   type CanonicalEngagementMessage,
-} from "../../core/engagement/index.js";
+} from "../../core/engagement/index";
 import {
   UnconfiguredEngagementLanguageProvider,
   validateGenerationResult,
   validateReviewResult,
   type EngagementLanguageProvider,
-} from "../../platform/ai/engagement-provider.js";
-import { EngagementDeliveryError, UnconfiguredEngagementDeliveryProvider, type EngagementDeliveryProvider } from "../../platform/ai/engagement-delivery-provider.js";
-import { EngagementRepository, engagementRepositoryFromEnvironment } from "../../platform/database/engagement-repository.js";
+} from "../../platform/ai/engagement-provider";
+import { EngagementDeliveryError, UnconfiguredEngagementDeliveryProvider, type EngagementDeliveryProvider } from "../../platform/ai/engagement-delivery-provider";
+import { EngagementRepository, engagementRepositoryFromEnvironment } from "../../platform/database/engagement-repository";
 
 const PROVIDER_TIMEOUT_MS=120_000;
 function now(value?:string){return (value?new Date(value):new Date()).toISOString();}

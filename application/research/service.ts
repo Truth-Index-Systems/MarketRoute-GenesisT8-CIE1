@@ -1,5 +1,5 @@
-import { planResearch } from "../../core/research/index.js";
-import { ResearchRepository, researchRepositoryFromEnvironment } from "../../platform/database/research-repository.js";
+import { planResearch } from "../../core/research/index";
+import { ResearchRepository, researchRepositoryFromEnvironment } from "../../platform/database/research-repository";
 
 export class ResearchPlanningService {
   constructor(private readonly repository:ResearchRepository){}

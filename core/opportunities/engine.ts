@@ -6,7 +6,7 @@ import {
   type OpportunityProfileInput,
   type OpportunityResearchPressure,
   type ParetoRelation,
-} from "./contracts.js";
+} from "./contracts";
 
 function finite01(value:number|null, code:string):number|null {
   if(value===null) return null;

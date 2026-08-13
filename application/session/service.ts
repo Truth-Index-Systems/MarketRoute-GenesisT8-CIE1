@@ -1,7 +1,7 @@
-import { supabaseAuthClientFromEnvironment, type SupabaseAuthSession, type AuthenticatedUser } from "../../platform/auth/supabase-auth.js";
-import { workspaceRepositoryFromEnvironment, type WorkspaceMembership } from "../../platform/database/workspace-repository.js";
-import { AuthenticatedRpcClient } from "../../platform/database/authenticated-rpc.js";
-export type { WorkspaceMembership } from "../../platform/database/workspace-repository.js";
+import { supabaseAuthClientFromEnvironment, type SupabaseAuthSession, type AuthenticatedUser } from "../../platform/auth/supabase-auth";
+import { workspaceRepositoryFromEnvironment, type WorkspaceMembership } from "../../platform/database/workspace-repository";
+import { AuthenticatedRpcClient } from "../../platform/database/authenticated-rpc";
+export type { WorkspaceMembership } from "../../platform/database/workspace-repository";
 
 export interface MarketRouteSession {
   user:AuthenticatedUser;

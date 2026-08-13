@@ -1,7 +1,7 @@
-import { deriveHardConstraintRequirements, evaluateCommercialReality, type CommercialRealityEvaluation } from "../../core/commercial-reality/index.js";
-import { CommercialRealityRepository, commercialRealityRepositoryFromEnvironment, type PersistedCommercialReality } from "../../platform/database/commercial-reality-repository.js";
-import { SellerGenomeRepository } from "../../platform/database/seller-genome-repository.js";
-import { TruthService, truthServiceFromEnvironment } from "../truth/service.js";
+import { deriveHardConstraintRequirements, evaluateCommercialReality, type CommercialRealityEvaluation } from "../../core/commercial-reality/index";
+import { CommercialRealityRepository, commercialRealityRepositoryFromEnvironment, type PersistedCommercialReality } from "../../platform/database/commercial-reality-repository";
+import { SellerGenomeRepository } from "../../platform/database/seller-genome-repository";
+import { TruthService, truthServiceFromEnvironment } from "../truth/service";
 
 export interface CommercialRealityServiceDependencies {
   repository: CommercialRealityRepository;

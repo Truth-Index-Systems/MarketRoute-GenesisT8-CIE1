@@ -1,5 +1,5 @@
-import { canonicaliseClaim, normaliseText, type CanonicalClaim } from "../evidence/index.js";
-import type { RawContactClaimInput } from "./contracts.js";
+import { canonicaliseClaim, normaliseText, type CanonicalClaim } from "../evidence/index";
+import type { RawContactClaimInput } from "./contracts";
 
 function clean(value:string, code:string):string {
   const v=normaliseText(value);

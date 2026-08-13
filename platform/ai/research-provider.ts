@@ -1,4 +1,4 @@
-import type { ResearchProvider, ResearchProviderExecutionContext, ResearchProviderResult, ResearchWorkUnit } from "../../core/research/index.js";
+import type { ResearchProvider, ResearchProviderExecutionContext, ResearchProviderResult, ResearchWorkUnit } from "../../core/research/index";
 
 /** Provider boundary only. Build 10 intentionally does not couple Genesis to one model/search vendor. */
 export interface ResearchAcquisitionProvider extends ResearchProvider {}

@@ -1,5 +1,5 @@
-import type { CommercialRealityContext, CommercialRealityEvaluation } from "../../core/commercial-reality/index.js";
-import { PostgrestRpcClient, databaseConfigFromEnvironment } from "./postgrest-rpc.js";
+import type { CommercialRealityContext, CommercialRealityEvaluation } from "../../core/commercial-reality/index";
+import { PostgrestRpcClient, databaseConfigFromEnvironment } from "./postgrest-rpc";
 
 export interface PersistedCommercialReality {
   r4RecordId: string;

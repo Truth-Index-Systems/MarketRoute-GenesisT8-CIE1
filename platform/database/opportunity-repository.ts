@@ -1,5 +1,5 @@
-import type { OpportunityProfile } from "../../core/opportunities/index.js";
-import { PostgrestRpcClient, databaseConfigFromEnvironment } from "./postgrest-rpc.js";
+import type { OpportunityProfile } from "../../core/opportunities/index";
+import { PostgrestRpcClient, databaseConfigFromEnvironment } from "./postgrest-rpc";
 
 export interface OpportunitySyncResult {
   opportunity_id:string|null; outcome_code:"NOT_MATERIALISED"|"MATERIALISED_REVIEWABLE"|"BECAME_REVIEWABLE"|"BECAME_RESEARCHING"|"UNCHANGED"|"FOUNDER_RESEARCH_HOLD";

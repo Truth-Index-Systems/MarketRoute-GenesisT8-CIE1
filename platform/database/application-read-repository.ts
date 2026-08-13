@@ -1,4 +1,4 @@
-import { PostgrestRpcClient, databaseConfigFromEnvironment } from "./postgrest-rpc.js";
+import { PostgrestRpcClient, databaseConfigFromEnvironment } from "./postgrest-rpc";
 
 export class ApplicationReadRepository {
   constructor(private readonly rpc: PostgrestRpcClient) {}

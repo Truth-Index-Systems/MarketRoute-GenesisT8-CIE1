@@ -1,9 +1,9 @@
-import { sha256Hex, stableJson } from "../evidence/index.js";
+import { sha256Hex, stableJson } from "../evidence/index";
 import {
   CONTACT_AUTHORITY_ENGINE_VERSION, CONTACT_AUTHORITY_MAX_HOURS, CONTACT_AUTHORITY_SEMANTICS_VERSION,
   CONTACT_AUTHORITY_WRITER_KEY, CONTACT_AUTHORITY_WRITER_VERSION,
   type ContactAuthorityContext, type ContactAuthorityEvaluation, type ContactClaimTruthRef, type ContactPathBinding,
-} from "./contracts.js";
+} from "./contracts";
 
 const HOUR=3_600_000;
 const POSITIVE=new Set(["KNOWN","SUPPORTED"]);

@@ -1,4 +1,4 @@
-import { databaseConfigFromEnvironment } from "./postgrest-rpc.js";
+import { databaseConfigFromEnvironment } from "./postgrest-rpc";
 
 export interface WorkspaceMembership {
   organisationId:string;

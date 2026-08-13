@@ -1,12 +1,12 @@
-import type { ResearchProvider } from "../../core/research/index.js";
-import { ResearchRepository, researchRepositoryFromEnvironment } from "../../platform/database/research-repository.js";
-import { evidenceServiceFromEnvironment } from "../evidence/service.js";
-import { relationshipServiceFromEnvironment } from "../relationships/service.js";
-import { contactAuthorityServiceFromEnvironment } from "../contacts/service.js";
-import { commercialRealityServiceFromEnvironment } from "../commercial-reality/service.js";
-import { ResearchPlanningService } from "./service.js";
-import { ResearchWorker } from "./worker.js";
-import { OpportunityService, opportunityServiceFromEnvironment } from "../opportunities/opportunity-service.js";
+import type { ResearchProvider } from "../../core/research/index";
+import { ResearchRepository, researchRepositoryFromEnvironment } from "../../platform/database/research-repository";
+import { evidenceServiceFromEnvironment } from "../evidence/service";
+import { relationshipServiceFromEnvironment } from "../relationships/service";
+import { contactAuthorityServiceFromEnvironment } from "../contacts/service";
+import { commercialRealityServiceFromEnvironment } from "../commercial-reality/service";
+import { ResearchPlanningService } from "./service";
+import { ResearchWorker } from "./worker";
+import { OpportunityService, opportunityServiceFromEnvironment } from "../opportunities/opportunity-service";
 
 export class ResearchAutomationService {
   constructor(private readonly repository:ResearchRepository,private readonly planner:ResearchPlanningService,private readonly worker:ResearchWorker,private readonly opportunities:OpportunityService){}

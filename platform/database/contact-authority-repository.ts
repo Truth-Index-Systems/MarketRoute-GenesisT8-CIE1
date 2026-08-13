@@ -1,5 +1,5 @@
-import type { ContactAuthorityContext, ContactAuthorityEvaluation } from "../../core/contacts/index.js";
-import { PostgrestRpcClient, databaseConfigFromEnvironment } from "./postgrest-rpc.js";
+import type { ContactAuthorityContext, ContactAuthorityEvaluation } from "../../core/contacts/index";
+import { PostgrestRpcClient, databaseConfigFromEnvironment } from "./postgrest-rpc";
 
 interface PersistRow { r6_record_id:string; authority_record_id:string; reasoning_run_id:string; reasoning_artifact_id:string; input_fingerprint:string; authority_fingerprint:string; valid_until:string; deduplicated:boolean; }
 function one<T>(value:T[]|T,code:string):T {if(Array.isArray(value)){if(value.length!==1)throw new Error(`${code}:${value.length}`);return value[0]!;}if(!value)throw new Error(`${code}:0`);return value;}

@@ -1,7 +1,7 @@
 import {
   SELLER_GENOME_EXTRACTION_CONTRACT_VERSION,
   type SellerGenomeExtractionEnvelope,
-} from "../../core/seller-genome/index.js";
+} from "../../core/seller-genome/index";
 
 const FORBIDDEN_OUTPUT_KEY = /(confidence|probability|score|rank|fit|viab|authority|priority)/i;
 

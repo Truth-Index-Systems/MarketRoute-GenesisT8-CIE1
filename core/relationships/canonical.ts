@@ -1,4 +1,4 @@
-import { sha256Hex, stableJson } from "../evidence/index.js";
+import { sha256Hex, stableJson } from "../evidence/index";
 import {
   RELATIONSHIP_CANONICAL_VERSION,
   RELATIONSHIP_ONTOLOGY_VERSION,
@@ -10,7 +10,7 @@ import {
   type RawGraphNodeInput,
   type RawRelationshipInput,
   type RelationshipTypeDefinition,
-} from "./contracts.js";
+} from "./contracts";
 
 
 const FORBIDDEN_AUTHORITY_KEYS=new Set(["score","confidence","probability","weight","rank","authority","strength","viability"]);

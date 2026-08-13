@@ -1,4 +1,4 @@
-import type { CommercialRelationshipType, GraphNodeKind, AccessPointKind } from "../../core/relationships/index.js";
+import type { CommercialRelationshipType, GraphNodeKind, AccessPointKind } from "../../core/relationships/index";
 
 export interface RelationshipSemanticProposalNode {
   nodeKind: GraphNodeKind;

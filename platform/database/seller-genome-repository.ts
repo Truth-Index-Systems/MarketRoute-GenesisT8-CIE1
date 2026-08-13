@@ -1,5 +1,5 @@
-import { PostgrestRpcClient, databaseConfigFromEnvironment } from "./postgrest-rpc.js";
-import type { CanonicalSellerGenome } from "../../core/seller-genome/index.js";
+import { PostgrestRpcClient, databaseConfigFromEnvironment } from "./postgrest-rpc";
+import type { CanonicalSellerGenome } from "../../core/seller-genome/index";
 
 export interface SellerGenomeSourceRecord {
   sourceMaterialId: string;

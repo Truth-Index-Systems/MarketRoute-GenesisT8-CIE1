@@ -1,4 +1,4 @@
-import { normaliseOptionalText, normaliseText, stableJson } from "../evidence/index.js";
+import { normaliseOptionalText, normaliseText, stableJson } from "../evidence/index";
 import {
   SELLER_GENOME_CANONICALISATION_VERSION,
   SELLER_GENOME_SCHEMA_VERSION,
@@ -8,7 +8,7 @@ import {
   type SemanticDimensionState,
   type SellerGenomeCandidate,
   type SellerGenomeDimensionKey,
-} from "./contracts.js";
+} from "./contracts";
 
 const CODE_PATTERN = /^[a-z0-9][a-z0-9._-]{0,79}$/;
 const COUNTRY_PATTERN = /^[A-Z]{2}$/;

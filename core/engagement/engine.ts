@@ -1,4 +1,4 @@
-import { sha256Hex } from "../evidence/index.js";
+import { sha256Hex } from "../evidence/index";
 import {
   ENGAGEMENT_ENGINE_VERSION,
   ENGAGEMENT_STRATEGY_VERSION,
@@ -10,7 +10,7 @@ import {
   type EngagementReviewCandidate,
   type EngagementStrategy,
   type EngagementStrategyContext,
-} from "./contracts.js";
+} from "./contracts";
 
 const REASON_CODE = /^[A-Z0-9][A-Z0-9_:-]{0,95}$/;
 const FORBIDDEN_DIAGNOSTIC_KEY = /(authority|executionpermission|commercialviability|routeauthority|contactauthority)/i;

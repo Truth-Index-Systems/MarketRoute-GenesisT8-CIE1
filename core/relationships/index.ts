@@ -1,3 +1,3 @@
-export * from "./contracts.js";
-export * from "./canonical.js";
-export * from "./graph.js";
+export * from "./contracts";
+export * from "./canonical";
+export * from "./graph";

@@ -1,4 +1,4 @@
-import { PostgrestRpcClient, databaseConfigFromEnvironment } from "./postgrest-rpc.js";
+import { PostgrestRpcClient, databaseConfigFromEnvironment } from "./postgrest-rpc";
 
 export type AuthorityLifecycleState =
   | "R4_REVALIDATION_REQUIRED" | "COMMERCIAL_RESEARCH_REQUIRED" | "NOT_ADMISSIBLE"

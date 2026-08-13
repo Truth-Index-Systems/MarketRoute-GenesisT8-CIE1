@@ -1,4 +1,4 @@
-import { sha256Hex, stableJson } from "../evidence/index.js";
+import { sha256Hex, stableJson } from "../evidence/index";
 import {
   TRUTH_ENGINE_VERSION,
   TRUTH_ENTITY_AGGREGATION_VERSION,

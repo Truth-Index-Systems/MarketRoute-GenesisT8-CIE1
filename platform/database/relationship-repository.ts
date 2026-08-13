@@ -1,5 +1,5 @@
-import type { CanonicalGraphNode, CanonicalRelationshipInput, RouteAuthorityContext, RouteAuthorityEvaluation } from "../../core/relationships/index.js";
-import { PostgrestRpcClient, databaseConfigFromEnvironment } from "./postgrest-rpc.js";
+import type { CanonicalGraphNode, CanonicalRelationshipInput, RouteAuthorityContext, RouteAuthorityEvaluation } from "../../core/relationships/index";
+import { PostgrestRpcClient, databaseConfigFromEnvironment } from "./postgrest-rpc";
 
 interface NodeRow { node_id:string; node_fingerprint:string; deduplicated:boolean; }
 interface RelationshipRow { relationship_id:string; claim_id:string; relationship_fingerprint:string; deduplicated:boolean; }

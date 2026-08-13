@@ -1,2 +1,2 @@
-export * from "./contracts.js";
-export * from "./canonical.js";
+export * from "./contracts";
+export * from "./canonical";
