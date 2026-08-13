@@ -1,0 +1,21 @@
+{
+  "version": "MRV2-AI-BOUNDARY-1.0.0",
+  "aiMay": [
+    "extract_semantics",
+    "classify_unstructured_information",
+    "summarise_evidence",
+    "propose_research_hypotheses",
+    "generate_language",
+    "judge_language_quality_categorically"
+  ],
+  "aiMayNot": [
+    "set_truth_probability_without_empirical_calibration",
+    "decide_commercial_viability",
+    "grant_route_authority",
+    "grant_contact_authority",
+    "grant_execution_permission",
+    "mutate_authority_fingerprints",
+    "convert_numeric_confidence_into_workflow_authority"
+  ],
+  "principle": "AI interprets semantics. Evidence-qualified deterministic systems govern authority."
+}

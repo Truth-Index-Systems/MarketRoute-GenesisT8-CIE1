@@ -1,0 +1,19 @@
+{
+  "version": "MRV2-LAYERS-1.0.0",
+  "layers": {
+    "constitution": { "mayImport": [] },
+    "core": { "mayImport": ["constitution", "core"] },
+    "platform": { "mayImport": ["constitution", "core", "platform"] },
+    "application": { "mayImport": ["constitution", "core", "platform", "application"] },
+    "ui": { "mayImport": ["constitution", "application", "ui"] },
+    "app": { "mayImport": ["constitution", "application", "ui", "app"] }
+  },
+  "specialRules": {
+    "core/authority": {
+      "forbidImportsContaining": ["platform/ai", "ui", "app", "application"]
+    },
+    "ui": {
+      "forbidImportsContaining": ["core/authority", "platform/database", "platform/ai"]
+    }
+  }
+}
