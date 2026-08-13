@@ -1,6 +1,6 @@
 {
-  "version": "MRV2-DB-BOUNDARY-1.7.0",
-  "build": 9,
+  "version": "MRV2-DB-BOUNDARY-1.10.0",
+  "build": 10,
   "principles": {
     "evidenceIsNotAuthority": true,
     "reasoningIsNotAuthority": true,
@@ -78,7 +78,27 @@
     "executionPredicateRequiresApprovedAndCurrentAuthority": true,
     "executionPredicateIsNotAuthorityWriter": true,
     "opportunityWorkflowDirectDmlForbidden": true,
-    "humanReviewIsIdempotentRpcOnly": true
+    "humanReviewIsIdempotentRpcOnly": true,
+    "autonomousResearchIsNotAuthority": true,
+    "researchPriorityIsCategoricalNotWeighted": true,
+    "researchBudgetIsResourceGovernanceOnly": true,
+    "researchPlansAreAppendOnly": true,
+    "researchBudgetEventsAreAppendOnly": true,
+    "researchProviderCannotEmitAuthorityScores": true,
+    "researchOutputsReturnThroughEvidencePipeline": true,
+    "researchRevalidationDoesNotMutateWorkflow": true,
+    "researchBudgetReservationIsAttemptScoped": true,
+    "researchPlanningUsesCurrentAuthorityEnvelope": true,
+    "researchSchedulerSingleLease": true,
+    "researchSchedulerHeartbeatRequired": true,
+    "researchHistoricalPlanReplayForbidden": true,
+    "researchUnchangedGapCooldownBounded": true,
+    "researchProviderExecutionTimeBound": true,
+    "researchFailedSpendAccounted": true,
+    "researchUnknownFailedSpendConservative": true,
+    "researchAbandonedAttemptsRecoverable": true,
+    "researchZeroCostRevalidationSurvivesBudgetExhaustion": true,
+    "researchPlanningTargetsExplicitCampaignScopesOnly": true
   },
   "backendOwnedEvidenceTables": [
     "companies",
@@ -136,7 +156,10 @@
     "route_authority_r5_records",
     "commercial_relationship_type_registry",
     "contact_authority_r6_records",
-    "opportunity_workflow_events"
+    "opportunity_workflow_events",
+    "research_plan_runs",
+    "research_work_units",
+    "research_budget_events"
   ],
   "forbiddenCommercialAuthorityColumns": [
     "opportunity_score",
@@ -176,5 +199,11 @@
   ],
   "contactAuthorityTables": [
     "contact_authority_r6_records"
+  ],
+  "researchTables": [
+    "research_budget_policies",
+    "research_plan_runs",
+    "research_work_units",
+    "research_budget_events"
   ]
 }

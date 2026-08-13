@@ -63,3 +63,20 @@ A derived authority lifecycle composes only the exact current R4 → R5 → R6 c
 Human workflow remains orthogonal to authority. Founder approval requires `AUTHORITY_READY` at the instant of review and the exact authority envelope/fingerprint is persisted with the review. Later expiry or mutation of R4/R5/R6 does not demote the opportunity or erase founder intent. Instead, the opportunity remains `APPROVED` while the derived execution predicate becomes false. Revalidation of R4/R5/R6 never consults or mutates opportunity workflow state.
 
 `marketroute_opportunity_executable_now_v1` is a derived predicate, not an authority writer. It is true only when workflow is `APPROVED` and the R4/R5/R6 envelope is currently `AUTHORITY_READY`. Actual execution permission and message sending remain later engagement-build responsibilities.
+
+
+## Build 10 state
+
+Build 10 introduces no new authority writer. The constitutional writer set remains R4, R5 and R6. Genesis research is an evidence-acquisition and deterministic-revalidation subsystem only. It may spend bounded resources, but it may not create commercial authority, route authority, contact authority, opportunity ranking, workflow transitions, or execution permission.
+
+Research pressure is derived from the current Build-9 authority envelope. `DECISION_BLOCKER` outranks `CURRENTNESS_REPAIR`, which outranks `EXPIRING_SOON`, which outranks `ENRICHMENT`. This ordering is categorical and lexicographic; no continuous research score may become commercial priority. Numeric budget and concurrency values govern resource consumption only.
+
+Paid research findings must return through the Build-3 evidence boundary. Relationship findings return through Relationship Truth; contact findings return through Contact Truth. Only those existing systems may then change R4/R5/R6. Provider output fields resembling confidence, probability, score, rank, weight, authority, or viability are rejected recursively.
+
+Deterministic `REVALIDATE_R4`, `REVALIDATE_R5`, and `REVALIDATE_R6` work has a zero-dollar research ceiling and remains schedulable even when the paid AI budget is exhausted or has been conservatively exceeded.
+
+Autonomous execution uses one `GENESIS_RESEARCH_V1` scheduler lease with heartbeat. Planning is limited to explicit `CAMPAIGN` company scopes whose campaign is `ACTIVE`. A current research plan cannot be replayed historically. Identical unchanged gaps are cooled down for six hours, while retry attempts remain scoped to the same immutable work unit.
+
+Budget settlement is attempt-scoped and append-only. Successful work commits actual spend. Failed work commits known incurred spend and releases only unused reservation. If provider spend is unknown, the system conservatively accounts the reserved ceiling. A process-abandoned RUNNING attempt is recovered after the scheduler lease horizon, conservatively charged to its reserved ceiling, marked `ABORTED`, and retried or failed according to the existing attempt limit.
+
+Provider execution has a 180-second abort contract. Build 10 deliberately defines a vendor-neutral `ResearchProvider` interface rather than coupling Genesis to one model or search vendor.

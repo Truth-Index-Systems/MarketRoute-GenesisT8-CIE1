@@ -12,3 +12,6 @@ The V2 database begins from a clean constitutional history.
 - Build 9: `0012_unified_authority_lifecycle.sql` — derived R4→R5→R6 lifecycle, founder review provenance and workflow/authority separation.
 
 Build 9 keeps exactly three authority writers. Execution permission remains future work.
+- Build 10: `0013_genesis_autonomous_research_engine.sql` — authority-driven autonomous research planning, budget governance, scheduler leasing/recovery and evidence-only provider execution.
+
+Build 10 keeps exactly three authority writers. Research is not authority and cannot mutate opportunity workflow.
