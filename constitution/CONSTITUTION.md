@@ -53,3 +53,13 @@ Build 8 introduces the third authority writer: `marketroute.r6.contact-truth` / 
 R6 consumes only a current R5 structural route. Organisational routes remain executable at the contact layer without inventing a named person. Any path that contains a person or personal channel must prove, through the generic Truth Engine, the exact person identity, current employment with the employer structurally present on that path, at least one current role at that employer, and ownership of the exact terminal channel. A different employer, competing identity, competing channel owner, stale/contradicted claim, archived person, or missing structural person/employer keeps the path at `CONTACT_TRUTH_REQUIRED`.
 
 Contact authority is categorical (`CONTACT_AUTHORISED`, `CONTACT_RESEARCH_REQUIRED`, `CONTACT_NOT_APPLICABLE`). Numeric contact confidence, scores, ranks, probabilities and weights are forbidden authority inputs. PostgreSQL independently re-derives the contact-claim universe, validates the exact Truth snapshots, recomputes bindings/decision/fingerprints, and caps R6 validity at eight hours or the earlier parent/Truth boundary.
+
+## Build 9 state
+
+Build 9 introduces no new authority writer. The constitutional writer set remains R4, R5 and R6.
+
+A derived authority lifecycle composes only the exact current R4 → R5 → R6 chain. It returns a categorical state such as `R4_REVALIDATION_REQUIRED`, `ROUTE_RESEARCH_REQUIRED`, `CONTACT_RESEARCH_REQUIRED`, `NOT_ADMISSIBLE`, or `AUTHORITY_READY`. Continuous confidence or scoring cannot alter this lifecycle.
+
+Human workflow remains orthogonal to authority. Founder approval requires `AUTHORITY_READY` at the instant of review and the exact authority envelope/fingerprint is persisted with the review. Later expiry or mutation of R4/R5/R6 does not demote the opportunity or erase founder intent. Instead, the opportunity remains `APPROVED` while the derived execution predicate becomes false. Revalidation of R4/R5/R6 never consults or mutates opportunity workflow state.
+
+`marketroute_opportunity_executable_now_v1` is a derived predicate, not an authority writer. It is true only when workflow is `APPROVED` and the R4/R5/R6 envelope is currently `AUTHORITY_READY`. Actual execution permission and message sending remain later engagement-build responsibilities.

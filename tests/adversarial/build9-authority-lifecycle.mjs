@@ -1,0 +1,30 @@
+import assert from "node:assert/strict";import fs from "node:fs";import os from "node:os";import path from "node:path";import {execFileSync} from "node:child_process";import {pathToFileURL} from "node:url";
+const root=path.resolve(import.meta.dirname,"../..");const temp=fs.mkdtempSync(path.join(os.tmpdir(),"mrv2-lifecycle-"));
+try{
+ execFileSync("tsc",["core/authority/lifecycle.ts","--target","ES2022","--module","NodeNext","--moduleResolution","NodeNext","--outDir",temp,"--strict","--skipLibCheck","--lib","ES2022"],{cwd:root,stdio:"pipe"});
+ const m=await import(pathToFileURL(path.join(temp,"lifecycle.js")).href+`?${Date.now()}`);const tests=[];const test=(n,f)=>tests.push({n,f});
+ const layer=(current,decision)=>({current,decision,authorityRecordId:current?"id":null,authorityFingerprint:current?"a".repeat(64):null,validUntil:current?"2026-08-14T00:00:00Z":null});
+ const env=(r4=layer(true,"COMMERCIAL_CANDIDATE"),r5=layer(true,"ROUTE_STRUCTURALLY_OPEN"),r6=layer(true,"CONTACT_AUTHORISED"))=>m.evaluateAuthorityEnvelope({r4,r5,r6});
+ test("all three current positive layers are ready",()=>assert.equal(env().lifecycleState,"AUTHORITY_READY"));
+ test("ready flag is true only at full chain",()=>assert.equal(env().authorityReady,true));
+ test("missing R4 fails closed",()=>assert.equal(env(layer(false,null)).lifecycleState,"R4_REVALIDATION_REQUIRED"));
+ test("R4 research stops at R4",()=>assert.equal(env(layer(true,"RESEARCH_REQUIRED")).lifecycleState,"COMMERCIAL_RESEARCH_REQUIRED"));
+ test("R4 not admissible terminates",()=>assert.equal(env(layer(true,"NOT_ADMISSIBLE")).lifecycleState,"NOT_ADMISSIBLE"));
+ test("missing R5 requires R5",()=>assert.equal(env(undefined,layer(false,null)).lifecycleState,"R5_REVALIDATION_REQUIRED"));
+ test("R5 research stops at R5",()=>assert.equal(env(undefined,layer(true,"ROUTE_RESEARCH_REQUIRED")).lifecycleState,"ROUTE_RESEARCH_REQUIRED"));
+ test("R5 not applicable terminates",()=>assert.equal(env(undefined,layer(true,"ROUTE_NOT_APPLICABLE")).lifecycleState,"ROUTE_NOT_APPLICABLE"));
+ test("missing R6 requires R6",()=>assert.equal(env(undefined,undefined,layer(false,null)).lifecycleState,"R6_REVALIDATION_REQUIRED"));
+ test("R6 research stops at R6",()=>assert.equal(env(undefined,undefined,layer(true,"CONTACT_RESEARCH_REQUIRED")).lifecycleState,"CONTACT_RESEARCH_REQUIRED"));
+ test("R6 not applicable terminates",()=>assert.equal(env(undefined,undefined,layer(true,"CONTACT_NOT_APPLICABLE")).lifecycleState,"CONTACT_NOT_APPLICABLE"));
+ test("approved plus ready is executable",()=>assert.equal(m.isOpportunityExecutableNow("APPROVED",env()),true));
+ test("reviewable plus ready is not executable",()=>assert.equal(m.isOpportunityExecutableNow("REVIEWABLE",env()),false));
+ test("researching plus ready is not executable",()=>assert.equal(m.isOpportunityExecutableNow("RESEARCHING",env()),false));
+ test("rejected plus ready is not executable",()=>assert.equal(m.isOpportunityExecutableNow("REJECTED",env()),false));
+ test("engaged plus ready is not newly executable",()=>assert.equal(m.isOpportunityExecutableNow("ENGAGED",env()),false));
+ test("archived plus ready is not executable",()=>assert.equal(m.isOpportunityExecutableNow("ARCHIVED",env()),false));
+ test("approved plus stale R4 is not executable",()=>assert.equal(m.isOpportunityExecutableNow("APPROVED",env(layer(false,null))),false));
+ test("approved plus stale R5 is not executable",()=>assert.equal(m.isOpportunityExecutableNow("APPROVED",env(undefined,layer(false,null))),false));
+ test("approved plus stale R6 is not executable",()=>assert.equal(m.isOpportunityExecutableNow("APPROVED",env(undefined,undefined,layer(false,null))),false));
+ test("no numeric score vocabulary in lifecycle output",()=>{const x=JSON.stringify(env()).toLowerCase();for(const w of ["score","confidence","probability","weight","rank"])assert.equal(x.includes(w),false,w)});
+ let passed=0;console.log("\nMarketRoute V2 Build 9 — Authority lifecycle adversarial gate");for(const {n,f} of tests){try{await f();passed++;console.log(`PASS  ${n}`)}catch(e){console.error(`FAIL  ${n}: ${e instanceof Error?e.message:e}`)}}console.log(`\n${passed}/${tests.length} PASS`);if(passed!==tests.length)process.exitCode=1;
+}finally{fs.rmSync(temp,{recursive:true,force:true});}

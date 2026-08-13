@@ -1,6 +1,6 @@
 {
-  "version": "MRV2-DB-BOUNDARY-1.6.0",
-  "build": 8,
+  "version": "MRV2-DB-BOUNDARY-1.7.0",
+  "build": 9,
   "principles": {
     "evidenceIsNotAuthority": true,
     "reasoningIsNotAuthority": true,
@@ -67,7 +67,18 @@
     "contactAuthoritySelfInvalidatesOnTruthMutation": true,
     "organisationalRouteDoesNotRequireInventedPerson": true,
     "numericContactAuthorityForbidden": true,
-    "canonicalContactClaimsCannotBeSuperseded": true
+    "canonicalContactClaimsCannotBeSuperseded": true,
+    "unifiedAuthorityLifecycleBuild9": true,
+    "authorityEnvelopeUsesOnlyCurrentR4R5R6": true,
+    "workflowStateIndependentOfAuthorityState": true,
+    "approvedOpportunityMayHaveStaleAuthority": true,
+    "approvalRequiresCurrentAuthorityAtReviewTime": true,
+    "approvalCapturesExactAuthorityEnvelope": true,
+    "authorityRevalidationNeverRequiresWorkflowDemotion": true,
+    "executionPredicateRequiresApprovedAndCurrentAuthority": true,
+    "executionPredicateIsNotAuthorityWriter": true,
+    "opportunityWorkflowDirectDmlForbidden": true,
+    "humanReviewIsIdempotentRpcOnly": true
   },
   "backendOwnedEvidenceTables": [
     "companies",
@@ -99,7 +110,8 @@
   ],
   "workflowTables": [
     "opportunities",
-    "opportunity_human_reviews"
+    "opportunity_human_reviews",
+    "opportunity_workflow_events"
   ],
   "appendOnlyTables": [
     "source_acquisitions",
@@ -123,7 +135,8 @@
     "commercial_relationships",
     "route_authority_r5_records",
     "commercial_relationship_type_registry",
-    "contact_authority_r6_records"
+    "contact_authority_r6_records",
+    "opportunity_workflow_events"
   ],
   "forbiddenCommercialAuthorityColumns": [
     "opportunity_score",

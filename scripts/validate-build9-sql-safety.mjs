@@ -1,0 +1,16 @@
+import fs from "node:fs";import path from "node:path";import {ROOT,assert,check,printResults} from "./lib/constitution.mjs";
+const p=path.join(ROOT,"supabase/migrations/0012_unified_authority_lifecycle.sql");const s=fs.readFileSync(p,"utf8");const standalone=fs.readFileSync(path.join(ROOT,"APPLY-IN-SUPABASE-MARKETROUTE-V2-BUILD9.sql"),"utf8");const r=[];
+r.push(check("migration atomic",()=>assert(/^BEGIN;/.test(s.trimStart())&&/COMMIT;\s*$/.test(s.trim()),"atomic")));
+r.push(check("standalone equals canonical migration",()=>assert(s===standalone,"parity")));
+r.push(check("migration introduces no authority writer",()=>assert(!/INSERT INTO public\.authority_writer_registry/i.test(s),"writer")));
+r.push(check("no authority table direct writes",()=>assert(!/INSERT INTO public\.authority_records|UPDATE public\.authority_records|DELETE FROM public\.authority_records/i.test(s),"authority dml")));
+r.push(check("workflow ledger RLS enabled",()=>assert(s.includes("ALTER TABLE public.opportunity_workflow_events ENABLE ROW LEVEL SECURITY"),"rls")));
+r.push(check("workflow ledger append only",()=>assert(s.includes("marketroute_reject_mutation"),"append")));
+r.push(check("direct workflow writes revoked",()=>assert(s.includes("REVOKE INSERT,UPDATE,DELETE ON public.opportunities")&&s.includes("REVOKE INSERT,UPDATE,DELETE ON public.opportunity_human_reviews"),"revoke")));
+r.push(check("internal envelope fingerprint helper not public",()=>assert(s.includes("REVOKE ALL ON FUNCTION public.marketroute_authority_envelope_fingerprint_v1(jsonb) FROM PUBLIC"),"helper")));
+r.push(check("public helper execution revoked",()=>{for(const f of ["marketroute_authority_envelope_v1(uuid,uuid,uuid,timestamptz)","marketroute_authority_ready_v1(uuid,uuid,uuid,timestamptz)","marketroute_opportunity_executable_now_v1(uuid,timestamptz)","marketroute_record_opportunity_review_v1(uuid,uuid,text,text,uuid,timestamptz)"])assert(s.includes(`REVOKE ALL ON FUNCTION public.${f} FROM PUBLIC`),f)}));
+r.push(check("only intended lifecycle RPCs service-role executable",()=>assert(s.includes("GRANT EXECUTE ON FUNCTION public.marketroute_authority_envelope_v1")&&s.includes("GRANT EXECUTE ON FUNCTION public.marketroute_record_opportunity_review_v1"),"grant")));
+r.push(check("no DROP FUNCTION signature churn",()=>assert(!/DROP FUNCTION/i.test(s),"drop")));
+r.push(check("schema release records three writers",()=>assert(s.includes("'authority_writers',3")&&s.includes("'new_authority_writer',false"),"release")));
+r.push(check("PostgREST reload requested",()=>assert(s.includes("NOTIFY pgrst,'reload schema'"),"reload")));
+printResults("MarketRoute V2 Build 9 — SQL safety gate",r);

@@ -1,10 +1,11 @@
 # Authority
 
-Build 7 declares exactly two authority writers:
+Build 9 keeps exactly three authority writers:
 
 - `marketroute.r4.commercial-reality` — Commercial Reality.
 - `marketroute.r5.relationship-graph` — structural Route Authority.
+- `marketroute.r6.contact-truth` — Contact Authority.
 
-Both are deterministic core modules with database-recomputed decisions/fingerprints and finite validity. R5 can only traverse Truth-qualified canonical relationship edges. Paths containing a person or personal channel are explicitly `CONTACT_TRUTH_REQUIRED`; contact authority does not exist until Build 8.
+Build 9 adds a **derived authority lifecycle**, not a fourth writer. It composes only current R4 → R5 → R6 decisions into a categorical lifecycle state and a single `authorityReady` predicate.
 
-Execution permission does not exist yet.
+Human workflow state is independent. An opportunity may remain `APPROVED` while its authority becomes stale; revalidation of R4/R5/R6 never rewrites founder intent. Execution permission is still not an authority writer and does not exist until the later engagement build.
