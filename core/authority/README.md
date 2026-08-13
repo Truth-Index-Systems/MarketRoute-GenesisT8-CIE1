@@ -1,7 +1,10 @@
 # Authority
 
-Build 6 registers exactly one authority writer: `marketroute.r4.commercial-reality`.
+Build 7 declares exactly two authority writers:
 
-The writer is implemented by the deterministic Commercial Reality core. It cannot import AI, application, UI, or database code. Persistence is only through the Build 6 R4 RPC, where PostgreSQL recomputes the decision inputs, boundary result, reasoning fingerprint, and authority fingerprint from persisted records.
+- `marketroute.r4.commercial-reality` — Commercial Reality.
+- `marketroute.r5.relationship-graph` — structural Route Authority.
 
-Route authority (R5), contact authority (R6), and execution permission do not exist yet.
+Both are deterministic core modules with database-recomputed decisions/fingerprints and finite validity. R5 can only traverse Truth-qualified canonical relationship edges. Paths containing a person or personal channel are explicitly `CONTACT_TRUTH_REQUIRED`; contact authority does not exist until Build 8.
+
+Execution permission does not exist yet.

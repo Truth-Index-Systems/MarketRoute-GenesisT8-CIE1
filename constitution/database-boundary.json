@@ -1,6 +1,6 @@
 {
-  "version": "MRV2-DB-BOUNDARY-1.4.0",
-  "build": 6,
+  "version": "MRV2-DB-BOUNDARY-1.5.0",
+  "build": 7,
   "principles": {
     "evidenceIsNotAuthority": true,
     "reasoningIsNotAuthority": true,
@@ -43,7 +43,20 @@
     "commercialRealityHardConstraintsFailClosed": true,
     "commercialRealityFingerprintDatabaseComputed": true,
     "commercialRealityDecisionDatabaseRecomputed": true,
-    "commercialRealityAuthorityTimeBound": true
+    "commercialRealityAuthorityTimeBound": true,
+    "relationshipAssertionsRequireTruth": true,
+    "relationshipDirectionIsOntologyOwned": true,
+    "businessRelationshipDoesNotImplyAccess": true,
+    "routeAuthorityR5IsSecondAuthorityWriter": true,
+    "routeAuthorityDatabaseRecomputesDecision": true,
+    "routeAuthorityDatabaseRecomputesFingerprint": true,
+    "routeAuthorityPathProvenanceDatabaseValidated": true,
+    "routeAuthoritySelfInvalidatesOnRelationshipPremiseMutation": true,
+    "personalRoutesRequireFutureContactTruth": true,
+    "numericRouteAuthorityForbidden": true,
+    "canonicalRelationshipClaimsCannotBeSuperseded": true,
+    "internalGraphHelpersNotPublicExecutable": true,
+    "routeGraphComplexityBounded": true
   },
   "backendOwnedEvidenceTables": [
     "companies",
@@ -94,7 +107,11 @@
     "seller_genome_source_materials",
     "seller_commercial_genome_snapshots",
     "campaign_seller_context_selections",
-    "commercial_reality_r4_records"
+    "commercial_reality_r4_records",
+    "commercial_graph_nodes",
+    "commercial_relationships",
+    "route_authority_r5_records",
+    "commercial_relationship_type_registry"
   ],
   "forbiddenCommercialAuthorityColumns": [
     "opportunity_score",
@@ -125,5 +142,11 @@
   "commercialRealityTables": [
     "commercial_reality_boundary_constitutions",
     "commercial_reality_r4_records"
+  ],
+  "relationshipGraphTables": [
+    "commercial_relationship_type_registry",
+    "commercial_graph_nodes",
+    "commercial_relationships",
+    "route_authority_r5_records"
   ]
 }

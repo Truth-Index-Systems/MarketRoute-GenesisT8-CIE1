@@ -1,6 +1,6 @@
 {
   "version": "MRV2-CONSTITUTION-1.0.0",
-  "status": "COMMERCIAL_REALITY_R4_ACTIVE",
+  "status": "RELATIONSHIP_GRAPH_R5_ACTIVE",
   "authorityWriters": [
     {
       "writerKey": "marketroute.r4.commercial-reality",
@@ -13,12 +13,23 @@
       "databaseRecomputesDecision": true,
       "databaseRecomputesFingerprint": true,
       "timeBound": true
+    },
+    {
+      "writerKey": "marketroute.r5.relationship-graph",
+      "authorityStage": "ROUTE_AUTHORITY",
+      "writerVersion": "1.0.0",
+      "coreModule": "core/relationships",
+      "persistenceRpc": "marketroute_persist_route_authority_r5_v1",
+      "decisionCodes": ["ROUTE_STRUCTURALLY_OPEN", "ROUTE_RESEARCH_REQUIRED", "ROUTE_NOT_APPLICABLE"],
+      "numericAuthority": false,
+      "databaseRecomputesDecision": true,
+      "databaseRecomputesFingerprint": true,
+      "timeBound": true,
+      "relationshipTruthRequired": true,
+      "contactTruthDeferred": true
     }
   ],
-  "declaredFutureAuthorityStages": [
-    "route-authority",
-    "contact-authority"
-  ],
+  "declaredFutureAuthorityStages": ["contact-authority"],
   "rules": {
     "authorityMustBeDeclared": true,
     "databaseIsPersistenceBoundary": true,
@@ -30,5 +41,5 @@
     "databaseMustRecomputeAuthorityFingerprint": true,
     "databaseMustRecomputeAuthorityDecision": true
   },
-  "schemaBuild": 6
+  "schemaBuild": 7
 }

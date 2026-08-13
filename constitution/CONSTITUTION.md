@@ -31,16 +31,17 @@ MarketRoute exists to research markets, identify commercially admissible compani
 - `/ui`: presentation components consuming application read models only.
 - `/app`: Next.js routing/composition only.
 
-## Build 5 state
+## Build 7 state
 
-There are deliberately **zero commercial authority writers**. Builds 1–4 establish the clean repository, persistence constitution, evidence/provenance runtime and non-authoritative Truth Engine. Build 5 adds first-party seller semantic context only.
+Two commercial authority writers are live and explicitly declared:
 
-The Seller Commercial Genome separates machine-semantic meaning from explanatory prose. Its eight declared dimensions are offerings, capabilities, commercial objectives, delivery, service geography, target characteristics, buyer assumptions and constraints. Each dimension is explicitly `DECLARED`, `EXPLICIT_NONE` or `UNKNOWN`; unknowns remain questions rather than being silently treated as absence.
+1. `marketroute.r4.commercial-reality` — consumes exact campaign seller context + current target Truth + mandatory boundaries and returns `COMMERCIAL_CANDIDATE`, `RESEARCH_REQUIRED`, or `NOT_ADMISSIBLE`.
+2. `marketroute.r5.relationship-graph` — consumes a current R4 parent plus the exact Truth-qualified route relationship universe and returns `ROUTE_STRUCTURALLY_OPEN`, `ROUTE_RESEARCH_REQUIRED`, or `ROUTE_NOT_APPLICABLE`.
 
-Seller semantics are first-party declared context, not external Truth and not commercial authority. AI may extract and canonicalise seller meaning under a versioned semantic contract, but output keys resembling confidence, probability, score, rank, fit, viability, authority or priority are constitutionally forbidden. Unrecognised semantic fields fail closed.
+Build 7 introduces a canonical commercial relationship ontology. A relationship row is only identity/topology; it is never an OPEN graph premise by itself. Every relationship has an immutable `relationship.exists` claim and may be traversed by R5 only when the generic Truth Engine evaluates that claim as `KNOWN` or `SUPPORTED` at the exact R5 reference time. `UNRESOLVED`, `CONTRADICTED`, `STALE`, expired, or mutated relationship Truth cannot be traversed.
 
-Seller genome persistence is append-only and RPC-write-only. PostgreSQL independently validates the canonical semantic shape and computes both an exact content fingerprint and a machine-semantic fingerprint. Explanatory wording may change without changing semantic identity; a genuine semantic change must change semantic identity.
+Business relationships such as `partners_with`, `supplies`, `customer_of`, and `uses_technology_from` are intelligence edges but are not automatic access routes. Route traversal is ontology-owned and currently limited to explicit structural access relations such as `parent_of`, `employs`, `has_access_point`, and `introduced_by`.
 
-Campaign seller context selection is an append-only founder-intent event. Each selection binds an exact genome snapshot and objective key. Idempotency is request-scoped: retrying the same `selection_request_id` deduplicates, while a later intentional re-selection with a new request ID creates a new current event even if it returns to a previously selected objective.
+R5 proves structural reachability only. A path containing a person or personal access point is marked `CONTACT_TRUTH_REQUIRED`; Build 7 does not grant current identity, employment, role, or channel ownership. Build 8 owns that contact authority.
 
-Build 5 does not create R4, route authority, contact authority, opportunity authority, ranking or execution permission. The authority writer registry remains empty. Build 6 is the first build permitted to introduce a commercial authority writer, and it must consume persisted campaign seller context plus target Truth through an explicit mandatory-boundary constitution.
+R5 has no numeric score, confidence, probability, weight, strength, or rank. PostgreSQL independently verifies the exact reachable relationship universe, exact current Truth snapshot for every relationship, the structural endpoint set, path directionality, canonical ontology metadata, parent R4 fingerprint, time validity, and the final authority fingerprint. New route-relevant relationships, new relationship evidence, Truth expiry, or stale R4 authority make R5 non-current without waiting for a scheduler.

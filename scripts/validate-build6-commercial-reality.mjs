@@ -10,8 +10,8 @@ const db = readJson("constitution/database-boundary.json");
 const pkg = readJson("package.json");
 const results=[];
 
-results.push(check("Build 6 registers exactly one authority writer",()=>assert(authority.authorityWriters.length===1,"writer count")));
-results.push(check("writer is R4 only",()=>assert(authority.authorityWriters[0].writerKey==="marketroute.r4.commercial-reality" && authority.declaredFutureAuthorityStages.length===2,"writer scope")));
+results.push(check("Build 6 R4 writer remains registered",()=>assert(authority.authorityWriters.some(w=>w.writerKey==="marketroute.r4.commercial-reality"),"R4 writer missing")));
+results.push(check("R4 remains first commercial-reality writer",()=>{const w=authority.authorityWriters.find(w=>w.writerKey==="marketroute.r4.commercial-reality");assert(w?.authorityStage==="COMMERCIAL_REALITY","R4 scope");}));
 results.push(check("R4 decision codes are categorical",()=>{ for(const v of ["COMMERCIAL_CANDIDATE","RESEARCH_REQUIRED","NOT_ADMISSIBLE"]) assert(contracts.includes(`\"${v}\"`),v); }));
 results.push(check("R4 boundary states are categorical",()=>{ for(const v of ["SATISFIED","UNSATISFIED","UNRESOLVED","CONTRADICTED","STALE"]) assert(contracts.includes(`\"${v}\"`),v); }));
 results.push(check("R4 has explicit constitution and reality class",()=>assert(contracts.includes("MRV2-R4-BOUNDARIES-1.0.0")&&contracts.includes("SELLER_TO_TARGET_COMMERCIAL_ENGAGEMENT_V1"),"versions")));

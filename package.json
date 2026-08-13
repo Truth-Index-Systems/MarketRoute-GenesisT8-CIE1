@@ -1,6 +1,6 @@
 {
   "name": "marketroute-v2",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "private": true,
   "engines": {
     "node": ">=20.11.0"
@@ -15,7 +15,7 @@
     "constitution:legacy": "node scripts/validate-no-legacy.mjs",
     "constitution:authority": "node scripts/validate-authority-manifest.mjs",
     "constitution:adversarial": "node tests/adversarial/build1-constitution.mjs",
-    "constitution:check": "npm run constitution:architecture && npm run constitution:ai && npm run constitution:legacy && npm run constitution:authority && npm run constitution:schema && npm run constitution:sql && npm run constitution:adversarial && npm run constitution:database-adversarial && npm run constitution:evidence && npm run constitution:evidence-sql && npm run constitution:evidence-adversarial && npm run constitution:evidence-db-adversarial && npm run constitution:truth && npm run constitution:truth-sql && npm run constitution:truth-adversarial && npm run constitution:truth-db-adversarial && npm run constitution:seller && npm run constitution:seller-sql && npm run constitution:seller-adversarial && npm run constitution:seller-db-adversarial && npm run constitution:r4 && npm run constitution:r4-sql && npm run constitution:r4-adversarial && npm run constitution:r4-db-adversarial",
+    "constitution:check": "npm run constitution:architecture && npm run constitution:ai && npm run constitution:legacy && npm run constitution:authority && npm run constitution:schema && npm run constitution:sql && npm run constitution:adversarial && npm run constitution:database-adversarial && npm run constitution:evidence && npm run constitution:evidence-sql && npm run constitution:evidence-adversarial && npm run constitution:evidence-db-adversarial && npm run constitution:truth && npm run constitution:truth-sql && npm run constitution:truth-adversarial && npm run constitution:truth-db-adversarial && npm run constitution:seller && npm run constitution:seller-sql && npm run constitution:seller-adversarial && npm run constitution:seller-db-adversarial && npm run constitution:r4 && npm run constitution:r4-sql && npm run constitution:r4-adversarial && npm run constitution:r4-db-adversarial && npm run constitution:r5 && npm run constitution:r5-sql && npm run constitution:r5-adversarial && npm run constitution:r5-db-adversarial",
     "constitution:schema": "node scripts/validate-build2-schema.mjs",
     "constitution:sql": "node scripts/validate-build2-sql-safety.mjs",
     "constitution:database-adversarial": "node tests/adversarial/build2-database-boundaries.mjs",
@@ -34,7 +34,11 @@
     "constitution:r4": "node scripts/validate-build6-commercial-reality.mjs",
     "constitution:r4-sql": "node scripts/validate-build6-sql-safety.mjs",
     "constitution:r4-adversarial": "node tests/adversarial/build6-commercial-reality.mjs",
-    "constitution:r4-db-adversarial": "node tests/adversarial/build6-database-boundaries.mjs"
+    "constitution:r4-db-adversarial": "node tests/adversarial/build6-database-boundaries.mjs",
+    "constitution:r5": "node scripts/validate-build7-relationship-graph.mjs",
+    "constitution:r5-sql": "node scripts/validate-build7-sql-safety.mjs",
+    "constitution:r5-adversarial": "node tests/adversarial/build7-relationship-graph.mjs",
+    "constitution:r5-db-adversarial": "node tests/adversarial/build7-database-boundaries.mjs"
   },
   "dependencies": {
     "next": "^15.5.21",

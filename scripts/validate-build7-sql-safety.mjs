@@ -1,0 +1,18 @@
+import fs from "node:fs";import path from "node:path";import {ROOT,assert,check,printResults} from "./lib/constitution.mjs";
+const sql=fs.readFileSync(path.join(ROOT,"supabase/migrations/0010_relationship_truth_and_route_authority_r5.sql"),"utf8");const results=[];
+results.push(check("migration is atomic",()=>assert(/^BEGIN;/m.test(sql)&&/COMMIT;\s*$/.test(sql.trim()),"transaction")));
+results.push(check("no DROP TABLE",()=>assert(!/DROP\s+TABLE/i.test(sql),"drop")));
+results.push(check("no destructive R4 alteration",()=>assert(!/ALTER\s+TABLE\s+public\.commercial_reality_r4_records/i.test(sql),"R4 altered")));
+results.push(check("no changed legacy function signature replacement",()=>assert(!/DROP\s+FUNCTION/i.test(sql),"drop function")));
+results.push(check("R5 table direct DML revoked",()=>assert(sql.includes("public.route_authority_r5_records")&&/REVOKE ALL ON[\s\S]*route_authority_r5_records/.test(sql),"revoke")));
+results.push(check("no client input fingerprint",()=>assert(!/p_input_fingerprint/i.test(sql),"input fp arg")));
+results.push(check("no client authority fingerprint",()=>assert(!/p_authority_fingerprint/i.test(sql),"authority fp arg")));
+results.push(check("no numeric route score columns",()=>{for(const x of ["route_score","route_quality","route_confidence","is_viable","opportunity_score"])assert(!sql.toLowerCase().includes(x),x);}));
+results.push(check("relationship writer collision fails closed",()=>assert(sql.includes("MARKETROUTE_R5_WRITER_REGISTRY_COLLISION"),"collision")));
+results.push(check("path provenance validation exists",()=>assert(sql.includes("MARKETROUTE_R5_PATH_PROVENANCE_INVALID"),"path")));
+results.push(check("current predicate is temporal",()=>assert(sql.includes("a.valid_from<=p_at AND p_at<a.valid_until"),"time")));
+results.push(check("current predicate checks R4",()=>assert(sql.includes("marketroute_r4_authority_current_v1"),"R4")));
+results.push(check("schema reload included",()=>assert(sql.includes("NOTIFY pgrst,'reload schema'"),"reload")));
+results.push(check("Build 7 release explicit",()=>assert(sql.includes("MARKETROUTE_V2_BUILD7_RELATIONSHIP_GRAPH_R5")&&sql.includes("'authority_writers',2"),"release")));
+results.push(check("standalone installer equals canonical migration",()=>{const standalone=fs.readFileSync(path.join(ROOT,"APPLY-IN-SUPABASE-MARKETROUTE-V2-BUILD7.sql"),"utf8");assert(standalone===sql,"installer mismatch");}));
+printResults("MarketRoute V2 Build 7 — SQL safety gate",results);
