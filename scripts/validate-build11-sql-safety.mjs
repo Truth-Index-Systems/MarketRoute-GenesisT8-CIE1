@@ -1,0 +1,16 @@
+import fs from "node:fs";import path from "node:path";import {ROOT,assert,check,printResults} from "./lib/constitution.mjs";
+const s=fs.readFileSync(path.join(ROOT,"supabase/migrations/0014_opportunity_engine.sql"),"utf8");const x=[];
+x.push(check("migration atomic",()=>assert(/^BEGIN;/m.test(s)&&/COMMIT;\s*$/m.test(s),"transaction")));
+x.push(check("no destructive schema drops",()=>assert(!/\bDROP\s+(TABLE|SCHEMA|FUNCTION|VIEW|TYPE)\b/i.test(s),"drop")));
+x.push(check("no truncate",()=>assert(!/\bTRUNCATE\b/i.test(s),"truncate")));
+x.push(check("no authority writer registration",()=>assert(!/INSERT\s+INTO\s+public\.authority_writer_registry/i.test(s),"authority writer")));
+x.push(check("no authority record writes",()=>assert(!/INSERT\s+INTO\s+public\.authority_records/i.test(s),"authority record")));
+x.push(check("no weighted opportunity score persistence",()=>assert(!/(CREATE TABLE|ALTER TABLE|INSERT INTO)[^;]*(opportunity_score|company_fit|route_quality|route_confidence|is_viable|weighted_score|priority_score)/is.test(s),"score persistence")));
+x.push(check("opportunity materialisation requires authorityReady",()=>assert(s.includes("IF NOT v_ready THEN")&&s.includes("NOT_MATERIALISED"),"materialise")));
+x.push(check("system transitions only mention RESEARCHING and REVIEWABLE branches",()=>assert(s.includes("v_prior='REVIEWABLE' AND NOT v_ready")&&s.includes("v_prior='RESEARCHING' AND v_ready"),"states")));
+x.push(check("founder research hold bound to unchanged envelope",()=>assert(s.includes("FOUNDER_RETURNED_TO_RESEARCH")&&s.includes("e.authority_envelope_fingerprint=v_fp"),"hold")));
+x.push(check("sync events append-only",()=>assert(s.includes("opportunity_sync_events_append_only"),"append only")));
+x.push(check("direct workflow DML remains revoked",()=>assert(s.includes("REVOKE INSERT,UPDATE,DELETE ON public.opportunities"),"revoke")));
+x.push(check("RPCs not public executable",()=>assert(!/GRANT EXECUTE[^;]+ TO (anon|authenticated)/i.test(s),"public grant")));
+x.push(check("standalone SQL matches canonical migration",()=>{const a=fs.readFileSync(path.join(ROOT,"APPLY-IN-SUPABASE-MARKETROUTE-V2-BUILD11.sql"),"utf8");assert(a===s,"sql mismatch")}));
+printResults("MarketRoute V2 Build 11 — SQL safety gate",x);

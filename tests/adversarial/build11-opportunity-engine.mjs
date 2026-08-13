@@ -1,0 +1,37 @@
+import assert from "node:assert/strict";import fs from "node:fs";import os from "node:os";import path from "node:path";import {execFileSync} from "node:child_process";import {pathToFileURL} from "node:url";
+const root=process.cwd(),temp=fs.mkdtempSync(path.join(os.tmpdir(),"mrv2-b11-"));
+try{
+ execFileSync("tsc",["--target","ES2022","--module","NodeNext","--moduleResolution","NodeNext","--strict","--skipLibCheck","--outDir",temp,path.join(root,"core/opportunities/contracts.ts"),path.join(root,"core/opportunities/engine.ts")],{stdio:"pipe"});
+ const m=await import(pathToFileURL(path.join(temp,"engine.js")).href);const tests=[];const test=(n,f)=>tests.push({n,f});
+ const base=(over={})=>({organisationId:"o",campaignId:"c",companyId:"x",companyName:"Acme",evaluatedAt:"2026-08-13T20:00:00.000Z",workflowState:"REVIEWABLE",lifecycleState:"AUTHORITY_READY",authorityReady:true,reasonCode:"READY",r4Decision:"COMMERCIAL_CANDIDATE",r5Decision:"ROUTE_STRUCTURALLY_OPEN",r6Decision:"CONTACT_AUTHORISED",truth:{entityState:"KNOWN",currentCoverage:1,evidenceSufficiency:1,freshnessCoverage:1,coherence:1,truthIndex:100,probabilityState:"UNCALIBRATED"},structurallyOpenAccessPointCount:2,authorisedAccessPointCount:2,...over});
+ test("ready becomes ACTIONABLE",()=>assert.equal(m.buildOpportunityProfile(base()).disposition,"ACTIONABLE"));
+ test("R4 research is research required",()=>assert.equal(m.buildOpportunityProfile(base({lifecycleState:"COMMERCIAL_RESEARCH_REQUIRED",authorityReady:false})).disposition,"RESEARCH_REQUIRED"));
+ test("stale R5 is revalidation required",()=>assert.equal(m.buildOpportunityProfile(base({lifecycleState:"R5_REVALIDATION_REQUIRED",authorityReady:false})).disposition,"REVALIDATION_REQUIRED"));
+ test("not admissible stays explicit",()=>assert.equal(m.buildOpportunityProfile(base({lifecycleState:"NOT_ADMISSIBLE",authorityReady:false})).disposition,"NOT_ADMISSIBLE"));
+ test("route not applicable stays explicit",()=>assert.equal(m.buildOpportunityProfile(base({lifecycleState:"ROUTE_NOT_APPLICABLE",authorityReady:false})).disposition,"NOT_APPLICABLE"));
+ test("research pressure identifies R4",()=>assert.equal(m.buildOpportunityProfile(base({lifecycleState:"COMMERCIAL_RESEARCH_REQUIRED",authorityReady:false})).researchPressure,"R4"));
+ test("research pressure identifies R5",()=>assert.equal(m.buildOpportunityProfile(base({lifecycleState:"ROUTE_RESEARCH_REQUIRED",authorityReady:false})).researchPressure,"R5"));
+ test("research pressure identifies R6",()=>assert.equal(m.buildOpportunityProfile(base({lifecycleState:"CONTACT_RESEARCH_REQUIRED",authorityReady:false})).researchPressure,"R6"));
+ test("reviewable actionable is reviewable now",()=>assert.equal(m.buildOpportunityProfile(base()).reviewableNow,true));
+ test("approved actionable is executable now",()=>assert.equal(m.buildOpportunityProfile(base({workflowState:"APPROVED"})).executableNow,true));
+ test("approved stale is not executable",()=>assert.equal(m.buildOpportunityProfile(base({workflowState:"APPROVED",lifecycleState:"R6_REVALIDATION_REQUIRED",authorityReady:false})).executableNow,false));
+ test("rejected ready remains non executable",()=>assert.equal(m.buildOpportunityProfile(base({workflowState:"REJECTED"})).executableNow,false));
+ test("authorised count cannot exceed structural count",()=>assert.throws(()=>m.buildOpportunityProfile(base({structurallyOpenAccessPointCount:1,authorisedAccessPointCount:2})),/EXCEEDS_STRUCTURE/));
+ test("authority flag and disposition cannot disagree",()=>assert.throws(()=>m.buildOpportunityProfile(base({lifecycleState:"AUTHORITY_READY",authorityReady:false})),/DISPOSITION_MISMATCH/));
+ test("unknown lifecycle cannot be silently downgraded to research",()=>assert.throws(()=>m.buildOpportunityProfile(base({lifecycleState:"FUTURE_UNKNOWN_STATE",authorityReady:false})),/LIFECYCLE_STATE_UNKNOWN/));
+ test("actionable profile requires exact R4 R5 R6 chain",()=>assert.throws(()=>m.buildOpportunityProfile(base({r6Decision:"CONTACT_RESEARCH_REQUIRED"})),/ACTIONABLE_AUTHORITY_CHAIN_INVALID/));
+ test("actionable profile requires at least one authorised route",()=>assert.throws(()=>m.buildOpportunityProfile(base({structurallyOpenAccessPointCount:0,authorisedAccessPointCount:0})),/ACTIONABLE_ROUTE_REQUIRED/));
+ test("one route is SINGLE redundancy",()=>assert.equal(m.buildOpportunityProfile(base({structurallyOpenAccessPointCount:1,authorisedAccessPointCount:1})).routeRedundancy,"SINGLE"));
+ test("multiple routes are MULTIPLE redundancy",()=>assert.equal(m.buildOpportunityProfile(base()).routeRedundancy,"MULTIPLE"));
+ const a=m.buildOpportunityProfile(base({companyId:"a",companyName:"A",truth:{...base().truth,evidenceSufficiency:1},authorisedAccessPointCount:2}));
+ const b=m.buildOpportunityProfile(base({companyId:"b",companyName:"B",truth:{...base().truth,evidenceSufficiency:.7},authorisedAccessPointCount:1}));
+ test("Pareto detects dominance without weighted score",()=>assert.equal(m.compareOpportunityPareto(a,b),"A_DOMINATES"));
+ const c=m.buildOpportunityProfile(base({companyId:"c",companyName:"C",truth:{...base().truth,evidenceSufficiency:.6,freshnessCoverage:1},structurallyOpenAccessPointCount:3,authorisedAccessPointCount:3}));
+ const d=m.buildOpportunityProfile(base({companyId:"d",companyName:"D",truth:{...base().truth,evidenceSufficiency:1,freshnessCoverage:.6},authorisedAccessPointCount:1}));
+ test("trade-offs remain incomparable",()=>assert.equal(m.compareOpportunityPareto(c,d),"INCOMPARABLE"));
+ test("non actionable profiles are not Pareto compared",()=>assert.equal(m.compareOpportunityPareto(a,m.buildOpportunityProfile(base({lifecycleState:"CONTACT_RESEARCH_REQUIRED",authorityReady:false}))),"NOT_COMPARABLE"));
+ test("frontier excludes dominated actionable profile",()=>assert.deepEqual(m.opportunityParetoFrontier([b,a]).map(x=>x.companyId),["a"]));
+ test("Truth Index diagnostic cannot rescue weak Pareto dimension",()=>{const hiIndex=m.buildOpportunityProfile(base({companyId:"h",companyName:"H",truth:{...base().truth,truthIndex:100,evidenceSufficiency:.4}}));const lowIndex=m.buildOpportunityProfile(base({companyId:"l",companyName:"L",truth:{...base().truth,truthIndex:10,evidenceSufficiency:.8}}));assert.equal(m.compareOpportunityPareto(lowIndex,hiIndex),"A_DOMINATES")});
+ test("no numeric score/confidence/probability authority output",()=>{const s=JSON.stringify(a);for(const key of ["opportunityScore","confidence","weight","rank","truthProbability"])assert.equal(s.includes(key),false,key);assert.equal(a.truth.probabilityState,"UNCALIBRATED")});
+ let passed=0;console.log("\nMarketRoute V2 Build 11 — Opportunity engine adversarial gate");for(const {n,f} of tests){try{await f();passed++;console.log(`PASS  ${n}`)}catch(e){console.error(`FAIL  ${n}: ${e instanceof Error?e.message:e}`)}}console.log(`\n${passed}/${tests.length} PASS`);if(passed!==tests.length)process.exitCode=1;
+}finally{fs.rmSync(temp,{recursive:true,force:true});}

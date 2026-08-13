@@ -1,6 +1,6 @@
 {
-  "version": "MRV2-DB-BOUNDARY-1.10.0",
-  "build": 10,
+  "version": "MRV2-DB-BOUNDARY-1.11.0",
+  "build": 11,
   "principles": {
     "evidenceIsNotAuthority": true,
     "reasoningIsNotAuthority": true,
@@ -98,7 +98,14 @@
     "researchUnknownFailedSpendConservative": true,
     "researchAbandonedAttemptsRecoverable": true,
     "researchZeroCostRevalidationSurvivesBudgetExhaustion": true,
-    "researchPlanningTargetsExplicitCampaignScopesOnly": true
+    "researchPlanningTargetsExplicitCampaignScopesOnly": true,
+    "opportunityEngineBuild11": true,
+    "opportunityIsProjectionNotAuthority": true,
+    "opportunityMaterialisationRequiresCurrentAuthorityReady": true,
+    "opportunityWeightedScoreForbidden": true,
+    "opportunityParetoOrderingIsProductOnly": true,
+    "systemReviewabilityMayOnlyMutatePreHumanStates": true,
+    "humanOpportunityStatesPreservedBySystemSync": true
   },
   "backendOwnedEvidenceTables": [
     "companies",
@@ -131,7 +138,8 @@
   "workflowTables": [
     "opportunities",
     "opportunity_human_reviews",
-    "opportunity_workflow_events"
+    "opportunity_workflow_events",
+    "opportunity_sync_events"
   ],
   "appendOnlyTables": [
     "source_acquisitions",
@@ -159,7 +167,8 @@
     "opportunity_workflow_events",
     "research_plan_runs",
     "research_work_units",
-    "research_budget_events"
+    "research_budget_events",
+    "opportunity_sync_events"
   ],
   "forbiddenCommercialAuthorityColumns": [
     "opportunity_score",

@@ -80,3 +80,13 @@ Autonomous execution uses one `GENESIS_RESEARCH_V1` scheduler lease with heartbe
 Budget settlement is attempt-scoped and append-only. Successful work commits actual spend. Failed work commits known incurred spend and releases only unused reservation. If provider spend is unknown, the system conservatively accounts the reserved ceiling. A process-abandoned RUNNING attempt is recovered after the scheduler lease horizon, conservatively charged to its reserved ceiling, marked `ABORTED`, and retried or failed according to the existing attempt limit.
 
 Provider execution has a 180-second abort contract. Build 10 deliberately defines a vendor-neutral `ResearchProvider` interface rather than coupling Genesis to one model or search vendor.
+
+## Build 11 state
+
+Build 11 introduces no new authority writer. Opportunity is a product-layer projection of the existing current R4 → R5 → R6 authority envelope.
+
+A new `opportunities` workflow row may be materialised only when the exact current authority envelope is `AUTHORITY_READY`. Once materialised, the row is historical workflow identity and is never deleted merely because authority later becomes stale. System-owned pre-human states may move between `RESEARCHING` and `REVIEWABLE`; human states (`APPROVED`, `REJECTED`, `ENGAGED`, `ARCHIVED`) are never silently rewritten by opportunity synchronisation.
+
+Opportunity semantics are categorical and dimensional. `ACTIONABLE`, `RESEARCH_REQUIRED`, `REVALIDATION_REQUIRED`, `NOT_ADMISSIBLE`, and `NOT_APPLICABLE` are derived from the authority lifecycle. Truth coverage, evidence sufficiency, freshness, coherence, structural route count, and authorised access-point count remain separate dimensions. MarketRoute V2 has no weighted opportunity score.
+
+Pareto comparison is permitted only as a non-authoritative product-ordering aid among already `ACTIONABLE` profiles. It may identify dominance or incomparability across independent dimensions; it may not create commercial authority, change R4/R5/R6, change workflow, or grant execution permission. `Truth Index` is presented as an epistemic diagnostic and is deliberately excluded from Pareto comparison to avoid double-counting its maximin aggregation.

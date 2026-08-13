@@ -15,3 +15,7 @@ Build 9 keeps exactly three authority writers. Execution permission remains futu
 - Build 10: `0013_genesis_autonomous_research_engine.sql` — authority-driven autonomous research planning, budget governance, scheduler leasing/recovery and evidence-only provider execution.
 
 Build 10 keeps exactly three authority writers. Research is not authority and cannot mutate opportunity workflow.
+
+- Build 11: `0014_opportunity_engine.sql` — non-authoritative opportunity projection, authority-ready materialisation, system reviewability synchronisation and dimensional/Pareto product semantics.
+
+Build 11 keeps exactly three authority writers. Opportunity state is a product projection, not commercial authority.

@@ -1,12 +1,5 @@
-# opportunities
+# Opportunities application layer
 
-Build 9 introduces the authority/workflow lifecycle application boundary.
+Build 11 materialises an opportunity only from a current `AUTHORITY_READY` envelope. Product semantics are categorical and dimensional; there is no weighted opportunity score and no new authority writer.
 
-It does **not** create opportunities and does not implement opportunity ranking; those remain Build 11 responsibilities. It can:
-
-- read the current R4 → R5 → R6 authority envelope;
-- record an idempotent founder human review for an existing `REVIEWABLE` opportunity;
-- preserve approval/rejection independently of later authority expiry;
-- ask the single shared `isExecutableNow` predicate.
-
-Direct workflow DML remains forbidden.
+System-owned pre-human states may move `RESEARCHING <-> REVIEWABLE`. Human states remain independent and are never overwritten by opportunity synchronisation.

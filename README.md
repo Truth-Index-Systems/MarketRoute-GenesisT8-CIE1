@@ -4,7 +4,7 @@ Constitutional rebuild of MarketRoute.
 
 ## Current build
 
-**Build 10 — Genesis Autonomous Research Engine**
+**Build 11 — Opportunity Engine**
 
 The live authority spine remains unchanged:
 
@@ -19,3 +19,7 @@ Research priority is categorical, not weighted: `DECISION_BLOCKER → CURRENTNES
 Autonomy is protected by a single scheduler lease, heartbeat, bounded work execution, 180-second provider abort contract, attempt-scoped budget reservations, bounded retries, six-hour unchanged-gap cooldown, and conservative abandoned-attempt recovery.
 
 Build 10 intentionally ships a **provider interface, not a vendor-specific OpenAI/search implementation**. Wiring a chosen provider later does not alter Genesis authority semantics.
+
+## Build 11 — Opportunity Engine
+
+Build 11 converts the current R4/R5/R6 authority envelope into a product-layer opportunity profile without introducing an opportunity score or a fourth authority writer. New opportunity rows materialise only from `AUTHORITY_READY`; system reviewability remains separate from human approval; and non-authoritative Pareto comparison is available for actionable opportunity sets.

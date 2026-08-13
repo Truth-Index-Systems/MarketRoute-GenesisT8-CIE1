@@ -1,6 +1,6 @@
 {
   "version": "MRV2-CONSTITUTION-1.0.0",
-  "status": "AUTONOMOUS_RESEARCH_ACTIVE",
+  "status": "OPPORTUNITY_ENGINE_ACTIVE",
   "authorityWriters": [
     {
       "writerKey": "marketroute.r4.commercial-reality",
@@ -77,7 +77,12 @@
     "researchBudgetResourceOnly": true,
     "researchProviderCannotGrantAuthority": true,
     "researchSchedulerSingleLease": true,
-    "researchAbandonedWorkFailSafe": true
+    "researchAbandonedWorkFailSafe": true,
+    "opportunityIsNotAuthority": true,
+    "opportunityMaterialisationRequiresAuthorityReady": true,
+    "opportunityWeightedScoreForbidden": true,
+    "opportunityParetoOrderingNonAuthoritative": true,
+    "systemReviewabilityCannotOverwriteHumanDecision": true
   },
-  "schemaBuild": 10
+  "schemaBuild": 11
 }
