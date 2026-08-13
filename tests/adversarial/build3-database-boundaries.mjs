@@ -41,7 +41,7 @@ test("global claim cannot consume private evidence", () => assert.ok(sql.include
 test("cross-tenant evidence linking remains forbidden", () => assert.ok(sql.includes("MARKETROUTE_CLAIM_EVIDENCE_TENANT_MISMATCH")));
 test("cross-subject evidence linking is forbidden", () => assert.ok(sql.includes("MARKETROUTE_CLAIM_EVIDENCE_SUBJECT_MISMATCH")));
 test("same evidence cannot be both support and contradiction for one claim", () => assert.ok(sql.includes("claim_evidence_links_single_polarity_unique")));
-test("Build 3 authority writers remain zero", () => assert.equal(manifest.authorityWriters.length, 0));
+test("Build 3 migration remains non-authoritative in successor repo", () => { assert.ok(!sql.includes("INSERT INTO public.authority_records")); assert.ok(!sql.includes("authority_writer_registry")); });
 test("Build 3 migration never writes authority table", () => assert.ok(!sql.includes("INSERT INTO public.authority_records")));
 test("Build 3 migration never writes opportunity workflow", () => assert.ok(!sql.includes("UPDATE public.opportunities")));
 

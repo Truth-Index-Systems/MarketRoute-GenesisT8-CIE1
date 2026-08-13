@@ -1,0 +1,18 @@
+import fs from "node:fs";
+import path from "node:path";
+import { ROOT, assert, check, printResults } from "./lib/constitution.mjs";
+const sql=fs.readFileSync(path.join(ROOT,"supabase/migrations/0009_commercial_reality_r4.sql"),"utf8");
+const results=[];
+results.push(check("migration is atomic",()=>assert(/^BEGIN;/m.test(sql)&&/COMMIT;\s*$/.test(sql.trim()),"transaction")));
+results.push(check("no DROP TABLE",()=>assert(!/DROP\s+TABLE/i.test(sql),"drop table")));
+results.push(check("no destructive authority alteration",()=>assert(!/ALTER\s+TABLE\s+public\.authority_records\s+DROP/i.test(sql),"authority alteration")));
+results.push(check("R4 function has no changed RETURNS TABLE legacy signature",()=>assert(!/CREATE OR REPLACE FUNCTION\s+public\.marketroute_persist_commercial_reality_r4_v1[\s\S]*DROP FUNCTION/i.test(sql),"unexpected signature migration")));
+results.push(check("authority registry is explicit",()=>assert(sql.includes("marketroute.r4.commercial-reality"),"writer")));
+results.push(check("R4 table direct DML revoked",()=>assert(sql.includes("REVOKE ALL ON public.commercial_reality_r4_records FROM anon,authenticated,service_role"),"revoke")));
+results.push(check("only SELECT granted on R4 tables",()=>assert(!/GRANT\s+(INSERT|UPDATE|DELETE)[^;]*commercial_reality_r4_records/i.test(sql),"direct DML grant")));
+results.push(check("no client-supplied input fingerprint",()=>assert(!/p_input_fingerprint/i.test(sql),"input fingerprint arg")));
+results.push(check("no client-supplied authority fingerprint",()=>assert(!/p_authority_fingerprint/i.test(sql),"authority fingerprint arg")));
+results.push(check("no numeric score authority columns",()=>{ for(const t of ["opportunity_score","company_fit","route_quality","route_confidence","is_viable"]) assert(!sql.toLowerCase().includes(t),t); }));
+results.push(check("schema reload included",()=>assert(sql.includes("NOTIFY pgrst, 'reload schema'"),"reload")));
+results.push(check("Build 6 release is explicit",()=>assert(sql.includes("MARKETROUTE_V2_BUILD6_R4")&&sql.includes("'authority_writers',1"),"release")));
+printResults("MarketRoute V2 Build 6 — SQL safety gate",results);

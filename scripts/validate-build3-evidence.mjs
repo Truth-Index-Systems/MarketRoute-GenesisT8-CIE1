@@ -9,12 +9,12 @@ const pkg = readJson("package.json");
 const results = [];
 
 results.push(check("Build 3 schema version declared", () => assert(db.build >= 3, `database boundary regressed below Build 3: ${db.build}`)));
-results.push(check("authority registry remains empty", () => assert(authority.authorityWriters.length === 0, "Build 3 must not create authority")));
-results.push(check("authority manifest advances schema build only", () => assert(authority.schemaBuild >= 3 && authority.authorityWriters.length === 0, "authority manifest regressed or introduced authority")));
+results.push(check("authority registry remains empty", () => assert(!/INSERT\s+INTO\s+public\.authority_writer_registry/i.test(migration), "Build 3 migration created authority")));
+results.push(check("authority manifest advances schema build only", () => assert(authority.schemaBuild >= 3, "authority manifest regressed")));
 results.push(check("evidence runtime is RPC-write-only constitutionally", () => assert(db.principles.evidenceRuntimeIsRpcWriteOnly === true, "RPC-only evidence boundary missing")));
 results.push(check("dependence family belongs to evidence", () => assert(db.principles.dependenceFamilyOwnedByEvidence === true, "dependence ownership missing")));
 results.push(check("source identity is immutable", () => assert(db.principles.sourceIdentityIsImmutable === true, "source identity immutability missing")));
-results.push(check("Build 3 evidence remains non-authoritative after successor builds", () => assert(db.principles.evidenceIsNotAuthority === true && authority.authorityWriters.length === 0, "evidence gained authority")));
+results.push(check("Build 3 evidence remains non-authoritative after successor builds", () => assert(db.principles.evidenceIsNotAuthority === true, "evidence gained authority")));
 results.push(check("migration adds source identity fingerprint", () => assert(migration.includes("source_identity_fingerprint"), "source identity fingerprint missing")));
 results.push(check("migration adds evidence dependence family snapshot", () => assert(migration.includes("ADD COLUMN dependence_family_key text"), "evidence family snapshot missing")));
 results.push(check("migration versions evidence fingerprints", () => assert(migration.includes("ADD COLUMN fingerprint_version text"), "fingerprint version missing")));

@@ -1,6 +1,6 @@
 {
-  "version": "MRV2-DB-BOUNDARY-1.3.0",
-  "build": 5,
+  "version": "MRV2-DB-BOUNDARY-1.4.0",
+  "build": 6,
   "principles": {
     "evidenceIsNotAuthority": true,
     "reasoningIsNotAuthority": true,
@@ -35,7 +35,15 @@
     "sellerGenomeContentFingerprintDatabaseComputed": true,
     "campaignSellerContextIsAppendOnlySelection": true,
     "campaignSellerContextHasExactAndSemanticLineage": true,
-    "sellerAiCannotEmitAuthorityScores": true
+    "sellerAiCannotEmitAuthorityScores": true,
+    "commercialRealityR4IsFirstAuthorityWriter": true,
+    "commercialRealityUsesCategoricalTruthOnly": true,
+    "commercialRealityMandatoryBoundariesExplicit": true,
+    "commercialRealityUnknownBoundaryBlocksCandidate": true,
+    "commercialRealityHardConstraintsFailClosed": true,
+    "commercialRealityFingerprintDatabaseComputed": true,
+    "commercialRealityDecisionDatabaseRecomputed": true,
+    "commercialRealityAuthorityTimeBound": true
   },
   "backendOwnedEvidenceTables": [
     "companies",
@@ -85,7 +93,8 @@
     "truth_entity_snapshots",
     "seller_genome_source_materials",
     "seller_commercial_genome_snapshots",
-    "campaign_seller_context_selections"
+    "campaign_seller_context_selections",
+    "commercial_reality_r4_records"
   ],
   "forbiddenCommercialAuthorityColumns": [
     "opportunity_score",
@@ -112,5 +121,9 @@
     "seller_genome_source_materials",
     "seller_commercial_genome_snapshots",
     "campaign_seller_context_selections"
+  ],
+  "commercialRealityTables": [
+    "commercial_reality_boundary_constitutions",
+    "commercial_reality_r4_records"
   ]
 }

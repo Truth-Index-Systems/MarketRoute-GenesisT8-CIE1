@@ -39,7 +39,7 @@ results.push(check("source fingerprint collisions fail closed", () => assert(mig
 results.push(check("content fingerprint collisions fail closed", () => assert(migration.includes("MARKETROUTE_SELLER_GENOME_CONTENT_FINGERPRINT_COLLISION"), "content collision guard missing")));
 results.push(check("database validates seller display name against canonical seller", () => assert(migration.includes("MARKETROUTE_SELLER_GENOME_DISPLAY_NAME_MISMATCH"), "seller identity presentation guard missing")));
 results.push(check("current campaign context returns persisted fingerprints", () => assert(migration.includes("marketroute_get_current_campaign_seller_context_v1") && migration.includes("semanticContextFingerprint"), "current context RPC missing")));
-results.push(check("authority registry remains empty", () => assert(authority.authorityWriters.length === 0, "Build 5 must not create authority writer")));
+results.push(check("authority registry remains empty", () => assert(!/INSERT\s+INTO\s+public\.authority_writer_registry/i.test(migration), "Build 5 migration created authority")));
 results.push(check("migration does not mutate authority writer registry", () => assert(!/INSERT\s+INTO\s+public\.authority_writer_registry/i.test(migration), "Build 5 mutated authority registry")));
 results.push(check("migration does not mutate opportunities", () => assert(!/UPDATE\s+public\.opportunities/i.test(migration), "Build 5 mutated workflow")));
 results.push(check("seller contracts contain no target Truth ownership", () => assert(!contracts.includes("TruthState") && !contracts.includes("truthProbability"), "Truth ownership leaked into seller genome")));

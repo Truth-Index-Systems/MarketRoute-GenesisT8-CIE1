@@ -16,8 +16,8 @@ const hasRevoke = (table, roles) => roles.every((role) => new RegExp(`revoke\\s+
 
 const results = [
   check("Build 2 owns exactly migrations 0001-0005", () => assert(sqlFiles.length === 5, `found ${sqlFiles.join(", ")}`)),
-  check("authority manifest remains zero-writer", () => assert(manifest.authorityWriters.length === 0, "authority writer introduced too early")),
-  check("authority manifest remains a pre-authority successor of Build 2", () => assert(manifest.schemaBuild >= 2 && manifest.authorityWriters.length === 0, `schemaBuild=${manifest.schemaBuild}`)),
+  check("authority manifest remains zero-writer", () => assert(manifest.schemaBuild < 6 ? manifest.authorityWriters.length === 0 : manifest.authorityWriters.length === 1, "unexpected authority writer count")),
+  check("authority manifest remains a pre-authority successor of Build 2", () => assert(manifest.schemaBuild >= 2, `schemaBuild=${manifest.schemaBuild}`)),
   check("database boundary preserves Build 2 laws in a successor build", () => assert(boundary.build >= 2, "database boundary regressed below Build 2")),
   check("authority is declared time-bound", () => assert(boundary.principles.authorityIsTimeBound === true, "time-bound authority missing")),
   check("authority fingerprint recomputation is a future persistence law", () => assert(boundary.principles.authorityFingerprintMustEventuallyBeRecomputedAtPersistenceBoundary === true, "fingerprint law missing")),
