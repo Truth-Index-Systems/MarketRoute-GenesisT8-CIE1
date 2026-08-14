@@ -1,0 +1,39 @@
+{
+  "profileVersion": "MRV2-V1-SOURCE-PROFILE-FORENSIC-BUILD8-1.0.0",
+  "sourceRepository": "MarketRoute-Genesis-T8-Forensic-Build8-Constitutional-Hardening",
+  "schemaThroughMigration": "0158_marketroute_forensic_build8_constitutional_hardening.sql",
+  "readOnlyTables": [
+    "business_profiles",
+    "campaigns",
+    "companies",
+    "company_evidence",
+    "contacts",
+    "contact_evidence",
+    "company_contact_channels",
+    "genesis_g8_intelligence_entities",
+    "genesis_g8_intelligence_claims",
+    "genesis_g8_intelligence_evidence"
+  ],
+  "neverExportTables": [
+    "genesis_g8_truth_snapshots",
+    "genesis_g8_truth_v2_snapshots",
+    "cie_r4_commercial_decisions",
+    "cie_r4_commercial_reality_productions",
+    "cie_r5_route_decisions",
+    "cie_r6_contact_decisions",
+    "opportunities",
+    "opportunity_history",
+    "commercial_routes",
+    "route_intelligence_snapshots",
+    "engagement_strategies",
+    "engagement_send_queue",
+    "g5_engagement_execution_queue",
+    "engagement_human_reviews"
+  ],
+  "notes": [
+    "Only factual identities, source material and source evidence cross the V1 to V2 bridge.",
+    "Legacy numeric assessment fields are never emitted into the export bundle.",
+    "Legacy route topology is never emitted. Raw Genesis route-source evidence is reattached to its target company when the canonical key safely identifies that company.",
+    "Genesis shared company evidence is retained without importing V1 Truth calculations or claim weighting."
+  ]
+}

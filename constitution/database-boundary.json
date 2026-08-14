@@ -1,6 +1,6 @@
 {
-  "version": "MRV2-DB-BOUNDARY-1.13.0",
-  "build": 13,
+  "version": "MRV2-DB-BOUNDARY-1.17.0",
+  "build": 17,
   "principles": {
     "evidenceIsNotAuthority": true,
     "reasoningIsNotAuthority": true,
@@ -139,7 +139,17 @@
     "applicationReadContractVersioned": true,
     "applicationReadIncludesTruthR4R5R6ResearchWorkflowEngagement": true,
     "applicationClaimProvenanceCurrentLineageScoped": true,
-    "applicationMainReadsDoNotEmbedRawEvidence": true
+    "applicationMainReadsDoNotEmbedRawEvidence": true,
+    "v1MigrationOfflineEtLOnly": true,
+    "v1MigrationFactualEvidenceOnly": true,
+    "v1MigrationAuthorityImportForbidden": true,
+    "v1MigrationTruthImportForbidden": true,
+    "v1MigrationWorkflowImportForbidden": true,
+    "v1MigrationMappingAppendOnly": true,
+    "v1MigrationRecordFingerprintDatabaseComputed": true,
+    "v1MigrationCampaignsStartDraft": true,
+    "v1MigrationEvidenceMarkedMigrated": true,
+    "v1MigrationDownstreamStateRecomputedByV2": true
   },
   "backendOwnedEvidenceTables": [
     "companies",

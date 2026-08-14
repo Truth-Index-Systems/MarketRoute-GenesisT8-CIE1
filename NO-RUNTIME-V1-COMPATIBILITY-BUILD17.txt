@@ -1,0 +1,2 @@
+Build 17 intentionally adds no V1 runtime adapter, V1 RPC call, foreign database link or compatibility layer.
+The only supported bridge is a validated static factual/evidence export consumed by the offline migration importer.

@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "MRV2-V1-FACTUAL-EXPORT-1.0.0",
+  "title": "MarketRoute V1 factual export bundle",
+  "description": "Build 17 offline export contract. Runtime validation is implemented in scripts/migration/v1-contract.mjs; this schema documents the top-level envelope.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contractVersion", "exportedAt"],
+  "properties": {
+    "contractVersion": { "const": "MRV2-V1-FACTUAL-EXPORT-1.0.0" },
+    "exportedAt": { "type": "string" },
+    "exportMetadata": { "type": "object" },
+    "companies": { "$ref": "#/$defs/records" },
+    "people": { "$ref": "#/$defs/records" },
+    "accessPoints": { "$ref": "#/$defs/records" },
+    "sellerBusinesses": { "$ref": "#/$defs/records" },
+    "sellerSources": { "$ref": "#/$defs/records" },
+    "campaigns": { "$ref": "#/$defs/records" },
+    "campaignScopes": { "$ref": "#/$defs/records" },
+    "evidence": { "$ref": "#/$defs/records" },
+    "historicalResearch": { "$ref": "#/$defs/records" }
+  },
+  "$defs": {
+    "records": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["sourceTable", "v1Id", "payload"],
+        "properties": {
+          "sourceTable": { "type": "string", "minLength": 1 },
+          "v1Id": { "type": "string", "minLength": 1 },
+          "payload": { "type": "object" }
+        }
+      }
+    }
+  }
+}

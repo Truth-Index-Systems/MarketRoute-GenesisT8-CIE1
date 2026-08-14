@@ -11,7 +11,7 @@ const results = [];
 
 results.push(check("Build 16 presentation marker is active", () => {
   const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, "constitution/authority-manifest.json"), "utf8"));
-  assert(manifest.presentationBuild >= 16 && manifest.schemaBuild === 15, `${manifest.presentationBuild}/${manifest.schemaBuild}`);
+  assert(manifest.presentationBuild >= 16 && manifest.schemaBuild >= 15, `${manifest.presentationBuild}/${manifest.schemaBuild}`);
   assert(manifest.rules.publicWebsiteIsPresentationOnly && manifest.rules.publicAcquisitionValueFirst, "Build 16 rules");
 }));
 

@@ -1,0 +1,17 @@
+import fs from "node:fs";
+import path from "node:path";
+import { ROOT, assert, check, printResults } from "../../scripts/lib/constitution.mjs";
+import { validateBundle, forbiddenKeys } from "../../scripts/migration/v1-contract.mjs";
+const base=JSON.parse(fs.readFileSync(path.join(ROOT,"migration/v1/example.bundle.json"),"utf8"));
+const clone=()=>structuredClone(base);const x=[];
+x.push(check("safe factual bundle survives",()=>assert(validateBundle(clone()).totalRecords===9,"safe bundle")));
+x.push(check("old opportunity score fails closed",()=>{const b=clone();b.companies[0].payload.opportunityScore=91;let failed=false;try{validateBundle(b)}catch{failed=true}assert(failed,"score accepted")}));
+x.push(check("old confidence fails closed even when nested",()=>{const b=clone();b.evidence[0].payload.source.metadata={analysis:{confidence:0.99}};let failed=false;try{validateBundle(b)}catch{failed=true}assert(failed,"confidence accepted")}));
+x.push(check("old READY/workflow state fails closed",()=>{const b=clone();b.campaigns[0].payload.workflowState="READY";let failed=false;try{validateBundle(b)}catch{failed=true}assert(failed,"workflow accepted")}));
+x.push(check("old R4 result fails closed",()=>{const b=clone();b.evidence[0].payload.claim.object.r4="COMMERCIAL_CANDIDATE";let failed=false;try{validateBundle(b)}catch{failed=true}assert(failed,"R4 accepted")}));
+x.push(check("Truth Index migration fails closed",()=>{const b=clone();b.historicalResearch[0].payload.metadata={truthIndex:88};let failed=false;try{validateBundle(b)}catch{failed=true}assert(failed,"Truth Index accepted")}));
+x.push(check("non-factual claim key fails closed",()=>{const b=clone();b.evidence[0].payload.claim.claimKey="opportunity.score";let failed=false;try{validateBundle(b)}catch{failed=true}assert(failed,"score claim accepted")}));
+x.push(check("missing subject mapping fails closed",()=>{const b=clone();b.evidence[0].payload.subject.v1Id="not-exported";let failed=false;try{validateBundle(b)}catch{failed=true}assert(failed,"orphan evidence accepted")}));
+x.push(check("same V1 source cannot mutate between evidence rows",()=>{const b=clone();const second=structuredClone(b.evidence[0]);second.v1Id="evidence-002";second.payload.source.title="Changed identity";b.evidence.push(second);let failed=false;try{validateBundle(b)}catch{failed=true}assert(failed,"source mutation accepted")}));
+x.push(check("forbidden-key scanner reports exact derived semantics",()=>{const keys=forbiddenKeys({a:{truth_probability:0.8},b:[{route_quality:2}]});assert(keys.includes("truthprobability")&&keys.includes("routequality"),keys.join(","))}));
+printResults("MarketRoute V2 Build 17 — migration adversarial gate",x);

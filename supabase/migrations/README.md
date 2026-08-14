@@ -25,3 +25,7 @@ Build 11 keeps exactly three authority writers. Opportunity state is a product p
 
 Build 13 keeps exactly three authority writers. The read model is presentation composition only and performs no authority, workflow or engagement mutation.
 - Build 15C: `0018_build15c_readability_onboarding.sql` — onboarding identity capture that creates the organisation and seller-business identity together from organisation name + full company website URL. Internal workspace slugs are generated automatically. No commercial authority is created or mutated.
+
+### 0019 — Build 17 V1 evidence migration
+
+`0019_v1_evidence_migration.sql` installs service-role-only offline ETL RPCs, immutable V1→V2 mapping/audit tables, factual whitelist enforcement and migrated evidence lineage. It creates no authority writer and imports no Truth/workflow state.

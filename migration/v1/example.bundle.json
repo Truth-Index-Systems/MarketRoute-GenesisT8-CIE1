@@ -1,0 +1,152 @@
+{
+  "contractVersion": "MRV2-V1-FACTUAL-EXPORT-1.0.0",
+  "exportedAt": "2026-08-14T08:00:00.000Z",
+  "exportMetadata": {
+    "purpose": "synthetic Build 17 contract example"
+  },
+  "companies": [
+    {
+      "sourceTable": "companies",
+      "v1Id": "company-001",
+      "payload": {
+        "canonicalName": "Northstar Industrial Systems",
+        "canonicalDomain": "northstar.example",
+        "websiteUrl": "https://northstar.example",
+        "countryCode": "GB"
+      }
+    }
+  ],
+  "people": [
+    {
+      "sourceTable": "contacts",
+      "v1Id": "person-001",
+      "payload": {
+        "displayName": "Alex Morgan",
+        "canonicalName": "Alex Morgan"
+      }
+    }
+  ],
+  "accessPoints": [
+    {
+      "sourceTable": "contacts",
+      "v1Id": "channel-001",
+      "payload": {
+        "accessPointKind": "PERSONAL_EMAIL",
+        "canonicalValue": "alex.morgan@northstar.example",
+        "stableKey": "email:alex.morgan@northstar.example",
+        "label": "Work email"
+      }
+    }
+  ],
+  "sellerBusinesses": [
+    {
+      "sourceTable": "seller_businesses",
+      "v1Id": "seller-001",
+      "payload": {
+        "name": "Truth Index Systems",
+        "canonicalDomain": "truthindexsystems.co.uk",
+        "websiteUrl": "https://truthindexsystems.co.uk"
+      }
+    }
+  ],
+  "sellerSources": [
+    {
+      "sourceTable": "seller_context",
+      "v1Id": "seller-source-001",
+      "payload": {
+        "sellerBusinessSourceTable": "seller_businesses",
+        "sellerBusinessV1Id": "seller-001",
+        "content": {
+          "description": "Evidence-led commercial intelligence software",
+          "offering": "MarketRoute"
+        }
+      }
+    }
+  ],
+  "campaigns": [
+    {
+      "sourceTable": "campaigns",
+      "v1Id": "campaign-001",
+      "payload": {
+        "sellerBusinessSourceTable": "seller_businesses",
+        "sellerBusinessV1Id": "seller-001",
+        "name": "UK Industrial Automation",
+        "objectiveText": "Find commercially relevant industrial automation companies"
+      }
+    }
+  ],
+  "campaignScopes": [
+    {
+      "sourceTable": "campaign_company_links",
+      "v1Id": "scope-001",
+      "payload": {
+        "campaignSourceTable": "campaigns",
+        "campaignV1Id": "campaign-001",
+        "companySourceTable": "companies",
+        "companyV1Id": "company-001"
+      }
+    }
+  ],
+  "evidence": [
+    {
+      "sourceTable": "evidence",
+      "v1Id": "evidence-001",
+      "payload": {
+        "subject": {
+          "entityKind": "COMPANY",
+          "sourceTable": "companies",
+          "v1Id": "company-001"
+        },
+        "source": {
+          "sourceTable": "sources",
+          "v1Id": "source-001",
+          "sourceKind": "WEB",
+          "canonicalUrl": "https://northstar.example/about",
+          "publisherDomain": "northstar.example",
+          "title": "About Northstar",
+          "publishedAt": null,
+          "stableLocator": "https://northstar.example/about",
+          "dependenceFamilyKey": "northstar.example:about",
+          "metadata": {}
+        },
+        "acquisition": {
+          "acquiredAt": "2026-08-10T12:00:00.000Z",
+          "parserVersion": "v1-export",
+          "metadata": {}
+        },
+        "evidence": {
+          "evidenceKind": "QUOTE",
+          "excerptText": "Northstar Industrial Systems provides industrial automation services.",
+          "observedAt": "2026-08-10T12:00:00.000Z",
+          "extractionVersion": "v1-export"
+        },
+        "claim": {
+          "sourceTable": "claims",
+          "v1Id": "claim-001",
+          "claimKey": "operation.current",
+          "predicate": "EXISTS",
+          "object": { "current": true },
+          "canonicalValueText": "current",
+          "polarity": "SUPPORTS"
+        }
+      }
+    }
+  ],
+  "historicalResearch": [
+    {
+      "sourceTable": "research_notes",
+      "v1Id": "research-001",
+      "payload": {
+        "subject": {
+          "entityKind": "COMPANY",
+          "sourceTable": "companies",
+          "v1Id": "company-001"
+        },
+        "text": "Historical V1 research note retained only as raw migrated evidence.",
+        "observedAt": "2026-08-10T12:00:00.000Z",
+        "sourceLabel": "V1 research note",
+        "metadata": {}
+      }
+    }
+  ]
+}

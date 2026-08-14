@@ -35,3 +35,11 @@ SUPABASE_ANON_KEY=
 Build 15 expects an existing Supabase Auth user. Public signup/acquisition belongs to Build 16.
 
 Primary MarketRoute colours remain `#2F8CFF` and `#76B6FF` on the near-black `#05080D` workspace.
+
+## Build 17 — V1 evidence migration
+
+Build 17 adds an offline, service-role-only V1 → V2 factual/evidence ETL. Use `migration/v1/README.md` for the export contract and migration workflow. No V1 authority, Truth state, scoring or workflow state is imported; V2 recomputes downstream intelligence from migrated evidence.
+
+### Build 17 source export
+
+For the pre-V2 Forensic Build 8 database, generate the static one-way factual export with `npm run migration:v1:export -- /secure/path/v1-export.json`. The exporter is GET-only and source-profile pinned; see `migration/v1/README.md`.

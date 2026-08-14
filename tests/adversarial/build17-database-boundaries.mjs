@@ -1,0 +1,13 @@
+import fs from "node:fs";import path from "node:path";import {ROOT,assert,check,printResults} from "../../scripts/lib/constitution.mjs";
+const s=fs.readFileSync(path.join(ROOT,"supabase/migrations/0019_v1_evidence_migration.sql"),"utf8");const x=[];
+x.push(check("immutable V1 to V2 mapping cannot be updated or deleted",()=>assert(s.includes("marketroute_v1_migration_id_map_append_only")&&s.includes("BEFORE UPDATE OR DELETE ON public.marketroute_v1_migration_id_map"),"mapping mutation")));
+x.push(check("record mapping collision fails closed",()=>assert(s.includes("MARKETROUTE_V1_MIGRATION_MAPPING_COLLISION"),"mapping collision")));
+x.push(check("same mapped source payload cannot silently change",()=>{for(const code of ["COMPANY_SOURCE_CHANGED_AFTER_MAPPING","PERSON_SOURCE_CHANGED_AFTER_MAPPING","ACCESS_POINT_SOURCE_CHANGED_AFTER_MAPPING","SELLER_SOURCE_CHANGED_AFTER_MAPPING","CAMPAIGN_CHANGED_AFTER_MAPPING","EVIDENCE_CHANGED_AFTER_MAPPING"])assert(s.includes(`MARKETROUTE_V1_${code}`),code)}));
+x.push(check("recursive forbidden fields include score confidence READY and R4-R6",()=>{for(const key of ["opportunityscore","confidence","ready","truthindex","r4","r5","r6"])assert(s.includes(`'${key}'`),key)}));
+x.push(check("campaign state cannot be imported from V1",()=>assert(s.includes("ARRAY['sellerBusinessSourceTable','sellerBusinessV1Id','name','objectiveText']")&&s.includes("'DRAFT'"),"campaign whitelist")));
+x.push(check("evidence extraction method cannot masquerade as native V2",()=>assert(s.includes("'MIGRATED',COALESCE")&&s.includes("'extractionMethod','MIGRATED'"),"migration lineage")));
+x.push(check("V1 claims receive migration-specific fingerprint version",()=>assert(s.includes("MRV2-V1-MIGRATED-CLAIM-FP-1.0.0"),"claim fingerprint")));
+x.push(check("V1 sources receive migration-specific normalisation",()=>assert(s.includes("MRV2-V1-MIGRATION-NORM-1.0.0"),"source normalisation")));
+x.push(check("historical research is evidence not authority",()=>assert(s.includes("HISTORICAL_RESEARCH_IMPORTED_AS_EVIDENCE")&&!/INSERT\s+INTO\s+public\.reasoning_artifacts/i.test(s),"historical import")));
+x.push(check("completion says V2 must earn downstream state",()=>assert(s.includes("RECOMPUTE_V2_TRUTH_R4_R5_R6"),"recompute")));
+printResults("MarketRoute V2 Build 17 — database migration adversarial gate",x);

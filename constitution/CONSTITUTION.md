@@ -116,3 +116,15 @@ Build 14 introduces no authority writer, database mutation, reasoning rule or wo
 The presentation system uses the MarketRoute blue brand (`#2F8CFF`, `#76B6FF`) on the dark intelligence workspace. Colour, badges, gauges, progress bars, route diagrams and status treatments are presentational mappings of already-supplied semantic state; they may never infer or alter Truth, R4, R5, R6, workflow, research priority or execution permission.
 
 The product namespace is `/app`. The public `/` route remains an acquisition surface and is reserved for the full Build-16 landing experience. Build-14 application data is explicitly marked non-authoritative preview data. Build 15 must replace it with the canonical Build-13 application read contract rather than connecting UI components directly to Supabase or authority tables.
+
+## Build 17 — V1 factual/evidence migration
+
+V1 is a read-only source system during migration. The only bridge is a static, audited factual export. V2 runtime code must not import V1 modules, call V1 RPCs, query V1 tables or install compatibility adapters.
+
+Build 17 may migrate canonical identities, seller source material, campaign definitions/scopes, source provenance, evidence, factual claims, contact channels and historical research. It may not migrate Truth snapshots, commercial authority, route/contact authority, opportunity scoring, READY state, approval authority or engagement/workflow decisions.
+
+The migration mapping from V1 identity to V2 identity is append-only. Per-record fingerprints are recomputed at the V2 persistence boundary. Migrated evidence is explicitly marked `MIGRATED`.
+
+After import, V2 earns downstream state again from first principles:
+
+`evidence → V2 Truth → V2 R4 → V2 R5 → V2 R6`
