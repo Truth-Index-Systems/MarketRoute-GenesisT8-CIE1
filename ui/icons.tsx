@@ -16,7 +16,9 @@ export type IconName =
   | "clock"
   | "check"
   | "search"
-  | "menu";
+  | "menu"
+  | "user"
+  | "mail";
 
 interface IconProps extends SVGProps<SVGSVGElement> {
   name: IconName;
@@ -40,6 +42,8 @@ const paths: Record<IconName, React.ReactNode> = {
   check: <path d="m5 12 4 4L19 6" />,
   search: <><circle cx="10.5" cy="10.5" r="5.5" /><path d="m15 15 5 5" /></>,
   menu: <><path d="M4 7h16M4 12h16M4 17h16" /></>,
+  user: <><circle cx="12" cy="8" r="3.5" /><path d="M5 20c.8-4.2 3.2-6.3 7-6.3s6.2 2.1 7 6.3" /></>,
+  mail: <><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m4 7 8 6 8-6" /></>,
 };
 
 export function Icon({ name, size = 18, ...props }: IconProps) {

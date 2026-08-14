@@ -15,23 +15,30 @@ export default function PublicPreview(){
       <StatusBadge label="Illustrative example" tone="slate"/>
     </section>
 
-    <section className="mr-preview-company">
-      <div className="mr-preview-company__identity"><span>Example company</span><h2>Northstar Industrial Systems</h2><p>Industrial automation · Birmingham, UK</p></div>
-      <div className="mr-preview-company__verdict"><span>MarketRoute verdict</span><strong>Worth pursuing — reachable now</strong><p>Commercial case confirmed · Buyer route available · Current contact channel</p></div>
-    </section>
+    <section className="mr-preview-workspace">
+      <div className="mr-preview-workspace__bar">
+        <div><span className="mr-preview-workspace__mark"><Icon name="opportunities" size={15}/></span><strong>Opportunity view</strong><span>Northstar Industrial Systems</span></div>
+        <span>Example data</span>
+      </div>
 
-    <section className="mr-preview-outcomes">
-      <div><span>Commercial case</span><strong>Confirmed</strong><small>Current R4</small></div>
-      <div><span>Route in</span><strong>2 paths</strong><small>Current R5</small></div>
-      <div><span>Buyer access</span><strong>Qualified</strong><small>Current R6</small></div>
-      <div><span>Research strength</span><strong>88 / 100</strong><small>Truth Index</small></div>
-    </section>
+      <section className="mr-preview-company">
+        <div className="mr-preview-company__identity"><span>Example company</span><h2>Northstar Industrial Systems</h2><p>Industrial automation · Birmingham, UK</p></div>
+        <div className="mr-preview-company__verdict"><span>MarketRoute verdict</span><strong>Worth pursuing — reachable now</strong><p>Commercial case confirmed · Buyer route available · Current contact channel</p></div>
+      </section>
 
-    <section className="mr-preview-grid">
-      <Panel emphasis="blue"><SectionHeading eyebrow="Commercial decision · R4 → R6" title="Why this company is worth pursuing" description="MarketRoute requires a current commercial reason, a proven organisational route and a qualified access point. No single score creates the opportunity."/><AuthorityStack stages={stages}/></Panel>
-      <Panel><SectionHeading eyebrow="Research quality · Truth Index" title="How strong is the research?" description="Evidence readiness is separate from commercial authority. Unknowns stay unknown rather than becoming artificial confidence."/><TruthGauge value={88} state="Well supported"/><div className="mr-preview-truth-list"><div><span>Coverage</span><strong>92%</strong></div><div><span>Evidence sufficiency</span><strong>86%</strong></div><div><span>Freshness</span><strong>90%</strong></div><div><span>Calibration</span><strong>Uncalibrated</strong></div></div></Panel>
-      <Panel className="mr-preview-route-panel"><SectionHeading eyebrow="Route to buyer · R5 + R6" title="How do we reach the right person?" description="The route shows the company, the decision-owning area, the person and the qualified access point in one readable chain."/><RoutePath nodes={[{label:"Northstar Industrial Systems",meta:"Target company",kind:"company"},{label:"Operations leadership",meta:"Decision-owning area",kind:"unit"},{label:"VP Operations",meta:"Current role supported",kind:"person"},{label:"Work email",meta:"Qualified access point",kind:"channel"}]} caption="A second independent structural route remains available if the primary contact changes."/></Panel>
-      <Panel><SectionHeading eyebrow="Open questions · Genesis research" title="What still needs validating?" description="Research pressure stays visible so a user can see what is decision-blocking, what should be monitored and what is already resolved."/><ResearchPressure items={[{label:"Secondary procurement relationship",detail:"Useful enrichment; it does not block the current route",state:"watch"},{label:"Primary contact employment",detail:"Current and independently supported",state:"clear"},{label:"Work email ownership",detail:"Current and supported",state:"clear"}]}/></Panel>
+      <section className="mr-preview-outcomes">
+        <div><span className="mr-preview-outcome__icon mr-preview-outcome__icon--green"><Icon name="shield" size={17}/></span><div><span>Commercial case</span><strong>Confirmed</strong><small>Current R4</small></div></div>
+        <div><span className="mr-preview-outcome__icon mr-preview-outcome__icon--blue"><Icon name="route" size={17}/></span><div><span>Route in</span><strong>2 paths</strong><small>Current R5</small></div></div>
+        <div><span className="mr-preview-outcome__icon mr-preview-outcome__icon--violet"><Icon name="user" size={17}/></span><div><span>Buyer access</span><strong>Qualified</strong><small>Current R6</small></div></div>
+        <div><span className="mr-preview-outcome__icon mr-preview-outcome__icon--blue"><Icon name="research" size={17}/></span><div><span>Research strength</span><strong>88 / 100</strong><small>Truth Index</small></div></div>
+      </section>
+
+      <section className="mr-preview-grid">
+        <Panel emphasis="blue" className="mr-preview-card mr-preview-card--decision"><SectionHeading eyebrow="Commercial decision · R4 → R6" title="Why this company is worth pursuing" description="MarketRoute requires a current commercial reason, a proven organisational route and a qualified access point. No single score creates the opportunity."/><AuthorityStack stages={stages}/></Panel>
+        <Panel className="mr-preview-card mr-preview-card--truth"><SectionHeading eyebrow="Research quality · Truth Index" title="How strong is the research?" description="Evidence readiness is separate from commercial authority. Unknowns stay unknown rather than becoming artificial confidence."/><TruthGauge value={88} state="Well supported"/><div className="mr-preview-truth-list"><div><span>Coverage</span><strong>92%</strong></div><div><span>Evidence sufficiency</span><strong>86%</strong></div><div><span>Freshness</span><strong>90%</strong></div><div><span>Calibration</span><strong>Uncalibrated</strong></div></div></Panel>
+        <Panel className="mr-preview-route-panel mr-preview-card mr-preview-card--route"><SectionHeading eyebrow="Route to buyer · R5 + R6" title="How do we reach the right person?" description="The route shows the company, the decision-owning area, the person and the qualified access point in one readable chain."/><RoutePath nodes={[{label:"Northstar Industrial Systems",meta:"Target company",kind:"company"},{label:"Operations leadership",meta:"Decision-owning area",kind:"unit"},{label:"VP Operations",meta:"Current role supported",kind:"person"},{label:"Work email",meta:"Qualified access point",kind:"channel"}]} caption="A second independent structural route remains available if the primary contact changes."/></Panel>
+        <Panel className="mr-preview-card mr-preview-card--research"><SectionHeading eyebrow="Open questions · Genesis research" title="What still needs validating?" description="Research pressure stays visible so a user can see what is decision-blocking, what should be monitored and what is already resolved."/><ResearchPressure items={[{label:"Secondary procurement relationship",detail:"Useful enrichment; it does not block the current route",state:"watch"},{label:"Primary contact employment",detail:"Current and independently supported",state:"clear"},{label:"Work email ownership",detail:"Current and supported",state:"clear"}]}/></Panel>
+      </section>
     </section>
 
     <section className="mr-preview-value">

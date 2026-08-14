@@ -1,3 +1,4 @@
+import { Icon, type IconName } from "@/ui/icons";
 export interface RouteNodeView {
   label: string;
   meta?: string;
@@ -8,6 +9,8 @@ interface RoutePathProps {
   nodes: RouteNodeView[];
   caption?: string;
 }
+
+const nodeIcon: Record<RouteNodeView["kind"], IconName> = { company: "companies", unit: "route", person: "user", channel: "mail" };
 
 const nodeKind: Record<RouteNodeView["kind"], string> = {
   company: "Company",
@@ -23,7 +26,7 @@ export function RoutePath({ nodes, caption }: RoutePathProps) {
         {nodes.map((node, index) => (
           <div className="mr-route-path__segment" key={`${node.kind}-${node.label}`}>
             <div className={`mr-route-node mr-route-node--${node.kind}`}>
-              <span className="mr-route-node__kind">{nodeKind[node.kind]}</span>
+              <div className="mr-route-node__top"><span className={`mr-route-node__icon mr-route-node__icon--${node.kind}`}><Icon name={nodeIcon[node.kind]} size={15}/></span><span className="mr-route-node__kind">{nodeKind[node.kind]}</span></div>
               <div>
                 <strong>{node.label}</strong>
                 {node.meta && <small>{node.meta}</small>}
