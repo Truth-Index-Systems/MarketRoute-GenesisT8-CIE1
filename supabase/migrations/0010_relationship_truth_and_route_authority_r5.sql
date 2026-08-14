@@ -189,8 +189,8 @@ BEGIN
   SELECT * INTO v_existing FROM public.commercial_relationships r WHERE r.relationship_fingerprint=v_fp;
   IF FOUND THEN RETURN QUERY SELECT v_existing.id,v_existing.claim_id,v_existing.relationship_fingerprint,true; RETURN; END IF;
   v_claim_fp:=encode(extensions.digest(concat_ws('|','MRV2-RELATIONSHIP-CLAIM-1.0.0',COALESCE(p_tenant_scope_organisation_id::text,'GLOBAL'),v_fp,'relationship.exists','EXISTS','true'),'sha256'),'hex');
-  INSERT INTO public.claims(tenant_scope_organisation_id,subject_type,subject_id,claim_key,predicate,object_json,canonical_value_text,claim_fingerprint)
-  VALUES(p_tenant_scope_organisation_id,'RELATIONSHIP',v_relationship_id,'relationship.exists','EXISTS','true'::jsonb,'true',v_claim_fp)
+  INSERT INTO public.claims(tenant_scope_organisation_id,subject_type,subject_id,claim_key,predicate,object_json,canonical_value_text,claim_fingerprint,fingerprint_version)
+  VALUES(p_tenant_scope_organisation_id,'RELATIONSHIP',v_relationship_id,'relationship.exists','EXISTS','true'::jsonb,'true',v_claim_fp,'MRV2-CLAIM-FP-1.0.0')
   RETURNING id INTO v_claim_id;
   -- Relationship id is the evidence subject identity.
   INSERT INTO public.commercial_relationships(id,tenant_scope_organisation_id,relation_type,from_node_id,to_node_id,claim_id,relationship_fingerprint,ontology_version,canonical_version)

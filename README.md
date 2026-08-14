@@ -47,3 +47,8 @@ For the pre-V2 Forensic Build 8 database, generate the static one-way factual ex
 ## Production growth activation
 
 0.18.3 adds the V2-native Genesis Database Growth worker. It builds the shared global intelligence bank across the ten canonical industries independently of customer campaigns. See `MARKETROUTE-V2-GENESIS-DATABASE-GROWTH-0.18.3.md`.
+
+
+## Production route hotfix 0.18.3.6
+
+Repairs the Build 7 relationship-claim insert so `claims.fingerprint_version` is populated with the canonical `MRV2-CLAIM-FP-1.0.0` value. See `MARKETROUTE-V2-PRODUCTION-HOTFIX-0.18.3.6.md`.
