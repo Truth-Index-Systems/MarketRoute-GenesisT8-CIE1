@@ -10,6 +10,12 @@ export interface MarketRouteSession {
 export class SessionService {
   private readonly auth=supabaseAuthClientFromEnvironment();
   private readonly workspace=workspaceRepositoryFromEnvironment();
+  async signUp(email:string,password:string){
+    const cleanEmail=email.trim().toLowerCase();
+    if(!cleanEmail||!password)throw new Error("MARKETROUTE_SIGNUP_CREDENTIALS_REQUIRED");
+    if(password.length<8)throw new Error("MARKETROUTE_PASSWORD_MINIMUM_8_CHARACTERS");
+    return this.auth.signUpWithPassword(cleanEmail,password);
+  }
   async signIn(email:string,password:string):Promise<{auth:SupabaseAuthSession;session:MarketRouteSession}>{
     if(!email.trim()||!password)throw new Error("MARKETROUTE_LOGIN_CREDENTIALS_REQUIRED");
     const auth=await this.auth.signInWithPassword(email.trim(),password); const memberships=await this.workspace.memberships(auth.user.id);
