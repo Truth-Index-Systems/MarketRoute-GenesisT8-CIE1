@@ -1,6 +1,6 @@
 {
   "version": "MRV2-CONSTITUTION-1.0.0",
-  "status": "CORE_APPLICATION_UI_ACTIVE",
+  "status": "PUBLIC_ACQUISITION_ACTIVE",
   "authorityWriters": [
     {
       "writerKey": "marketroute.r4.commercial-reality",
@@ -119,8 +119,10 @@
     "uiMutationsUseApplicationServicesOnly": true,
     "build15ReadIndexesAreReadOnly": true,
     "provenanceDrawerUsesCurrentLineageOnly": true,
-    "viewerMembershipIsReadOnly": true
+    "viewerMembershipIsReadOnly": true,
+    "publicWebsiteIsPresentationOnly": true,
+    "publicAcquisitionValueFirst": true
   },
   "schemaBuild": 15,
-  "presentationBuild": 15
+  "presentationBuild": 16
 }

@@ -1,0 +1,5 @@
+MarketRoute V2 Build 16 — Public Website + Acquisition Flow
+
+No Supabase migration is required.
+
+Build 16 changes the public website, public product storytelling, responsive marketing UI and value-first acquisition flow only. It does not alter Truth, R4/R5/R6 authority, research, opportunity, engagement or persistence semantics.

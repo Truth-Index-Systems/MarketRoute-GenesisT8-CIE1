@@ -1,7 +1,7 @@
 import fs from "node:fs";import path from "node:path";import {ROOT,assert,check,printResults,readJson,sourceFiles,relative} from "./lib/constitution.mjs";
 const pkg=readJson("package.json"),manifest=readJson("constitution/authority-manifest.json"),sql=fs.readFileSync(path.join(ROOT,"supabase/migrations/0017_core_application_ui_read_indexes.sql"),"utf8"),results=[];
-results.push(check("Build 15 package version",()=>assert(pkg.version==="0.15.0",pkg.version)));
-results.push(check("Build 15 presentation and schema markers",()=>assert(manifest.presentationBuild===15&&manifest.schemaBuild===15,`${manifest.presentationBuild}/${manifest.schemaBuild}`)));
+results.push(check("Build 15 package version",()=>assert(Number(pkg.version.split(".")[1])>=15,pkg.version)));
+results.push(check("Build 15 presentation and schema markers",()=>assert(manifest.presentationBuild>=15&&manifest.schemaBuild===15,`${manifest.presentationBuild}/${manifest.schemaBuild}`)));
 results.push(check("authority writer count remains three",()=>assert(manifest.authorityWriters.length===3,manifest.authorityWriters.length)));
 for(const file of ["app/app/page.tsx","app/app/campaigns/page.tsx","app/app/companies/page.tsx","app/app/opportunities/page.tsx","app/app/opportunities/[campaignId]/[companyId]/page.tsx","app/app/research/page.tsx","app/app/engagement/page.tsx","app/login/page.tsx","app/onboarding/page.tsx","ui/application/provenance-drawer.tsx","application/session/service.ts","platform/auth/supabase-auth.ts","supabase/migrations/0017_core_application_ui_read_indexes.sql"]){results.push(check(`Build 15 file exists: ${file}`,()=>assert(fs.existsSync(path.join(ROOT,file)),file)));}
 results.push(check("Build 14 sample preview removed from live /app",()=>{const t=fs.readFileSync(path.join(ROOT,"app/app/page.tsx"),"utf8");assert(!t.includes("Non-authoritative sample data")&&t.includes("commandCentre"),"live command centre");}));
