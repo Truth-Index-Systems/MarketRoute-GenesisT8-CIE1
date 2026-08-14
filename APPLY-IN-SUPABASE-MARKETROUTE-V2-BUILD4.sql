@@ -1030,13 +1030,13 @@ BEGIN
     COALESCE(to_char(v_next AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"'), '-')
   ), 'sha256'), 'hex');
 
-  SELECT * INTO v_existing
-  FROM public.truth_entity_snapshots
-  WHERE tenant_scope_organisation_id IS NOT DISTINCT FROM p_tenant_scope_organisation_id
-    AND subject_type = p_subject_type
-    AND subject_id = p_subject_id
-    AND profile_key = p_profile_key
-    AND input_fingerprint = v_input_fingerprint;
+  SELECT tes.* INTO v_existing
+  FROM public.truth_entity_snapshots AS tes
+  WHERE tes.tenant_scope_organisation_id IS NOT DISTINCT FROM p_tenant_scope_organisation_id
+    AND tes.subject_type = p_subject_type
+    AND tes.subject_id = p_subject_id
+    AND tes.profile_key = p_profile_key
+    AND tes.input_fingerprint = v_input_fingerprint;
   IF FOUND THEN
     IF v_existing.snapshot_fingerprint IS DISTINCT FROM v_snapshot_fingerprint THEN
       RAISE EXCEPTION 'MARKETROUTE_TRUTH_ENTITY_SNAPSHOT_COLLISION';

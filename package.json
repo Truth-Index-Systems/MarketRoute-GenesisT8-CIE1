@@ -10,6 +10,7 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
+    "validate:hotfix-01833": "node scripts/validate-production-hotfix-01833.mjs",
     "constitution:architecture": "node scripts/validate-architecture.mjs",
     "constitution:ai": "node scripts/validate-ai-boundary.mjs",
     "constitution:legacy": "node scripts/validate-no-legacy.mjs",
