@@ -18,7 +18,7 @@ export async function POST(request: Request) {
       String(form.get("websiteUrl") ?? ""),
     );
 
-    const response = NextResponse.redirect(new URL("/app", request.url), 303);
+    const response = NextResponse.redirect(new URL("/setup", request.url), 303);
     response.cookies.set(ORG_COOKIE, organisationId, {
       httpOnly: true,
       sameSite: "lax",

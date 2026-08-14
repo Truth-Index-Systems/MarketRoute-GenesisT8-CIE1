@@ -1,0 +1,6 @@
+import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
+import { sessionServiceFromEnvironment } from "@/application/session/service";
+import { ACCESS_COOKIE,ORG_COOKIE } from "@/app/app/_lib/session";
+import { sameOriginOrThrow } from "@/app/app/_lib/security";
+export async function POST(request:Request){try{sameOriginOrThrow(request);const form=await request.formData();const jar=await cookies();const access=jar.get(ACCESS_COOKIE)?.value,organisationId=jar.get(ORG_COOKIE)?.value;if(!access||!organisationId)throw new Error("MARKETROUTE_AUTH_REQUIRED");const service=sessionServiceFromEnvironment();const session=await service.authenticate(access);service.selectWorkspace(session,organisationId);await service.submitActivationBrief(access,{organisationId,objectiveText:String(form.get("objectiveText")??""),targetMarketText:String(form.get("targetMarketText")??""),hardConstraintsText:String(form.get("hardConstraintsText")??""),noHardConstraints:String(form.get("noHardConstraints")??"")==="true"});return NextResponse.redirect(new URL("/app?setup=processing",request.url),303);}catch(error){return NextResponse.redirect(new URL(`/setup?error=${encodeURIComponent(error instanceof Error?error.message:"MARKETROUTE_SETUP_FAILED")}`,request.url),303);}}

@@ -13,13 +13,17 @@ export interface SupabaseSignUpResult {
   session: SupabaseAuthSession | null;
 }
 
-function required(name:"SUPABASE_URL"|"SUPABASE_ANON_KEY"):string {
-  const fallback=name==="SUPABASE_ANON_KEY"?process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY:undefined;
-  const value=(process.env[name]??fallback)?.trim();
-  if(!value) throw new Error(`MARKETROUTE_ENV_REQUIRED:${name}`);
+function requiredUrl():string {
+  const value=process.env.SUPABASE_URL?.trim();
+  if(!value) throw new Error("MARKETROUTE_ENV_REQUIRED:SUPABASE_URL");
   return value;
 }
-function config(){return {url:required("SUPABASE_URL").replace(/\/+$/, ""),anon:required("SUPABASE_ANON_KEY")};}
+function publicKey():string {
+  const value=process.env.SUPABASE_PUBLISHABLE_KEY?.trim()||process.env.SUPABASE_ANON_KEY?.trim();
+  if(!value) throw new Error("MARKETROUTE_ENV_REQUIRED:SUPABASE_PUBLISHABLE_KEY_OR_SUPABASE_ANON_KEY");
+  return value;
+}
+function config(){return {url:requiredUrl().replace(/\/+$/, ""),anon:publicKey()};}
 async function request(path:string,init:RequestInit,accessToken?:string):Promise<unknown>{
   const {url,anon}=config();
   const response=await fetch(`${url}${path}`,{...init,headers:{apikey:anon,"Content-Type":"application/json",...(accessToken?{Authorization:`Bearer ${accessToken}`}:{ }),...(init.headers??{})},cache:"no-store"});

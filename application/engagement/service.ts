@@ -10,12 +10,13 @@ import {
   type CanonicalEngagementMessage,
 } from "../../core/engagement/index";
 import {
-  UnconfiguredEngagementLanguageProvider,
   validateGenerationResult,
   validateReviewResult,
   type EngagementLanguageProvider,
 } from "../../platform/ai/engagement-provider";
-import { EngagementDeliveryError, UnconfiguredEngagementDeliveryProvider, type EngagementDeliveryProvider } from "../../platform/ai/engagement-delivery-provider";
+import { EngagementDeliveryError, type EngagementDeliveryProvider } from "../../platform/ai/engagement-delivery-provider";
+import { openAIEngagementLanguageProviderFromEnvironment } from "../../platform/ai/openai-engagement-provider";
+import { resendDeliveryProviderFromEnvironment } from "../../platform/ai/resend-delivery-provider";
 import { EngagementRepository, engagementRepositoryFromEnvironment } from "../../platform/database/engagement-repository";
 
 const PROVIDER_TIMEOUT_MS=120_000;
@@ -46,4 +47,4 @@ export class EngagementService {
   queueMessage(command:{messageId:string;requestId?:string;at?:string}){return this.repository.queue({messageId:command.messageId,requestId:command.requestId??randomUUID(),at:now(command.at)});}
   async deliverNext(workerId:string){const claim=await this.repository.claimDelivery({workerId,at:now()});if(!claim)return null;try{const result=await withTimeout(signal=>this.deliveryProvider.send(claim.delivery_payload,{signal}));await this.repository.completeDelivery({queueItemId:claim.queue_item_id,workerId,providerMessageId:result.providerMessageId,metadata:result.metadata??{},at:now()});return {status:"SENT" as const,claim,result};}catch(error){await this.repository.failDelivery({queueItemId:claim.queue_item_id,workerId,errorCode:error instanceof Error?error.message:"MARKETROUTE_ENGAGEMENT_DELIVERY_FAILED",deliveryStateUnknown:error instanceof EngagementDeliveryError?error.deliveryStateUnknown:true,at:now()});return {status:"FAILED" as const,claim,error};}}
 }
-export function engagementServiceFromEnvironment(languageProvider:EngagementLanguageProvider=new UnconfiguredEngagementLanguageProvider(),deliveryProvider:EngagementDeliveryProvider=new UnconfiguredEngagementDeliveryProvider()){return new EngagementService(engagementRepositoryFromEnvironment(),languageProvider,deliveryProvider);}
+export function engagementServiceFromEnvironment(languageProvider?:EngagementLanguageProvider,deliveryProvider?:EngagementDeliveryProvider){return new EngagementService(engagementRepositoryFromEnvironment(),languageProvider??openAIEngagementLanguageProviderFromEnvironment(),deliveryProvider??resendDeliveryProviderFromEnvironment());}

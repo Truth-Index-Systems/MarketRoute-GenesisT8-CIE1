@@ -10,7 +10,7 @@ export default async function Opportunities({searchParams}:{searchParams:Promise
   const cc=await commandCentre(workspace.organisationId);
   const campaigns=asObjectArray(cc.campaigns).map(campaignListItem);
   const campaignId=resolveCampaignId(cc,typeof query.campaign==="string"?query.campaign:null);
-  if(!campaignId)return <div><PageHeader eyebrow="OPPORTUNITIES" title="Which companies are" accent="worth pursuing?" description="MarketRoute turns research into an opportunity only when a current commercial case and route can be represented."/><Panel><EmptyState icon="opportunities" title="No campaigns" body="There is no campaign from which to build opportunities."/></Panel></div>;
+  if(!campaignId)return <div><PageHeader eyebrow="OPPORTUNITIES" title="Which companies are" accent="worth pursuing?" description="MarketRoute turns research into an opportunity only when a current commercial case and route can be represented."/><Panel><EmptyState icon="opportunities" title="No opportunities yet" body="MarketRoute is still preparing or researching your first market. Opportunities appear only after the evidence and commercial route support them."/></Panel></div>;
   const campaign=await applicationReadServiceFromEnvironment().campaign({organisationId:workspace.organisationId,campaignId});
   const profiles=asObjectArray(campaign.opportunities).map(companyProfile);
   return <div>

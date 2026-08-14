@@ -18,16 +18,28 @@ export class PostgrestRpcError extends Error {
   }
 }
 
-function requiredEnvironment(name: "SUPABASE_URL" | "SUPABASE_SERVICE_ROLE_KEY"): string {
+function requiredEnvironment(name: "SUPABASE_URL"): string {
   const value = process.env[name]?.trim();
   if (!value) throw new Error(`MARKETROUTE_ENV_REQUIRED:${name}`);
+  return value;
+}
+
+export function supabaseServerKeyFromEnvironment(): string {
+  const value = process.env.SUPABASE_SECRET_KEY?.trim() || process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+  if (!value) throw new Error("MARKETROUTE_ENV_REQUIRED:SUPABASE_SECRET_KEY_OR_SUPABASE_SERVICE_ROLE_KEY");
+  return value;
+}
+
+export function supabasePublicKeyFromEnvironment(): string {
+  const value = process.env.SUPABASE_PUBLISHABLE_KEY?.trim() || process.env.SUPABASE_ANON_KEY?.trim();
+  if (!value) throw new Error("MARKETROUTE_ENV_REQUIRED:SUPABASE_PUBLISHABLE_KEY_OR_SUPABASE_ANON_KEY");
   return value;
 }
 
 export function databaseConfigFromEnvironment(): PostgrestRpcConfig {
   return {
     supabaseUrl: requiredEnvironment("SUPABASE_URL").replace(/\/+$/, ""),
-    serviceRoleKey: requiredEnvironment("SUPABASE_SERVICE_ROLE_KEY"),
+    serviceRoleKey: supabaseServerKeyFromEnvironment(),
   };
 }
 

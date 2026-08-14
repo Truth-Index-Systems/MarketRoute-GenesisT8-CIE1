@@ -37,6 +37,17 @@ export class SessionService {
     if(typeof value!=="string")throw new Error("MARKETROUTE_WORKSPACE_CREATE_INVALID_RESPONSE");
     return value;
   }
+  async activationStatus(accessToken:string,organisationId:string):Promise<{status:string;lastErrorCode:string|null}>{
+    const value=await new AuthenticatedRpcClient().call<unknown>(accessToken,"marketroute_workspace_activation_status_v1",{p_organisation_id:organisationId});
+    if(!value||typeof value!=="object"||Array.isArray(value))throw new Error("MARKETROUTE_ACTIVATION_STATUS_INVALID");
+    const row=value as Record<string,unknown>;return{status:String(row.status??"UNKNOWN"),lastErrorCode:typeof row.lastErrorCode==="string"?row.lastErrorCode:null};
+  }
+  async submitActivationBrief(accessToken:string,input:{organisationId:string;objectiveText:string;targetMarketText:string;hardConstraintsText:string;noHardConstraints:boolean}):Promise<string>{
+    const objective=input.objectiveText.trim(),target=input.targetMarketText.trim(),hard=input.hardConstraintsText.trim();
+    if(objective.length<8)throw new Error("MARKETROUTE_SETUP_OBJECTIVE_REQUIRED");if(target.length<3)throw new Error("MARKETROUTE_SETUP_TARGET_REQUIRED");if(!input.noHardConstraints&&hard.length<3)throw new Error("MARKETROUTE_SETUP_CONSTRAINT_DECLARATION_REQUIRED");
+    const value=await new AuthenticatedRpcClient().call<unknown>(accessToken,"marketroute_submit_workspace_activation_v1",{p_organisation_id:input.organisationId,p_objective_text:objective,p_target_market_text:target,p_hard_constraints_text:hard||null,p_no_hard_constraints:input.noHardConstraints});
+    if(typeof value!=="string")throw new Error("MARKETROUTE_ACTIVATION_SUBMIT_INVALID_RESPONSE");return value;
+  }
   async assertOpportunityScope(session:MarketRouteSession,opportunityId:string,organisationId:string):Promise<void>{
     if(!session.memberships.some((m)=>m.organisationId===organisationId))throw new Error("MARKETROUTE_WORKSPACE_ACCESS_DENIED");
     const actual=await this.workspace.opportunityOrganisation(opportunityId);if(actual!==organisationId)throw new Error("MARKETROUTE_OPPORTUNITY_SCOPE_MISMATCH");

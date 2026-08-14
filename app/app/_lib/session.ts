@@ -14,6 +14,9 @@ export async function workspaceSessionOrRedirect():Promise<WorkspaceSession>{
   try{session=await sessionServiceFromEnvironment().authenticate(access);}catch{if(refresh)redirect("/api/session/refresh?next=/app");redirect("/login?next=/app");}
   if(!session)redirect("/login?next=/app");
   if(session.memberships.length===0)redirect("/onboarding");
-  const workspace=sessionServiceFromEnvironment().selectWorkspace(session,jar.get(ORG_COOKIE)?.value);
+  const service=sessionServiceFromEnvironment();
+  const workspace=service.selectWorkspace(session,jar.get(ORG_COOKIE)?.value);
+  const activation=await service.activationStatus(access,workspace.organisationId);
+  if(activation.status==="NOT_SUBMITTED"||activation.status==="NEEDS_INPUT")redirect("/setup");
   return {session,workspace};
 }

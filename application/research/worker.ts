@@ -17,7 +17,7 @@ export class ResearchWorker {
       else if(work.action==="REVALIDATE_R5") await this.d.relationships.evaluateRoutes({organisationId:work.organisationId,campaignId:work.campaignId,companyId:work.companyId,referenceTime:now});
       else if(work.action==="REVALIDATE_R6") await this.d.contacts.evaluate({organisationId:work.organisationId,campaignId:work.campaignId,companyId:work.companyId,referenceTime:now});
       else {
-        const unit:ResearchWorkUnit={ordinal:1,gapKey:work.gapKey,layer:work.layer,tier:work.tier,action:work.action,subjectType:work.subjectType,subjectId:work.subjectId,claimKey:work.claimKey,reasonCode:work.reasonCode,queryHints:work.queryHints,costCeilingUsd:work.costCeilingUsd,dedupeKey:String(work.payload.dedupeKey??work.workUnitId),payload:work.payload};
+        const unit:ResearchWorkUnit={ordinal:1,gapKey:work.gapKey,layer:work.layer,tier:work.tier,action:work.action,subjectType:work.subjectType,subjectId:work.subjectId,claimKey:work.claimKey,reasonCode:work.reasonCode,queryHints:work.queryHints,costCeilingUsd:work.costCeilingUsd,dedupeKey:String(work.payload.dedupeKey??work.workUnitId),payload:{...work.payload,organisationId:work.organisationId,campaignId:work.campaignId,companyId:work.companyId}};
         const controller=new AbortController();const timeout=setTimeout(()=>controller.abort("MARKETROUTE_RESEARCH_PROVIDER_TIMEOUT"),RESEARCH_PROVIDER_TIMEOUT_MS);
         let result;
         try{result=await this.d.provider.execute(unit,{signal:controller.signal,timeoutMs:RESEARCH_PROVIDER_TIMEOUT_MS});}
