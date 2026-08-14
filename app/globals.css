@@ -1379,3 +1379,171 @@ html, body { background: var(--mr-bg); color: var(--mr-text); }
   .mr-panel { padding: 19px; border-radius: 15px; }
   .mr-live-page-header { padding: 18px; border-radius: 15px; }
 }
+
+/* ========================================================================== */
+/* Build 15C — Readability & Seller Identity Onboarding                       */
+/* Larger working type · clearer forms · no user-authored technical slug      */
+/* ========================================================================== */
+
+body { font-size: 16px; }
+
+/* Shared type scale */
+.mr-kicker { font-size: 11.5px; letter-spacing: .10em; }
+.mr-data-label, .mr-panel-label { font-size: 11px; letter-spacing: .08em; }
+.mr-muted-copy { font-size: 14px; line-height: 1.65; }
+.mr-button { min-height: 46px; padding-inline: 19px; font-size: 14px; }
+.mr-badge { font-size: 11px; }
+.mr-badge--compact { font-size: 10px; }
+
+/* Public/product walkthrough */
+.mr-front-door__brand > span { font-size: 11.5px; }
+.mr-front-door__signin, .mr-preview-signin { font-size: 13px; }
+.mr-front-door__process-intro span,
+.mr-front-door__process-steps span,
+.mr-front-door__trust span { font-size: 11px; }
+.mr-front-door__process-steps strong,
+.mr-front-door__trust strong { font-size: 16px; }
+.mr-front-door__process-steps p,
+.mr-front-door__trust p { font-size: 14px; }
+.mr-front-door__footer, .mr-preview-footer { font-size: 10.5px; }
+
+.mr-preview-hero p { font-size: 16px; }
+.mr-preview-workspace__bar { font-size: 12px; }
+.mr-preview-workspace__bar strong { font-size: 13px; }
+.mr-preview-workspace__bar > span { font-size: 11px; }
+.mr-preview-company__identity > span,
+.mr-preview-company__verdict > span,
+.mr-preview-value > div:first-child > span { font-size: 10.5px; }
+.mr-preview-company__identity p,
+.mr-preview-company__verdict p { font-size: 13px; }
+.mr-preview-outcomes span:not(.mr-preview-outcome__icon) { font-size: 11px; }
+.mr-preview-outcomes strong { font-size: 18px; }
+.mr-preview-outcomes small { font-size: 10px; }
+.mr-preview-truth-list span { font-size: 12px; }
+.mr-preview-truth-list strong { font-size: 13px; }
+.mr-preview-value p { font-size: 13.5px; }
+.mr-preview-value__proof span { font-size: 10px; }
+.mr-preview-value__proof strong { font-size: 14px; }
+.mr-preview-value__proof small { font-size: 11px; }
+
+/* Application navigation and chrome */
+.mr-sidebar__workspace > span { font-size: 10px; }
+.mr-sidebar__workspace > strong { font-size: 14px; }
+.mr-sidebar__workspace > small { font-size: 10px; }
+.mr-sidebar__workspace select { font-size: 12px; }
+.mr-sidebar__workspace button { font-size: 11px; }
+.mr-nav-item { min-height: 46px; font-size: 13px; }
+.mr-system-state strong { font-size: 11px; }
+.mr-system-state small { font-size: 10px; }
+.mr-sidebar__lineage { font-size: 9.5px; }
+.mr-topbar__context { font-size: 12px; }
+.mr-topbar__user, .mr-topbar__signout { font-size: 11px; }
+.mr-mobile-nav summary { font-size: 12px; }
+
+/* Page and card hierarchy */
+.mr-live-page-header p { font-size: 15px; line-height: 1.65; }
+.mr-section-heading__eyebrow { font-size: 11px; padding: 6px 10px; }
+.mr-section-heading h2 { font-size: 24px; }
+.mr-section-heading p { font-size: 14px; line-height: 1.65; }
+.mr-metric-card__top { font-size: 12px; }
+.mr-metric-card > p { font-size: 12px; line-height: 1.55; }
+.mr-command-brief span { font-size: 11px; }
+.mr-command-brief p { font-size: 13px; line-height: 1.6; }
+.mr-live-card__seller { font-size: 11px; }
+.mr-live-card__main p { font-size: 13px; }
+.mr-live-card dt { font-size: 10.5px; }
+.mr-live-card dd { font-size: 14px; }
+.mr-live-card__open { font-size: 12px; }
+.mr-campaign-card header span { font-size: 11px; }
+.mr-campaign-card__objective span, .mr-campaign-card dt { font-size: 10.5px; }
+.mr-campaign-card__objective p { font-size: 14px; }
+.mr-campaign-card footer { font-size: 11px; }
+.mr-campaign-switcher label span { font-size: 11px; }
+.mr-campaign-switcher select { font-size: 13px; }
+
+/* Tables: still efficient, now comfortably readable */
+.mr-intelligence-table th { font-size: 11px; letter-spacing: .055em; }
+.mr-intelligence-table td { font-size: 13px; }
+.mr-intelligence-table td strong { font-size: 14px; }
+.mr-intelligence-table td small { font-size: 11px; }
+.mr-table-footer { font-size: 11px; }
+
+/* Opportunity intelligence */
+.mr-opportunity-verdict__copy > span { font-size: 11px; }
+.mr-opportunity-verdict__copy p { font-size: 13px; }
+.mr-opportunity-verdict__facts dt { font-size: 10px; }
+.mr-opportunity-verdict__facts dd { font-size: 13px; }
+.mr-opportunity-verdict__facts small { font-size: 10px; }
+.mr-authority-stage__index { font-size: 11px; }
+.mr-authority-stage__question > span { font-size: 12.5px; }
+.mr-authority-stage__question small { font-size: 10px; }
+.mr-authority-stage__content > strong { font-size: 14px; }
+.mr-authority-meta span { font-size: 10.5px; }
+.mr-authority-meta strong { font-size: 12px; }
+.mr-truth-gauge__score span { font-size: 11px; }
+.mr-truth-gauge__copy span { font-size: 12px; }
+.mr-truth-gauge__copy strong { font-size: 12px; }
+.mr-truth-gauge__copy small { font-size: 10px; }
+.mr-truth-dimension span, .mr-truth-dimension strong { font-size: 12px; }
+.mr-calibration-note span { font-size: 11px; }
+.mr-calibration-note strong { font-size: 12px; }
+.mr-route-live-list__number { font-size: 12px; }
+.mr-route-live-list__head > span { font-size: 10.5px; }
+.mr-route-node__kind { font-size: 10px; }
+.mr-route-node strong { font-size: 13px; }
+.mr-route-node small { font-size: 11px; }
+.mr-route-path__link { font-size: 13px; }
+.mr-route-path__caption { font-size: 11px; }
+.mr-pressure-item strong { font-size: 13px; }
+.mr-pressure-item small { font-size: 11px; }
+.mr-pressure-item__state { font-size: 10px; }
+
+/* Research, provenance and workflow */
+.mr-provenance-trail dt, .mr-review-form label span { font-size: 11px; }
+.mr-provenance-trail dd { font-size: 13px; }
+.mr-readonly-note { font-size: 11px; }
+.mr-claim-grid strong { font-size: 13px; }
+.mr-claim-grid span { font-size: 11px; }
+.mr-claim-grid small { font-size: 10px; }
+.mr-policy-banner > div span { font-size: 10px; }
+.mr-policy-banner > div strong { font-size: 13px; }
+.mr-policy-banner p { font-size: 11px; }
+.mr-run-list > div { font-size: 11px; }
+.mr-run-list strong { font-size: 10px; }
+.mr-empty-state strong { font-size: 15px; }
+.mr-empty-state p { font-size: 13px; }
+.mr-alert { font-size: 13px; }
+.mr-provenance-drawer__panel header p { font-size: 12px; }
+.mr-provenance-drawer__truth dt { font-size: 10.5px; }
+.mr-provenance-drawer__truth dd { font-size: 12px; }
+.mr-provenance-drawer__evidence-head > span { font-size: 10.5px; }
+.mr-provenance-drawer__evidence article p { font-size: 13px; }
+.mr-provenance-drawer__evidence footer { font-size: 10.5px; }
+
+/* Authentication and onboarding */
+.mr-login__context > div > span { font-size: 11px; }
+.mr-login__context p { font-size: 16px; line-height: 1.68; }
+.mr-login__context ul { font-size: 13px; }
+.mr-login__context footer { font-size: 10.5px; }
+.mr-login__panel { width: min(580px, calc(100% - 56px)); }
+.mr-login__panel h2 { font-size: 38px; }
+.mr-login__panel > p { max-width: 540px; font-size: 14px; line-height: 1.65; }
+.mr-login__form { gap: 18px; margin-top: 30px; }
+.mr-login__form label { gap: 9px; }
+.mr-login__form label > span { font-size: 12px; font-weight: 680; color: #526a83; }
+.mr-login__form input { height: 54px; padding: 0 15px; border-radius: 10px; font-size: 16px; }
+.mr-login__form input::placeholder { color: #8a98a9; opacity: 1; }
+.mr-field-help { display: block; max-width: 540px; color: #738398; font-size: 12px; line-height: 1.55; font-weight: 450; }
+.mr-auth-switch { font-size: 12px; }
+.mr-login__panel > small { display: block; font-size: 11px; line-height: 1.55; }
+
+@media (max-width: 640px) {
+  .mr-button { font-size: 13.5px; }
+  .mr-live-page-header p { font-size: 14px; }
+  .mr-section-heading h2 { font-size: 22px; }
+  .mr-section-heading p { font-size: 13.5px; }
+  .mr-login__panel { width: calc(100% - 36px); }
+  .mr-login__panel h2 { font-size: 34px; }
+  .mr-login__context p { font-size: 15px; }
+  .mr-intelligence-table td { font-size: 12px; }
+}

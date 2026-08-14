@@ -27,7 +27,16 @@ export class SessionService {
   selectWorkspace(session:MarketRouteSession,requestedId:string|null|undefined):WorkspaceMembership{
     const selected=requestedId?session.memberships.find((m)=>m.organisationId===requestedId):null;const workspace=selected??session.memberships[0];if(!workspace)throw new Error("MARKETROUTE_NO_ACTIVE_WORKSPACE_MEMBERSHIP");return workspace;
   }
-  async createWorkspace(accessToken:string,name:string,slug:string):Promise<string>{const cleanName=name.trim(),cleanSlug=slug.trim().toLowerCase();if(!cleanName||!cleanSlug)throw new Error("MARKETROUTE_WORKSPACE_NAME_SLUG_REQUIRED");const value=await new AuthenticatedRpcClient().call<unknown>(accessToken,"marketroute_create_organisation",{p_name:cleanName,p_slug:cleanSlug});if(typeof value!=="string")throw new Error("MARKETROUTE_WORKSPACE_CREATE_INVALID_RESPONSE");return value;}
+  async createWorkspace(accessToken:string,name:string,websiteUrl:string):Promise<string>{
+    const cleanName=name.trim(),cleanWebsiteUrl=websiteUrl.trim();
+    if(!cleanName||!cleanWebsiteUrl)throw new Error("MARKETROUTE_WORKSPACE_NAME_WEBSITE_REQUIRED");
+    let parsed:URL;
+    try{parsed=new URL(cleanWebsiteUrl);}catch{throw new Error("MARKETROUTE_WORKSPACE_WEBSITE_INVALID");}
+    if(!["http:","https:"].includes(parsed.protocol)||!parsed.hostname.includes("."))throw new Error("MARKETROUTE_WORKSPACE_WEBSITE_INVALID");
+    const value=await new AuthenticatedRpcClient().call<unknown>(accessToken,"marketroute_create_workspace_with_seller_v1",{p_name:cleanName,p_website_url:parsed.toString()});
+    if(typeof value!=="string")throw new Error("MARKETROUTE_WORKSPACE_CREATE_INVALID_RESPONSE");
+    return value;
+  }
   async assertOpportunityScope(session:MarketRouteSession,opportunityId:string,organisationId:string):Promise<void>{
     if(!session.memberships.some((m)=>m.organisationId===organisationId))throw new Error("MARKETROUTE_WORKSPACE_ACCESS_DENIED");
     const actual=await this.workspace.opportunityOrganisation(opportunityId);if(actual!==organisationId)throw new Error("MARKETROUTE_OPPORTUNITY_SCOPE_MISMATCH");

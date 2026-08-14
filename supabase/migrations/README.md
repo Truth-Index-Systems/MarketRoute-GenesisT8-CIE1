@@ -24,3 +24,4 @@ Build 11 keeps exactly three authority writers. Opportunity state is a product p
 - Build 13: `0016_canonical_application_read_model.sql` — service-role-only canonical application read model for command centre, campaign, company intelligence, engagement and lineage-scoped claim provenance.
 
 Build 13 keeps exactly three authority writers. The read model is presentation composition only and performs no authority, workflow or engagement mutation.
+- Build 15C: `0018_build15c_readability_onboarding.sql` — onboarding identity capture that creates the organisation and seller-business identity together from organisation name + full company website URL. Internal workspace slugs are generated automatically. No commercial authority is created or mutated.
