@@ -85,7 +85,8 @@
     "production:env-check": "node scripts/production/validate-environment.mjs",
     "production:check": "npm run constitution:check && node scripts/validate-production-activation.mjs && node scripts/validate-founder-dashboard.mjs && node scripts/validate-genesis-database-growth.mjs",
     "production:dashboard": "node scripts/validate-founder-dashboard.mjs",
-    "production:growth": "node scripts/validate-genesis-database-growth.mjs"
+    "production:growth": "node scripts/validate-genesis-database-growth.mjs",
+    "production:hotfix": "node scripts/validate-production-hotfix-01832.mjs && node scripts/validate-production-hotfix-01831.mjs"
   },
   "dependencies": {
     "next": "15.5.23",
