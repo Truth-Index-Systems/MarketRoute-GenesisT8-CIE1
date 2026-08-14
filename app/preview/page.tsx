@@ -34,7 +34,15 @@ export default function PublicPreview(){
       <Panel><SectionHeading eyebrow="Open questions · Genesis research" title="What still needs validating?" description="Research pressure stays visible so a user can see what is decision-blocking, what should be monitored and what is already resolved."/><ResearchPressure items={[{label:"Secondary procurement relationship",detail:"Useful enrichment; it does not block the current route",state:"watch"},{label:"Primary contact employment",detail:"Current and independently supported",state:"clear"},{label:"Work email ownership",detail:"Current and supported",state:"clear"}]}/></Panel>
     </section>
 
-    <section className="mr-preview-value"><div><span>What MarketRoute changes</span><h2>You stop asking “is this a good lead?” and start asking “what do we know, and can we act?”</h2><p>That is the product: research, commercial qualification, route intelligence and contact readiness in one traceable view.</p></div><div className="mr-preview-value__actions"><ButtonLink href="/signup" variant="primary" icon={<Icon name="arrow" size={16}/>}>Build this for my market</ButtonLink><ButtonLink href="/" variant="ghost">Back to overview</ButtonLink></div></section>
+    <section className="mr-preview-value">
+      <div className="mr-preview-value__copy"><span>What MarketRoute changes</span><h2>From researched company to a route your team can act on.</h2><p>MarketRoute joins the commercial decision, the evidence behind it and the route to the right buyer in one traceable workflow.</p></div>
+      <div className="mr-preview-value__proof">
+        <div><span>01</span><strong>Know why</strong><small>See the evidence-backed commercial reason to pursue the company.</small></div>
+        <div><span>02</span><strong>Know who</strong><small>Identify the relevant buyer and the organisational path to them.</small></div>
+        <div><span>03</span><strong>Know what is ready</strong><small>Act only when the current research and access route support it.</small></div>
+      </div>
+      <div className="mr-preview-value__actions"><ButtonLink href="/signup" variant="primary" icon={<Icon name="arrow" size={16}/>}>Build this for my market</ButtonLink><ButtonLink href="/" variant="ghost">Back to overview</ButtonLink></div>
+    </section>
 
     <footer className="mr-preview-footer"><span>MarketRoute V2 · Genesis T8</span><span>Example data shown for product demonstration</span></footer>
   </main>;

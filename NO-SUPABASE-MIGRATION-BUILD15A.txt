@@ -1,0 +1,2 @@
+MarketRoute V2 Build 15A is a presentation / product-identity pass only.
+No Supabase migration is required.
