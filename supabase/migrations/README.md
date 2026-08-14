@@ -29,3 +29,12 @@ Build 13 keeps exactly three authority writers. The read model is presentation c
 ### 0019 — Build 17 V1 evidence migration
 
 `0019_v1_evidence_migration.sql` installs service-role-only offline ETL RPCs, immutable V1→V2 mapping/audit tables, factual whitelist enforcement and migrated evidence lineage. It creates no authority writer and imports no Truth/workflow state.
+
+### Production activation / operations
+
+- `0020_production_activation_runtime.sql` — production OpenAI/cron runtime support; no authority writer.
+- `0021_founder_dashboard_observability.sql` — founder-only production observability; read-only authority surface.
+- `0022_genesis_database_growth.sql` — autonomous shared intelligence-bank growth across ten canonical industries.
+- `0023_production_runtime_ambiguity_cost_hotfix.sql` — production RPC ambiguity and growth-cost accounting repairs.
+- `0024_truth_entity_snapshot_ambiguity_hotfix.sql` — qualified final entity-Truth snapshot lookup.
+- `0025_growth_seed_to_density_policy.sql` — deterministic seed-to-density scheduler policy: 50/industry seed floor, then PROFILE → ROUTES → CONTACTS before further breadth batches.
