@@ -1,0 +1,1 @@
+MarketRoute V2 0.18.3.4 is an application-layer evidence grounding hardening patch. No Supabase migration is required.
