@@ -1,6 +1,6 @@
 {
   "name": "marketroute-v2",
-  "version": "0.18.2",
+  "version": "0.18.3",
   "private": true,
   "engines": {
     "node": "22.x"
@@ -83,8 +83,9 @@
     "certification:live-lineage": "node scripts/certification/live-lineage-trace.mjs",
     "release:certify": "npm run constitution:check && npm run certification:cutover-preflight",
     "production:env-check": "node scripts/production/validate-environment.mjs",
-    "production:check": "npm run constitution:check && node scripts/validate-production-activation.mjs && node scripts/validate-founder-dashboard.mjs",
-    "production:dashboard": "node scripts/validate-founder-dashboard.mjs"
+    "production:check": "npm run constitution:check && node scripts/validate-production-activation.mjs && node scripts/validate-founder-dashboard.mjs && node scripts/validate-genesis-database-growth.mjs",
+    "production:dashboard": "node scripts/validate-founder-dashboard.mjs",
+    "production:growth": "node scripts/validate-genesis-database-growth.mjs"
   },
   "dependencies": {
     "next": "15.5.23",

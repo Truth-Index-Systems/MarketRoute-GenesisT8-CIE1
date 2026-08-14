@@ -3,12 +3,14 @@ import { openAIResearchProviderFromEnvironment } from "../../platform/ai/openai-
 import { researchAutomationServiceFromEnvironment } from "../research/automation";
 import { engagementServiceFromEnvironment } from "../engagement/service";
 import { runWorkspaceActivationCron } from "./bootstrap";
+import { genesisDatabaseGrowthServiceFromEnvironment } from "../growth/service";
 
 function intEnv(name:string,fallback:number,min:number,max:number){const n=Number(process.env[name]??fallback);return Number.isFinite(n)?Math.max(min,Math.min(max,Math.floor(n))):fallback;}
 function secureEqual(a:string,b:string){const aa=Buffer.from(a),bb=Buffer.from(b);return aa.length===bb.length&&timingSafeEqual(aa,bb);}
 function serverKeyPresent(){return Boolean(process.env.SUPABASE_SECRET_KEY?.trim()||process.env.SUPABASE_SERVICE_ROLE_KEY?.trim());}
 function publicKeyPresent(){return Boolean(process.env.SUPABASE_PUBLISHABLE_KEY?.trim()||process.env.SUPABASE_ANON_KEY?.trim());}
 export function assertCronRequest(request:Request){const secret=process.env.CRON_SECRET?.trim();if(!secret)throw new Error("MARKETROUTE_ENV_REQUIRED:CRON_SECRET");if(secret.length<32)throw new Error("MARKETROUTE_CRON_SECRET_TOO_SHORT");const auth=request.headers.get("authorization")??"";if(!secureEqual(auth,`Bearer ${secret}`))throw new Error("MARKETROUTE_CRON_UNAUTHORISED");}
+export async function runGrowthCron(){return genesisDatabaseGrowthServiceFromEnvironment().runCycle();}
 export async function runResearchCron(){return researchAutomationServiceFromEnvironment(openAIResearchProviderFromEnvironment()).runCycle({maxPlanningTargets:intEnv("MARKETROUTE_CRON_RESEARCH_PLANNING_TARGETS",50,1,500),maxWorkExecutions:intEnv("MARKETROUTE_CRON_RESEARCH_WORK_EXECUTIONS",8,1,50)});}
 export async function runBootstrapCron(){return runWorkspaceActivationCron(intEnv("MARKETROUTE_CRON_BOOTSTRAP_BATCH",2,1,5));}
 export async function runDeliveryCron(){if(process.env.MARKETROUTE_DELIVERY_ENABLED?.trim().toLowerCase()!=="true")return{status:"DISABLED" as const,processed:0};const max=intEnv("MARKETROUTE_CRON_DELIVERY_BATCH",10,1,50);const service=engagementServiceFromEnvironment();let processed=0,sent=0,failed=0;for(let i=0;i<max;i++){const result=await service.deliverNext(`VERCEL_CRON:${randomUUID()}`);if(!result)break;processed++;if(result.status==="SENT")sent++;else failed++;}return{status:"OK" as const,processed,sent,failed};}

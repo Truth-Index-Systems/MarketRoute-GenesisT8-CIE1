@@ -6,6 +6,7 @@ export interface FounderDashboardSnapshot extends JsonObject{
   schemaRelease:JsonObject;
   runtime:JsonObject;
   platform:JsonObject;
+  growth:JsonObject;
   activation:JsonObject;
   discovery:JsonObject;
   research:JsonObject;

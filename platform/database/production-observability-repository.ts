@@ -1,6 +1,6 @@
 import { PostgrestRpcClient,databaseConfigFromEnvironment } from "./postgrest-rpc";
 
-export type RuntimeKind="BOOTSTRAP"|"RESEARCH"|"DELIVERY"|"PREFLIGHT"|"SMOKE";
+export type RuntimeKind="BOOTSTRAP"|"GROWTH"|"RESEARCH"|"DELIVERY"|"PREFLIGHT"|"SMOKE";
 export type RuntimeEventType="STARTED"|"SUCCEEDED"|"FAILED"|"DISABLED";
 
 export interface RuntimeEventInput{

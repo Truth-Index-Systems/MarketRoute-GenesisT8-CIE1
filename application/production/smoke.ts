@@ -21,6 +21,7 @@ export async function runProductionConnectivitySmoke(){
     instructions:"You are performing a MarketRoute production connectivity check. Return only the requested structured status. Do not infer commercial authority.",
     prompt:"Return status OK.",
     maxOutputTokens:64,
+    usageContext:{requestKind:"PRODUCTION_SMOKE"},
   });
   if(openai.value.status!=="OK")throw new Error("MARKETROUTE_OPENAI_SMOKE_UNEXPECTED_OUTPUT");
   return {
