@@ -1,0 +1,28 @@
+{
+  "version": "MRV2-RELEASE-CERTIFICATION-1.0.0",
+  "build": 18,
+  "candidate": "MarketRoute V2 / Genesis T8",
+  "sourceBuild": 17,
+  "sourceBuildSha256": "c5dd0cc7950b1be8824c24b40f4c9b9c4bc5cb74d206e44bf823d0804fab4e5e",
+  "schemaBuild": 17,
+  "presentationBuild": 16,
+  "authorityWriterCount": 3,
+  "authorityWriters": [
+    "marketroute.r4.commercial-reality",
+    "marketroute.r5.relationship-graph",
+    "marketroute.r6.contact-truth"
+  ],
+  "sourceCertification": "PASS",
+  "databaseMigrationRequired": false,
+  "liveCutoverState": "PENDING_REAL_V2_DATA_TRACE",
+  "freezeState": "SOURCE_FROZEN_PRODUCTION_CANDIDATE",
+  "cutoverRequirements": [
+    "Build 17 factual/evidence migration applied to V2",
+    "A real migrated company earns V2 Truth from evidence",
+    "R4, R5 and R6 are recomputed by V2 rather than imported",
+    "A canonical application read proves current authority lineage",
+    "A current claim provenance read reaches source and evidence",
+    "Queued engagement is blocked if current execution authority is lost",
+    "Production environment passes the Build 18 preflight"
+  ]
+}

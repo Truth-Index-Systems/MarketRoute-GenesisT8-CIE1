@@ -113,7 +113,7 @@ Raw evidence is not embedded in command-centre, campaign or company payloads. A 
 
 Build 14 introduces no authority writer, database mutation, reasoning rule or workflow transition. It establishes the MarketRoute V2 visual design system and `/app` application shell only.
 
-The presentation system uses the MarketRoute blue brand (`#2F8CFF`, `#76B6FF`) on the dark intelligence workspace. Colour, badges, gauges, progress bars, route diagrams and status treatments are presentational mappings of already-supplied semantic state; they may never infer or alter Truth, R4, R5, R6, workflow, research priority or execution permission.
+The presentation system uses the MarketRoute blue brand (`#2F8CFF`, `#76B6FF`). Build 15A and later presentation polish supersede the original dark-workspace treatment with MarketRoute’s off-white commercial workspace, selective navy gradients and blue accents. Colour, badges, progress treatments, route diagrams and status treatments remain presentational mappings of already-supplied semantic state; they may never infer or alter Truth, R4, R5, R6, workflow, research priority or execution permission.
 
 The product namespace is `/app`. The public `/` route remains an acquisition surface and is reserved for the full Build-16 landing experience. Build-14 application data is explicitly marked non-authoritative preview data. Build 15 must replace it with the canonical Build-13 application read contract rather than connecting UI components directly to Supabase or authority tables.
 
@@ -128,3 +128,10 @@ The migration mapping from V1 identity to V2 identity is append-only. Per-record
 After import, V2 earns downstream state again from first principles:
 
 `evidence → V2 Truth → V2 R4 → V2 R5 → V2 R6`
+
+
+## Build 18 — red-team certification and production cutover
+
+Build 18 introduces no authority writer, database migration, product feature or new reasoning rule. It freezes the Build 17 source candidate and adds release certification, a cross-cutting adversarial replay, a production cutover preflight and a read-only live lineage tracer.
+
+Source certification and live production certification are intentionally distinct. A source build may be frozen only when the full constitutional suite passes. Operational production cutover additionally requires a real migrated V2 company to prove source/evidence provenance through current V2 Truth and the R4 → R5 → R6 chain, plus a stale-send safety smoke test. Until that proof is recorded, the release is `SOURCE_FROZEN_PRODUCTION_CANDIDATE`, not falsely labelled as a completed live cutover.

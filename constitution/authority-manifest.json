@@ -1,6 +1,6 @@
 {
   "version": "MRV2-CONSTITUTION-1.0.0",
-  "status": "V1_EVIDENCE_MIGRATION_ACTIVE",
+  "status": "PRODUCTION_CANDIDATE_FROZEN",
   "authorityWriters": [
     {
       "writerKey": "marketroute.r4.commercial-reality",
@@ -128,8 +128,16 @@
     "v1MigrationTruthImportForbidden": true,
     "v1MigrationWorkflowImportForbidden": true,
     "v1MigrationMappingImmutable": true,
-    "v1MigrationRecomputesV2Authority": true
+    "v1MigrationRecomputesV2Authority": true,
+    "build18AddsNoAuthorityWriter": true,
+    "build18AddsNoDatabaseMigration": true,
+    "productionCutoverRequiresLiveLineageTrace": true,
+    "productionCutoverRequiresBuild17MigrationCompletion": true,
+    "productionFreezeRequiresFullConstitutionalPass": true,
+    "productionFreezeRequiresSendTimeAuthorityRecheck": true
   },
   "schemaBuild": 17,
-  "presentationBuild": 16
+  "presentationBuild": 16,
+  "certificationBuild": 18,
+  "certificationStatus": "SOURCE_CERTIFIED_LIVE_CUTOVER_PENDING"
 }

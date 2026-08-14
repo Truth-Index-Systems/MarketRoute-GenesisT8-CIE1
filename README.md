@@ -4,23 +4,20 @@ Constitutional rebuild of MarketRoute.
 
 ## Current build
 
-**Build 15 — Core Application UI**
+**Build 18 — Red-Team Certification & Production Cutover**
 
-Build 15 turns the Build-14 blue application shell into the first live MarketRoute product surface. The intelligence architecture remains unchanged: exactly three authority writers exist — **R4 Commercial Reality, R5 Route Authority and R6 Contact Authority**. The UI consumes the canonical Build-13 application read contract and does not reconstruct Truth, authority or execution state.
+MarketRoute V2 / Genesis T8 is now a **source-frozen production candidate**. Build 18 adds no feature, authority writer or Supabase migration. It certifies the Build 17 repository, replays the complete Build 1–17 constitutional programme, adds a cross-cutting final red-team gate, and supplies the production lineage/cutover tools.
 
-Live product routes:
+The authority writer set remains exactly three: **R4 Commercial Reality, R5 Route Authority and R6 Contact Authority**. AI owns semantics and language, not authority. The UI consumes canonical application reads and never reconstructs commercial decisions.
 
-- `/app` — Founder Command Centre
-- `/app/campaigns` — campaign intelligence
-- `/app/companies` — company intelligence index
-- `/app/opportunities` — opportunity workspace index
-- `/app/opportunities/[campaignId]/[companyId]` — flagship Opportunity Workspace
-- `/app/research` — Genesis research operations
-- `/app/engagement` — engagement state and delivery pipeline
-- `/login` — server-mediated Supabase Auth sign-in
-- `/onboarding` — first-workspace creation for authenticated users without an organisation
+Run:
 
-Build 15 adds migration `0017_core_application_ui_read_indexes.sql`. It introduces **read-only, service-role-only** application indexes for company lists, research activity, engagement lists, route display and provenance claim discovery. It does not add an authority writer or mutate Truth, R4/R5/R6, workflow, research or engagement.
+```text
+npm run constitution:check
+npm run certification:cutover-preflight
+```
+
+After the Build 17 evidence migration and V2 recomputation, run the real-company proof with `npm run certification:live-lineage`. See `MARKETROUTE-V2-BUILD18-RED-TEAM-CERTIFICATION.md` and `PRODUCTION-CUTOVER-BUILD18.md`.
 
 ### Required server environment
 
@@ -30,11 +27,7 @@ SUPABASE_SERVICE_ROLE_KEY=
 SUPABASE_ANON_KEY=
 ```
 
-`NEXT_PUBLIC_SUPABASE_ANON_KEY` may be used as the anon-key fallback, but the application itself keeps authentication server-mediated. The service-role key is never sent to browser code.
-
-Build 15 expects an existing Supabase Auth user. Public signup/acquisition belongs to Build 16.
-
-Primary MarketRoute colours remain `#2F8CFF` and `#76B6FF` on the near-black `#05080D` workspace.
+The service-role key remains server-only.
 
 ## Build 17 — V1 evidence migration
 
