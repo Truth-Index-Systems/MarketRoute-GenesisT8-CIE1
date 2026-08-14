@@ -8,6 +8,8 @@ interface ResearchPressureProps {
   items: ResearchPressureItem[];
 }
 
+const stateLabel = { blocking: "Needs evidence", watch: "Monitor", clear: "Resolved" } as const;
+
 export function ResearchPressure({ items }: ResearchPressureProps) {
   return (
     <div className="mr-pressure-list">
@@ -18,6 +20,7 @@ export function ResearchPressure({ items }: ResearchPressureProps) {
             <strong>{item.label}</strong>
             <small>{item.detail}</small>
           </div>
+          <span className="mr-pressure-item__state">{stateLabel[item.state]}</span>
         </div>
       ))}
     </div>

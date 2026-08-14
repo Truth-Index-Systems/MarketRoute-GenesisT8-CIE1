@@ -1,0 +1,4 @@
+MarketRoute V2 Build 15 Premium Product UI Pass is presentation-only.
+
+DO NOT run a new Supabase migration for this patch.
+The existing Build 15 migration remains unchanged.

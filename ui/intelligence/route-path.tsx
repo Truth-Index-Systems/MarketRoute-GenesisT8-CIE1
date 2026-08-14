@@ -9,6 +9,13 @@ interface RoutePathProps {
   caption?: string;
 }
 
+const nodeKind: Record<RouteNodeView["kind"], string> = {
+  company: "Company",
+  unit: "Decision area",
+  person: "Person",
+  channel: "Access point",
+};
+
 export function RoutePath({ nodes, caption }: RoutePathProps) {
   return (
     <div className="mr-route-path">
@@ -16,13 +23,13 @@ export function RoutePath({ nodes, caption }: RoutePathProps) {
         {nodes.map((node, index) => (
           <div className="mr-route-path__segment" key={`${node.kind}-${node.label}`}>
             <div className={`mr-route-node mr-route-node--${node.kind}`}>
-              <span className="mr-route-node__dot" aria-hidden="true" />
+              <span className="mr-route-node__kind">{nodeKind[node.kind]}</span>
               <div>
                 <strong>{node.label}</strong>
                 {node.meta && <small>{node.meta}</small>}
               </div>
             </div>
-            {index < nodes.length - 1 && <span className="mr-route-path__link" aria-hidden="true" />}
+            {index < nodes.length - 1 && <span className="mr-route-path__link" aria-hidden="true"><i />→</span>}
           </div>
         ))}
       </div>

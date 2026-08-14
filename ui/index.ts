@@ -15,3 +15,4 @@ export { CampaignSwitcher } from "./application/campaign-switcher";
 export { EmptyState } from "./application/empty-state";
 export { IntelligenceTable } from "./application/intelligence-table";
 export { ProvenanceDrawer } from "./application/provenance-drawer";
+export { humanStatus, commercialVerdict, truthStrength, routeSummary, researchPressureLabel } from "./application/language";

@@ -21,7 +21,7 @@ export function SectionHeading({ eyebrow, title, description, action }: SectionH
   return (
     <header className="mr-section-heading">
       <div>
-        {eyebrow && <div className="mr-kicker">{eyebrow}</div>}
+        {eyebrow && <div className="mr-section-heading__eyebrow">{eyebrow}</div>}
         <h2>{title}</h2>
         {description && <p>{description}</p>}
       </div>
