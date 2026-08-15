@@ -25,6 +25,7 @@
     "validate:hotfix-018316": "node scripts/validate-campaign-activation-progress-ui-018316.mjs",
     "validate:hotfix-018317": "node scripts/validate-campaign-progress-polling-hotfix-018317.mjs",
     "validate:hotfix-018318": "node scripts/validate-r6-persistence-ambiguity-hotfix-018318.mjs",
+    "validate:hotfix-018319": "node scripts/validate-r6-reasoning-kind-hotfix-018319.mjs",
     "constitution:architecture": "node scripts/validate-architecture.mjs",
     "constitution:ai": "node scripts/validate-ai-boundary.mjs",
     "constitution:legacy": "node scripts/validate-no-legacy.mjs",
@@ -101,7 +102,7 @@
     "production:check": "npm run constitution:check && node scripts/validate-production-activation.mjs && node scripts/validate-founder-dashboard.mjs && node scripts/validate-genesis-database-growth.mjs",
     "production:dashboard": "node scripts/validate-founder-dashboard.mjs",
     "production:growth": "node scripts/validate-genesis-database-growth.mjs",
-    "production:hotfix": "node scripts/validate-production-hotfix-01832.mjs && node scripts/validate-production-hotfix-01831.mjs && npm run validate:hotfix-01837 && npm run validate:hotfix-01838 && npm run validate:hotfix-01839 && npm run validate:hotfix-018310 && npm run validate:hotfix-018311 && npm run validate:hotfix-018312 && npm run validate:hotfix-018313 && npm run validate:hotfix-018314 && npm run validate:hotfix-018315 && npm run validate:hotfix-018316 && npm run validate:hotfix-018317 && npm run validate:hotfix-018318",
+    "production:hotfix": "node scripts/validate-production-hotfix-01832.mjs && node scripts/validate-production-hotfix-01831.mjs && npm run validate:hotfix-01837 && npm run validate:hotfix-01838 && npm run validate:hotfix-01839 && npm run validate:hotfix-018310 && npm run validate:hotfix-018311 && npm run validate:hotfix-018312 && npm run validate:hotfix-018313 && npm run validate:hotfix-018314 && npm run validate:hotfix-018315 && npm run validate:hotfix-018316 && npm run validate:hotfix-018317 && npm run validate:hotfix-018318 && npm run validate:hotfix-018319",
     "validate:policy-01835": "node scripts/validate-growth-seed-to-density-policy-01835.mjs"
   },
   "dependencies": {

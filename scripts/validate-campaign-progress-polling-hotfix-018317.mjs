@@ -47,7 +47,7 @@ check("hotfix is application-only and preserves authority boundaries",()=>{
   assert.match(marker,/application-only/i);
   assert.match(marker,/0036/);
   const maxMigration=Math.max(...migrations.map((file)=>Number(file.slice(0,4))));
-  assert(maxMigration>=36&&maxMigration<=37);
+  assert(maxMigration>=36&&maxMigration<=38);
   assert(!migrations.some((file)=>/polling/i.test(file)));
   assert(!authorityWrite.test(progress));
   assert(!authorityWrite.test(endpoint));
