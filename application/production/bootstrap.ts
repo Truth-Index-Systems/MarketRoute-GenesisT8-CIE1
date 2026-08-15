@@ -19,7 +19,7 @@ export async function runWorkspaceActivationOnce(workerId=`ACTIVATION:${randomUU
     const material={websiteUrl:job.website_url,sellerOfferingText:job.seller_offering_text,objectiveText:job.objective_text,targetMarketText:job.target_market_text,hardConstraintsText:job.hard_constraints_text,noHardConstraints:job.no_hard_constraints};
     const sellerService=new SellerGenomeService(SellerGenomeRepository.fromEnvironment());
     const persisted=await sellerService.extractAndPersist({organisationId:job.organisation_id,sellerBusinessId:job.seller_business_id,sellerDisplayName:job.seller_name,materialKind:"COMPOSITE",sourceContent:material,extractor:openAISellerGenomeExtractorFromEnvironment(),createdByUserId:job.created_by_user_id});
-    const campaignId=await repo.createCampaign(job.organisation_id,job.seller_business_id,job.objective_text);
+    const campaignId=await repo.createCampaign(job.organisation_id,job.seller_business_id,job.campaign_name,job.objective_text);
     await sellerService.selectCampaignObjective({organisationId:job.organisation_id,campaignId,genomeSnapshotId:persisted.genomeSnapshotId,objectiveKey:"primary_objective",requestId:randomUUID()});
     await repo.setResearchPolicy({organisationId:job.organisation_id,campaignId,dailyBudgetUsd:num("MARKETROUTE_DEFAULT_DAILY_RESEARCH_BUDGET_USD",100,1,10000),maxJobCostUsd:num("MARKETROUTE_DEFAULT_MAX_JOB_COST_USD",0.5,0.05,25),maxConcurrentJobs:Math.floor(num("MARKETROUTE_DEFAULT_RESEARCH_CONCURRENCY",2,1,20)),maxWorkUnitsPerPlan:Math.floor(num("MARKETROUTE_DEFAULT_WORK_UNITS_PER_PLAN",4,1,20)),refreshHorizonHours:Math.floor(num("MARKETROUTE_DEFAULT_REFRESH_HORIZON_HOURS",2,1,168))});
 

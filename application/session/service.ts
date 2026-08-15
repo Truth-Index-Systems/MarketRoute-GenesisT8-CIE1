@@ -7,6 +7,20 @@ export interface MarketRouteSession {
   user:AuthenticatedUser;
   memberships:WorkspaceMembership[];
 }
+interface ActivationBriefInput {
+  organisationId:string;
+  sellerOfferingText:string;
+  objectiveText:string;
+  targetMarketText:string;
+  hardConstraintsText:string;
+  noHardConstraints:boolean;
+}
+
+function validatedActivationBrief(input:ActivationBriefInput){
+  const offering=input.sellerOfferingText.trim(),objective=input.objectiveText.trim(),target=input.targetMarketText.trim(),hard=input.hardConstraintsText.trim();
+  if(offering.length<8)throw new Error("MARKETROUTE_SETUP_OFFERING_REQUIRED");if(objective.length<8)throw new Error("MARKETROUTE_SETUP_OBJECTIVE_REQUIRED");if(target.length<3)throw new Error("MARKETROUTE_SETUP_TARGET_REQUIRED");if(input.noHardConstraints&&hard.length>0)throw new Error("MARKETROUTE_SETUP_CONSTRAINT_CONFLICT");if(!input.noHardConstraints&&hard.length<3)throw new Error("MARKETROUTE_SETUP_CONSTRAINT_DECLARATION_REQUIRED");
+  return{offering,objective,target,hard};
+}
 export class SessionService {
   private readonly auth=supabaseAuthClientFromEnvironment();
   private readonly workspace=workspaceRepositoryFromEnvironment();
@@ -42,11 +56,17 @@ export class SessionService {
     if(!value||typeof value!=="object"||Array.isArray(value))throw new Error("MARKETROUTE_ACTIVATION_STATUS_INVALID");
     const row=value as Record<string,unknown>;return{status:String(row.status??"UNKNOWN"),lastErrorCode:typeof row.lastErrorCode==="string"?row.lastErrorCode:null};
   }
-  async submitActivationBrief(accessToken:string,input:{organisationId:string;sellerOfferingText:string;objectiveText:string;targetMarketText:string;hardConstraintsText:string;noHardConstraints:boolean}):Promise<string>{
-    const offering=input.sellerOfferingText.trim(),objective=input.objectiveText.trim(),target=input.targetMarketText.trim(),hard=input.hardConstraintsText.trim();
-    if(offering.length<8)throw new Error("MARKETROUTE_SETUP_OFFERING_REQUIRED");if(objective.length<8)throw new Error("MARKETROUTE_SETUP_OBJECTIVE_REQUIRED");if(target.length<3)throw new Error("MARKETROUTE_SETUP_TARGET_REQUIRED");if(input.noHardConstraints&&hard.length>0)throw new Error("MARKETROUTE_SETUP_CONSTRAINT_CONFLICT");if(!input.noHardConstraints&&hard.length<3)throw new Error("MARKETROUTE_SETUP_CONSTRAINT_DECLARATION_REQUIRED");
+  async submitActivationBrief(accessToken:string,input:ActivationBriefInput):Promise<string>{
+    const {offering,objective,target,hard}=validatedActivationBrief(input);
     const value=await new AuthenticatedRpcClient().call<unknown>(accessToken,"marketroute_submit_workspace_activation_v2",{p_organisation_id:input.organisationId,p_seller_offering_text:offering,p_objective_text:objective,p_target_market_text:target,p_hard_constraints_text:input.noHardConstraints?null:hard,p_no_hard_constraints:input.noHardConstraints});
     if(typeof value!=="string")throw new Error("MARKETROUTE_ACTIVATION_SUBMIT_INVALID_RESPONSE");return value;
+  }
+  async submitReplacementCampaign(accessToken:string,input:ActivationBriefInput&{campaignName:string}):Promise<string>{
+    const campaignName=input.campaignName.trim();
+    if(campaignName.length<3||campaignName.length>120)throw new Error("MARKETROUTE_CAMPAIGN_NAME_REQUIRED");
+    const {offering,objective,target,hard}=validatedActivationBrief(input);
+    const value=await new AuthenticatedRpcClient().call<unknown>(accessToken,"marketroute_submit_replacement_campaign_v1",{p_organisation_id:input.organisationId,p_campaign_name:campaignName,p_seller_offering_text:offering,p_objective_text:objective,p_target_market_text:target,p_hard_constraints_text:input.noHardConstraints?null:hard,p_no_hard_constraints:input.noHardConstraints});
+    if(typeof value!=="string")throw new Error("MARKETROUTE_CAMPAIGN_CREATION_INVALID_RESPONSE");return value;
   }
   async assertOpportunityScope(session:MarketRouteSession,opportunityId:string,organisationId:string):Promise<void>{
     if(!session.memberships.some((m)=>m.organisationId===organisationId))throw new Error("MARKETROUTE_WORKSPACE_ACCESS_DENIED");
