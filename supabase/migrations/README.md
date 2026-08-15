@@ -40,3 +40,4 @@ Build 13 keeps exactly three authority writers. The read model is presentation c
 - `0025_growth_seed_to_density_policy.sql` — deterministic seed-to-density scheduler policy: 50/industry seed floor, then PROFILE → ROUTES → CONTACTS before further breadth batches.
 - `0026_route_relationship_claim_fingerprint_version_hotfix.sql` — restores the mandatory canonical claim-fingerprint version on relationship claims.
 - `0027_production_activation_hardening.sql` — first-party seller offering, fail-closed constraint consistency, retry reset, Genesis-bank-first activation candidates and truthful bootstrap failure reporting.
+- `0028_seller_genome_json_operator_hotfix.sql` — disambiguates JSON extraction before exact-key removal in the seller-genome validator, repairing production SQLSTATE `22P02` without changing validation policy or authority.

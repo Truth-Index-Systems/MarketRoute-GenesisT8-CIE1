@@ -8,14 +8,38 @@ export class PostgrestRpcError extends Error {
   readonly status: number;
   readonly code: string | null;
   readonly details: unknown;
+  readonly functionName: string;
 
-  constructor(message: string, status: number, code: string | null, details: unknown) {
+  constructor(message: string, status: number, code: string | null, details: unknown, functionName: string) {
     super(message);
     this.name = "PostgrestRpcError";
     this.status = status;
     this.code = code;
     this.details = details;
+    this.functionName = functionName;
   }
+}
+
+function diagnosticPart(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const normalised = value.replace(/\s+/g, " ").trim();
+  return normalised || null;
+}
+
+export function marketrouteErrorCode(error: unknown, fallback: string): string {
+  if (!(error instanceof PostgrestRpcError)) {
+    return (error instanceof Error ? error.message : fallback).slice(0, 500);
+  }
+  const payload = error.details && typeof error.details === "object"
+    ? error.details as Record<string, unknown>
+    : null;
+  return [
+    "MARKETROUTE_DATABASE_RPC_FAILED",
+    error.functionName,
+    error.code ?? String(error.status),
+    diagnosticPart(error.message),
+    diagnosticPart(payload?.details),
+  ].filter((value): value is string => Boolean(value)).join(":").slice(0, 500);
 }
 
 function requiredEnvironment(name: "SUPABASE_URL"): string {
@@ -75,6 +99,7 @@ export class PostgrestRpcClient {
         response.status,
         typeof object?.code === "string" ? object.code : null,
         parsed,
+        functionName,
       );
     }
     return parsed as TResult;

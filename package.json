@@ -14,6 +14,7 @@
     "validate:hotfix-01834": "node scripts/validate-production-hotfix-01834.mjs",
     "validate:hotfix-01836": "node scripts/validate-production-hotfix-01836.mjs",
     "validate:hotfix-01837": "node scripts/validate-production-activation-hardening-01837.mjs && node tests/adversarial/production-activation-hardening-01837.mjs",
+    "validate:hotfix-01838": "node scripts/validate-seller-genome-json-hotfix-01838.mjs",
     "constitution:architecture": "node scripts/validate-architecture.mjs",
     "constitution:ai": "node scripts/validate-ai-boundary.mjs",
     "constitution:legacy": "node scripts/validate-no-legacy.mjs",
@@ -90,7 +91,7 @@
     "production:check": "npm run constitution:check && node scripts/validate-production-activation.mjs && node scripts/validate-founder-dashboard.mjs && node scripts/validate-genesis-database-growth.mjs",
     "production:dashboard": "node scripts/validate-founder-dashboard.mjs",
     "production:growth": "node scripts/validate-genesis-database-growth.mjs",
-    "production:hotfix": "node scripts/validate-production-hotfix-01832.mjs && node scripts/validate-production-hotfix-01831.mjs && npm run validate:hotfix-01837",
+    "production:hotfix": "node scripts/validate-production-hotfix-01832.mjs && node scripts/validate-production-hotfix-01831.mjs && npm run validate:hotfix-01837 && npm run validate:hotfix-01838",
     "validate:policy-01835": "node scripts/validate-growth-seed-to-density-policy-01835.mjs"
   },
   "dependencies": {

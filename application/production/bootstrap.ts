@@ -4,6 +4,7 @@ import { SellerGenomeRepository } from "../../platform/database/seller-genome-re
 import { openAISellerGenomeExtractorFromEnvironment } from "../../platform/ai/openai-seller-genome-extractor";
 import { openAITargetDiscoveryProviderFromEnvironment,type DiscoveredTarget } from "../../platform/ai/openai-target-discovery";
 import { productionActivationRepositoryFromEnvironment } from "../../platform/database/production-activation-repository";
+import { marketrouteErrorCode } from "../../platform/database/postgrest-rpc";
 import { activationCountryCodes,activationIndustryKeys,activationMinimumBankTargets,activationTargetCount } from "./activation-targets";
 
 function num(name:string,fallback:number,min:number,max:number){const v=Number(process.env[name]??fallback);return Number.isFinite(v)?Math.max(min,Math.min(max,v)):fallback;}
@@ -46,7 +47,7 @@ export async function runWorkspaceActivationOnce(workerId=`ACTIVATION:${randomUU
     await repo.complete(job.job_id,workerId,result,new Date().toISOString());
     return{status:"SUCCEEDED" as const,jobId:job.job_id,...result};
   }catch(error){
-    const code=error instanceof Error?error.message:"MARKETROUTE_ACTIVATION_FAILED";
+    const code=marketrouteErrorCode(error,"MARKETROUTE_ACTIVATION_FAILED");
     await repo.fail(job.job_id,workerId,code,retryable(code),new Date().toISOString()).catch(()=>undefined);
     return{status:"FAILED" as const,jobId:job.job_id,error:code};
   }
