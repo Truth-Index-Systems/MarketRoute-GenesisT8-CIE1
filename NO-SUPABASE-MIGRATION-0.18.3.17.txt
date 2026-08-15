@@ -1,0 +1,4 @@
+MarketRoute V2 0.18.3.17 is an application-only hotfix.
+
+No new Supabase schema, table, policy, trigger, or RPC change is required.
+Supabase migration 0036 from release 0.18.3.16 remains the database prerequisite.

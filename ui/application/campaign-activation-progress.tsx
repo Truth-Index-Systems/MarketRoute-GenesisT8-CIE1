@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Icon } from "@/ui/icons";
 
@@ -43,39 +43,75 @@ function currentMessage(state:CampaignActivationProgressState){
 }
 
 function statusLabel(status:string){if(status==="PENDING")return"Queued";if(status==="RUNNING")return"Working";if(status==="FAILED")return"Retry scheduled";if(status==="NEEDS_INPUT")return"Needs input";return"Ready";}
+function isWorking(status:string){return["PENDING","RUNNING","FAILED"].includes(status);}
+function pollDelay(status:string){if(status==="RUNNING")return 3000;if(status==="FAILED")return 30000;return 12000;}
+function stateFingerprint(state:CampaignActivationProgressState){return`${state.status}|${state.stage}|${state.progress}|${state.updatedAt??""}`;}
+function activationState(value:unknown):CampaignActivationProgressState|null{
+  if(!value||typeof value!=="object"||Array.isArray(value))return null;
+  const row=value as Record<string,unknown>,progress=Number(row.progress??0);
+  if(typeof row.status!=="string"||typeof row.stage!=="string"||!Number.isFinite(progress))return null;
+  return{status:row.status,lastErrorCode:typeof row.lastErrorCode==="string"?row.lastErrorCode:null,campaignName:typeof row.campaignName==="string"?row.campaignName:null,stage:row.stage,progress:Math.max(0,Math.min(100,Math.round(progress))),stageDetail:row.stageDetail&&typeof row.stageDetail==="object"&&!Array.isArray(row.stageDetail)?row.stageDetail as Record<string,unknown>:{},updatedAt:typeof row.updatedAt==="string"?row.updatedAt:null};
+}
 
 export function CampaignActivationProgress({state}:{state:CampaignActivationProgressState}){
   const router=useRouter();
-  const progress=Math.max(0,Math.min(100,state.progress));
-  const activeIndex=state.status==="SUCCEEDED"?stages.length-1:Math.max(0,stages.findLastIndex(stage=>progress>=stage.start));
-  const working=["PENDING","RUNNING","FAILED"].includes(state.status);
+  const [current,setCurrent]=useState(state);
+  const currentRef=useRef(state);
+  const refreshStarted=useRef(false);
+  const progress=Math.max(0,Math.min(100,current.progress));
+  const activeIndex=current.status==="SUCCEEDED"?stages.length-1:Math.max(0,stages.findLastIndex(stage=>progress>=stage.start));
+  const working=isWorking(current.status);
 
   useEffect(()=>{
-    if(["PENDING","RUNNING","SUCCEEDED","NOT_REQUIRED"].includes(state.status))localStorage.removeItem("marketroute:new-campaign-draft:v1");
-    if(!working)return;
-    const delay=state.status==="FAILED"?12000:2200;
-    const refresh=()=>{if(document.visibilityState==="visible")router.refresh();};
-    const timer=window.setInterval(refresh,delay);
-    window.addEventListener("focus",refresh);
-    return()=>{window.clearInterval(timer);window.removeEventListener("focus",refresh);};
-  },[router,state.status,working]);
+    currentRef.current=state;
+    setCurrent(state);
+  },[state]);
+  useEffect(()=>{if(["PENDING","RUNNING","SUCCEEDED","NOT_REQUIRED"].includes(current.status))localStorage.removeItem("marketroute:new-campaign-draft:v1");},[current.status]);
+  useEffect(()=>{
+    let cancelled=false,timer:number|undefined;
+    const schedule=(status:string,override?:number)=>{if(!cancelled&&isWorking(status))timer=window.setTimeout(poll,override??pollDelay(status));};
+    const poll=async()=>{
+      if(cancelled)return;
+      if(document.visibilityState!=="visible"){schedule(currentRef.current.status,15000);return;}
+      try{
+        const response=await fetch("/api/campaigns/activation-status",{cache:"no-store",headers:{Accept:"application/json"}});
+        if(response.status===401){
+          if(!refreshStarted.current){refreshStarted.current=true;const next=`${window.location.pathname}${window.location.search}`;window.location.assign(`/api/session/refresh?next=${encodeURIComponent(next)}`);}
+          return;
+        }
+        if(!response.ok){schedule(currentRef.current.status,15000);return;}
+        const payload=await response.json() as {activation?:unknown};
+        const next=activationState(payload.activation);
+        if(!next){schedule(currentRef.current.status,15000);return;}
+        const previous=currentRef.current;
+        if(stateFingerprint(previous)!==stateFingerprint(next)){currentRef.current=next;setCurrent(next);}
+        if(!isWorking(next.status)){
+          if(!refreshStarted.current){refreshStarted.current=true;router.refresh();}
+          return;
+        }
+        schedule(next.status);
+      }catch{schedule(currentRef.current.status,15000);}
+    };
+    schedule(currentRef.current.status);
+    return()=>{cancelled=true;if(timer!==undefined)window.clearTimeout(timer);};
+  },[router]);
 
-  return <section className={`mr-activation-progress${state.stage==="FAILED"?" mr-activation-progress--error":""}`} aria-live="polite">
+  return <section className={`mr-activation-progress${current.stage==="FAILED"?" mr-activation-progress--error":""}`} aria-live="polite">
     <header className="mr-activation-progress__head">
-      <div><span>CAMPAIGN PREPARATION</span><h2>{state.campaignName??"Your new campaign"}</h2><p>{currentMessage(state)}</p></div>
-      <div className="mr-activation-progress__status"><span className={working&&state.stage!=="FAILED"?"is-working":""}/><strong>{statusLabel(state.status)}</strong><small>{progress}%</small></div>
+      <div><span>CAMPAIGN PREPARATION</span><h2>{current.campaignName??"Your new campaign"}</h2><p>{currentMessage(current)}</p></div>
+      <div className="mr-activation-progress__status"><span className={working&&current.stage!=="FAILED"?"is-working":""}/><strong>{statusLabel(current.status)}</strong><small>{progress}%</small></div>
     </header>
     <div className="mr-activation-progress__bar" aria-label={`${progress}% complete`}><span style={{width:`${progress}%`}}/></div>
     <ol className="mr-activation-progress__stages">
       {stages.map((stage,index)=>{
-        const complete=state.status==="SUCCEEDED"||index<activeIndex;
+        const complete=current.status==="SUCCEEDED"||index<activeIndex;
         const active=!complete&&index===activeIndex;
         return <li className={complete?"is-complete":active?"is-active":""} key={stage.label}>
-          <i>{complete?<Icon name="check" size={13}/>:active&&working&&state.stage!=="FAILED"?<span className="mr-activation-spinner"/>:index+1}</i>
+          <i>{complete?<Icon name="check" size={13}/>:active&&working&&current.stage!=="FAILED"?<span className="mr-activation-spinner"/>:index+1}</i>
           <div><strong>{stage.label}</strong><small>{stage.detail}</small></div>
         </li>;
       })}
     </ol>
-    <footer><span>{working?"This continues if you leave this page.":"Preparation state is stored in your workspace."}</span>{state.updatedAt&&<small>Updated {new Date(state.updatedAt).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit",second:"2-digit"})}</small>}</footer>
+    <footer><span>{working?"This continues if you leave this page.":"Preparation state is stored in your workspace."}</span>{current.updatedAt&&<small>Updated {new Date(current.updatedAt).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit",second:"2-digit"})}</small>}</footer>
   </section>;
 }

@@ -51,7 +51,9 @@ check("bootstrap records every visible preparation boundary",()=>{
 check("progress UI refreshes from persisted state and survives navigation",()=>{
   assert(progress.startsWith('"use client"'));
   assert.match(progress,/router\.refresh\(\)/);
-  assert.match(progress,/setInterval/);
+  assert.match(progress,/fetch\("\/api\/campaigns\/activation-status"/);
+  assert.match(progress,/setTimeout/);
+  assert.doesNotMatch(progress,/setInterval/);
   assert.match(progress,/This continues if you leave this page/);
   assert(campaigns.includes("CampaignActivationProgress"));
   assert(commandCentre.includes("CampaignActivationProgress"));
