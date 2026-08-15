@@ -1874,6 +1874,8 @@ body { font-size: 16px; }
 .mr-login__form label.mr-check-row { grid-template-columns:20px 1fr; align-items:start; gap:10px; padding:12px 14px; border:1px solid var(--mr-line); border-radius:10px; background:rgba(47,140,255,.035); }
 .mr-login__form label.mr-check-row input { width:18px; height:18px; margin:1px 0 0; accent-color:var(--mr-blue); box-shadow:none; }
 .mr-login__form label.mr-check-row span { font-size:13px; line-height:1.45; color:#40566e; font-weight:550; }
+.mr-constraint-choice { display:grid; gap:10px; margin:0; padding:0; border:0; }
+.mr-constraint-choice legend { margin:0 0 2px; color:#526a83; font-size:12px; font-weight:680; }
 
 /* ========================================================================== */
 /* Production Founder Dashboard — private operational observability            */

@@ -18,8 +18,11 @@ export async function observeProductionRuntime<T>(runtimeKind:RuntimeKind,operat
   try{
     const result=await operation();
     const metadata=objectResult(result);
-    const disabled=String(metadata.status??"").toUpperCase()==="DISABLED";
-    await recordBestEffort({correlationId,runtimeKind,eventType:disabled?"DISABLED":"SUCCEEDED",durationMs:Date.now()-started,metadata});
+    const status=String(metadata.status??"").toUpperCase();
+    const disabled=status==="DISABLED";
+    const failed=status==="FAILED"||status==="PARTIAL";
+    const errorCode=failed?String(metadata.errorCode??"MARKETROUTE_RUNTIME_REPORTED_FAILURE"):null;
+    await recordBestEffort({correlationId,runtimeKind,eventType:disabled?"DISABLED":failed?"FAILED":"SUCCEEDED",durationMs:Date.now()-started,errorCode,metadata});
     return result;
   }catch(error){
     const code=error instanceof Error?error.message:"MARKETROUTE_RUNTIME_FAILED";
