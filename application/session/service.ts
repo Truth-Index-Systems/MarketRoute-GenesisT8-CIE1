@@ -7,6 +7,16 @@ export interface MarketRouteSession {
   user:AuthenticatedUser;
   memberships:WorkspaceMembership[];
 }
+export interface WorkspaceActivationStatus {
+  status:string;
+  lastErrorCode:string|null;
+  campaignId:string|null;
+  campaignName:string|null;
+  stage:string;
+  progress:number;
+  stageDetail:Record<string,unknown>;
+  updatedAt:string|null;
+}
 interface ActivationBriefInput {
   organisationId:string;
   sellerOfferingText:string;
@@ -51,10 +61,13 @@ export class SessionService {
     if(typeof value!=="string")throw new Error("MARKETROUTE_WORKSPACE_CREATE_INVALID_RESPONSE");
     return value;
   }
-  async activationStatus(accessToken:string,organisationId:string):Promise<{status:string;lastErrorCode:string|null}>{
-    const value=await new AuthenticatedRpcClient().call<unknown>(accessToken,"marketroute_workspace_activation_status_v1",{p_organisation_id:organisationId});
+  async activationStatus(accessToken:string,organisationId:string):Promise<WorkspaceActivationStatus>{
+    const value=await new AuthenticatedRpcClient().call<unknown>(accessToken,"marketroute_workspace_activation_status_v2",{p_organisation_id:organisationId});
     if(!value||typeof value!=="object"||Array.isArray(value))throw new Error("MARKETROUTE_ACTIVATION_STATUS_INVALID");
-    const row=value as Record<string,unknown>;return{status:String(row.status??"UNKNOWN"),lastErrorCode:typeof row.lastErrorCode==="string"?row.lastErrorCode:null};
+    const row=value as Record<string,unknown>;
+    const detail=row.stageDetail&&typeof row.stageDetail==="object"&&!Array.isArray(row.stageDetail)?row.stageDetail as Record<string,unknown>:{};
+    const progress=Number(row.progress??0);
+    return{status:String(row.status??"UNKNOWN"),lastErrorCode:typeof row.lastErrorCode==="string"?row.lastErrorCode:null,campaignId:typeof row.campaignId==="string"?row.campaignId:null,campaignName:typeof row.campaignName==="string"?row.campaignName:null,stage:String(row.stage??"QUEUED"),progress:Number.isFinite(progress)?Math.max(0,Math.min(100,Math.round(progress))):0,stageDetail:detail,updatedAt:typeof row.updatedAt==="string"?row.updatedAt:null};
   }
   async submitActivationBrief(accessToken:string,input:ActivationBriefInput):Promise<string>{
     const {offering,objective,target,hard}=validatedActivationBrief(input);

@@ -4,6 +4,7 @@ export interface ActivationBankCandidate{company_id:string;name:string;canonical
 export class ProductionActivationRepository{
   constructor(private readonly rpc=new PostgrestRpcClient(databaseConfigFromEnvironment())){}
   async claim(workerId:string,at:string):Promise<ActivationJob|null>{const v=await this.rpc.call<ActivationJob[]|ActivationJob|null>("marketroute_claim_workspace_activation_v3",{p_worker_id:workerId,p_at:at});if(Array.isArray(v))return v[0]??null;return v??null;}
+  stage(jobId:string,workerId:string,stage:string,progress:number,detail:Record<string,unknown>={}){return this.rpc.call<void>("marketroute_set_workspace_activation_stage_v1",{p_job_id:jobId,p_worker_id:workerId,p_stage:stage,p_progress:progress,p_detail_json:detail,p_at:new Date().toISOString()});}
   complete(jobId:string,workerId:string,result:Record<string,unknown>,at:string){return this.rpc.call<void>("marketroute_complete_workspace_activation_v1",{p_job_id:jobId,p_worker_id:workerId,p_result_json:result,p_at:at});}
   fail(jobId:string,workerId:string,errorCode:string,retryable:boolean,at:string){return this.rpc.call<void>("marketroute_fail_workspace_activation_v1",{p_job_id:jobId,p_worker_id:workerId,p_error_code:errorCode,p_retryable:retryable,p_at:at});}
   createCampaign(organisationId:string,sellerBusinessId:string,campaignName:string|null,objectiveText:string){return this.rpc.call<string>("marketroute_create_activation_campaign_v2",{p_organisation_id:organisationId,p_seller_business_id:sellerBusinessId,p_campaign_name:campaignName,p_objective_text:objectiveText});}

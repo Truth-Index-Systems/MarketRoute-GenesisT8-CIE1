@@ -59,7 +59,7 @@ check("UI exposes recovery only when the normal campaign read is empty",()=>{
   assert(page.includes("MARKETROUTE_LIVE_CAMPAIGN_ALREADY_EXISTS"));
   assert(list.includes('href="/app/campaigns/new"'));
   assert(commandCentre.includes('href="/app/campaigns/new"'));
-  assert(list.includes('title={query.campaignAction==="processing"?"Preparing your new campaign":"No live campaign"}'));
+  assert(list.includes('title="No live campaign"'));
 });
 check("release preserves archived lineage and creates no authority writer",()=>{
   assert(migration.includes("'archived_campaigns_restored',false"));

@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { commandCentre } from "@/app/app/_lib/data";
 import { workspaceSessionOrRedirect } from "@/app/app/_lib/session";
 import { asObjectArray } from "@/application/read-model/presentation";
-import { Icon,PageHeader,Panel,SectionHeading } from "@/ui";
+import { CampaignCreationForm,Icon,PageHeader,Panel,SectionHeading } from "@/ui";
 
 function campaignCreationError(code:string|null){
   if(!code)return null;
@@ -24,8 +24,9 @@ function campaignCreationError(code:string|null){
 
 export default async function NewCampaign({searchParams}:{searchParams:Promise<Record<string,string|string[]|undefined>>}){
   const query=await searchParams;
-  const {workspace}=await workspaceSessionOrRedirect();
+  const {workspace,activation}=await workspaceSessionOrRedirect();
   if(!["OWNER","ADMIN"].includes(workspace.role))redirect("/app/campaigns?actionError=MARKETROUTE_CAMPAIGN_ADMIN_REQUIRED");
+  if(["PENDING","RUNNING","FAILED"].includes(activation.status))redirect("/app/campaigns");
   const model=await commandCentre(workspace.organisationId);
   if(asObjectArray(model.campaigns).length>0)redirect("/app/campaigns?actionError=MARKETROUTE_LIVE_CAMPAIGN_ALREADY_EXISTS");
   const raw=typeof query.error==="string"?decodeURIComponent(query.error):null;
@@ -36,19 +37,7 @@ export default async function NewCampaign({searchParams}:{searchParams:Promise<R
     <Panel className="mr-campaign-create">
       <SectionHeading eyebrow="Campaign brief" title="What should MarketRoute pursue next?" description="Genesis checks its existing intelligence bank first and uses fresh discovery only when the bank cannot supply enough candidates."/>
       {error&&<div className="mr-alert mr-alert--error"><Icon name="shield" size={18}/><span>{error}</span></div>}
-      <form action="/api/campaigns" method="post" className="mr-login__form">
-        <label><span>Campaign name</span><input name="campaignName" required minLength={3} maxLength={120} placeholder="UK logistics growth"/><small className="mr-field-help">Use a name you will recognise in campaign and opportunity views.</small></label>
-        <label><span>What does your business currently sell?</span><textarea name="sellerOfferingText" required minLength={8} rows={3} placeholder="Bespoke software engineering and commercial intelligence systems for B2B organisations."/><small className="mr-field-help">MarketRoute rechecks current seller context before building the new campaign.</small></label>
-        <label><span>What are you trying to achieve?</span><textarea name="objectiveText" required minLength={8} rows={3} placeholder="Win new B2B contracts."/></label>
-        <label><span>Which market should MarketRoute research?</span><textarea name="targetMarketText" required minLength={3} rows={3} placeholder="UK logistics and supply-chain organisations."/></label>
-        <fieldset className="mr-constraint-choice">
-          <legend>Does this campaign have hard limits?</legend>
-          <label className="mr-check-row"><input type="radio" name="constraintMode" value="DESCRIBED" required/><span>I have hard commercial limits and have described them below.</span></label>
-          <label className="mr-check-row"><input type="radio" name="constraintMode" value="NONE" required/><span>I have no hard commercial restrictions beyond the brief above.</span></label>
-        </fieldset>
-        <label><span>Hard limits</span><textarea name="hardConstraintsText" rows={2} placeholder="For example: UK only; small organisations; B2B only."/><small className="mr-field-help">Complete this only when “I have hard limits” is selected. Hard limits remain fail-closed.</small></label>
-        <div className="mr-campaign-create__actions"><a className="mr-button mr-button--secondary" href="/app/campaigns">Cancel</a><button className="mr-button mr-button--primary" type="submit">Start preparing campaign <Icon name="arrow" size={18}/></button></div>
-      </form>
+      <CampaignCreationForm/>
     </Panel>
   </div>;
 }
