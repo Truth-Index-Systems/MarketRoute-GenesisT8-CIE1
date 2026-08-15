@@ -42,3 +42,5 @@ Build 13 keeps exactly three authority writers. The read model is presentation c
 - `0027_production_activation_hardening.sql` — first-party seller offering, fail-closed constraint consistency, retry reset, Genesis-bank-first activation candidates and truthful bootstrap failure reporting.
 - `0028_seller_genome_json_operator_hotfix.sql` — disambiguates JSON extraction before exact-key removal in the seller-genome validator, repairing production SQLSTATE `22P02` without changing validation policy or authority.
 - `0029_activation_company_domain_hotfix.sql` — repairs the over-escaped activation hostname regex so valid discovered or Genesis-bank domains can enter campaign scope.
+- `0030_campaign_lifecycle_controls.sql` — owner/admin pause, resume and typed-name archival with append-only audit, active-campaign research claiming and archived-campaign filtering.
+- `0031_research_plan_persistence_hotfix.sql` — aligns PostgreSQL/JavaScript timestamp fingerprints and qualifies shadowed plan deduplication columns in the first live research-plan write.
