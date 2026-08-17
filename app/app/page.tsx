@@ -3,10 +3,11 @@ import { workspaceSessionOrRedirect } from "@/app/app/_lib/session";
 import { asObjectArray,campaignListItem,countFromObject,money } from "@/application/read-model/presentation";
 import { CampaignActivationProgress,EmptyState,humanStatus,Icon,MarketRouteNarrativeCard,MetricCard,PageHeader,Panel,SectionHeading,StatusBadge } from "@/ui";
 import { marketRouteConversationServiceFromEnvironment } from "@/application/conversation/service";
+import { commercialAccessServiceFromEnvironment } from "@/application/commercial/service";
 
 export default async function CommandCentre(){
   const {workspace,activation}=await workspaceSessionOrRedirect();
-  const model=await commandCentre(workspace.organisationId);
+  const [model,commercial]=await Promise.all([commandCentre(workspace.organisationId),commercialAccessServiceFromEnvironment().access(workspace.organisationId)]);
   const campaigns=asObjectArray(model.campaigns).map(campaignListItem);
   const scoped=campaigns.reduce((a,c)=>a+c.scopedCompanies,0);
   const opps=campaigns.reduce((a,c)=>a+c.materialisedOpportunities,0);
@@ -26,6 +27,8 @@ export default async function CommandCentre(){
     </section>
 
     <MarketRouteNarrativeCard narrative={narrative} eyebrow="MARKETROUTE BRIEF"/>
+
+    {commercial.mode==="DISCOVERY_FREE"&&commercial.lockedCount>0&&<a className="mr-upgrade-banner" href="/app/opportunities"><div><Icon name="spark" size={18}/><span><strong>{commercial.lockedCount} new opportunit{commercial.lockedCount===1?"y is":"ies are"} ready.</strong><small>Your first eight stay free. Upgrade to reveal the new companies and contact routes MarketRoute has established.</small></span></div><b>View opportunities →</b></a>}
 
     {activationVisible&&<CampaignActivationProgress state={activation}/>} 
 

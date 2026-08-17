@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { commandCentre } from "@/app/app/_lib/data";
 import { workspaceSessionOrRedirect } from "@/app/app/_lib/session";
 import { asObjectArray } from "@/application/read-model/presentation";
+import { commercialAccessServiceFromEnvironment } from "@/application/commercial/service";
 import { CampaignCreationForm,Icon,PageHeader,Panel,SectionHeading } from "@/ui";
 
 function campaignCreationError(code:string|null){
@@ -26,6 +27,8 @@ export default async function NewCampaign({searchParams}:{searchParams:Promise<R
   const query=await searchParams;
   const {workspace,activation}=await workspaceSessionOrRedirect();
   if(!["OWNER","ADMIN"].includes(workspace.role))redirect("/app/campaigns?actionError=MARKETROUTE_CAMPAIGN_ADMIN_REQUIRED");
+  const commercial=await commercialAccessServiceFromEnvironment().access(workspace.organisationId);
+  if(commercial.mode==="DISCOVERY_FREE"||commercial.mode==="UNENTITLED")redirect("/app/plans");
   if(["PENDING","RUNNING","FAILED"].includes(activation.status))redirect("/app/campaigns");
   const model=await commandCentre(workspace.organisationId);
   if(asObjectArray(model.campaigns).length>0)redirect("/app/campaigns?actionError=MARKETROUTE_LIVE_CAMPAIGN_ALREADY_EXISTS");

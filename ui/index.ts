@@ -1,3 +1,4 @@
+export { LockedOpportunityFeed,LockedOpportunityDetail,PlanChooser } from "./application/commercial-upgrade";
 export { MarketRouteNarrativeCard } from "./application/marketroute-narrative";
 export { AnonymousDiscoveryProgress } from "./application/anonymous-discovery-progress";
 export { MarketRouteLogo } from "./brand/marketroute-logo";

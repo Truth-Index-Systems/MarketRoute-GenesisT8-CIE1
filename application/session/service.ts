@@ -1,4 +1,4 @@
-import { anonymousDiscoveryRepositoryFromEnvironment } from "../../platform/database/anonymous-discovery-repository";
+import { commercialAccessServiceFromEnvironment } from "../commercial/service";
 import { supabaseAuthClientFromEnvironment, type SupabaseAuthSession, type AuthenticatedUser } from "../../platform/auth/supabase-auth";
 import { workspaceRepositoryFromEnvironment, type WorkspaceMembership } from "../../platform/database/workspace-repository";
 import { AuthenticatedRpcClient } from "../../platform/database/authenticated-rpc";
@@ -35,7 +35,7 @@ function validatedActivationBrief(input:ActivationBriefInput){
 export class SessionService {
   private readonly auth=supabaseAuthClientFromEnvironment();
   private readonly workspace=workspaceRepositoryFromEnvironment();
-  private readonly discovery=anonymousDiscoveryRepositoryFromEnvironment();
+  private readonly commercial=commercialAccessServiceFromEnvironment();
   async signUp(email:string,password:string){
     const cleanEmail=email.trim().toLowerCase();
     if(!cleanEmail||!password)throw new Error("MARKETROUTE_SIGNUP_CREDENTIALS_REQUIRED");
@@ -87,13 +87,13 @@ export class SessionService {
   }
   async assertOpportunityScope(session:MarketRouteSession,opportunityId:string,organisationId:string):Promise<void>{
     if(!session.memberships.some((m)=>m.organisationId===organisationId))throw new Error("MARKETROUTE_WORKSPACE_ACCESS_DENIED");
-    const actual=await this.workspace.opportunityOrganisation(opportunityId);if(actual!==organisationId)throw new Error("MARKETROUTE_OPPORTUNITY_SCOPE_MISMATCH");const access=await this.discovery.access(organisationId);if(access.mode==="DISCOVERY_FREE"&&!access.opportunityIds.includes(opportunityId))throw new Error("MARKETROUTE_DISCOVERY_UPGRADE_REQUIRED");
+    const actual=await this.workspace.opportunityOrganisation(opportunityId);if(actual!==organisationId)throw new Error("MARKETROUTE_OPPORTUNITY_SCOPE_MISMATCH");const access=await this.commercial.access(organisationId);if(!this.commercial.canReadOpportunity(access,opportunityId))throw new Error("MARKETROUTE_DISCOVERY_UPGRADE_REQUIRED");
   }
   async assertOpportunityWriteScope(session:MarketRouteSession,opportunityId:string,organisationId:string):Promise<void>{
     const membership=session.memberships.find((m)=>m.organisationId===organisationId);
     if(!membership)throw new Error("MARKETROUTE_WORKSPACE_ACCESS_DENIED");
     if(membership.role==="VIEWER")throw new Error("MARKETROUTE_WORKSPACE_WRITE_ACCESS_DENIED");
-    const actual=await this.workspace.opportunityOrganisation(opportunityId);if(actual!==organisationId)throw new Error("MARKETROUTE_OPPORTUNITY_SCOPE_MISMATCH");const access=await this.discovery.access(organisationId);if(access.mode==="DISCOVERY_FREE"&&!access.opportunityIds.includes(opportunityId))throw new Error("MARKETROUTE_DISCOVERY_UPGRADE_REQUIRED");
+    const actual=await this.workspace.opportunityOrganisation(opportunityId);if(actual!==organisationId)throw new Error("MARKETROUTE_OPPORTUNITY_SCOPE_MISMATCH");const access=await this.commercial.access(organisationId);if(!this.commercial.canReadOpportunity(access,opportunityId))throw new Error("MARKETROUTE_DISCOVERY_UPGRADE_REQUIRED");
   }
 }
 export function sessionServiceFromEnvironment(){return new SessionService();}

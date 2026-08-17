@@ -66,3 +66,7 @@ Authorised opportunities now expose actionable contact-route cards backed only b
 ## Product Build 23 — Free Eight + Account Claim
 
 Anonymous discovery now converts into a persistent free customer workspace without rerunning research. The first eight authority-ready opportunities are stored as permanent entitlements; exact contact values remain server-side until account claim, hidden opportunities are enforced server-side, and claimed discovery work may only finish within its original anonymous budget/window. Password recovery is also included. See `MARKETROUTE-V2-PRODUCT-BUILD23-FREE-EIGHT-ACCOUNT-CLAIM.md`.
+
+## Product Build 24 — Locked Opportunities + Commercial Boundary
+
+Discovery workspaces keep their first eight authority-ready opportunities while additional ready opportunities are exposed only as server-redacted locked teasers. Starter (£99), Growth (£249) and Scale (£599) now exist in a server-owned plan catalog, canonical reads/writes enforce the same commercial boundary, paid research capacity is enforced before new AI work is claimed, and existing pre-product customer workspaces are grandfathered. Billing is deliberately not connected yet; selecting a plan cannot grant access. See `MARKETROUTE-V2-PRODUCT-BUILD24-LOCKED-OPPORTUNITIES-COMMERCIAL-BOUNDARY.md`.

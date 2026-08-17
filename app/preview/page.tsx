@@ -48,7 +48,7 @@ export default function PublicPreview(){
         <div><span>02</span><strong>Know who</strong><small>Identify the relevant buyer and the organisational path to them.</small></div>
         <div><span>03</span><strong>Know what is ready</strong><small>Act only when the current research and access route support it.</small></div>
       </div>
-      <div className="mr-preview-value__actions"><ButtonLink href="/signup" variant="primary" icon={<Icon name="arrow" size={16}/>}>Build this for my market</ButtonLink><ButtonLink href="/" variant="ghost">Back to overview</ButtonLink></div>
+      <div className="mr-preview-value__actions"><ButtonLink href="/discover" variant="primary" icon={<Icon name="arrow" size={16}/>}>Build this for my market</ButtonLink><ButtonLink href="/" variant="ghost">Back to overview</ButtonLink></div>
     </section>
 
     <footer className="mr-preview-footer"><span>MarketRoute V2 · Genesis T8</span><span>Example data shown for product demonstration</span></footer>

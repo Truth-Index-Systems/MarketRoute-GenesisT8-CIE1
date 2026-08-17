@@ -7,4 +7,5 @@ export const shellNavigation:ShellNavigationItem[]=[
   {label:"Opportunities",icon:"opportunities",href:"/app/opportunities"},
   {label:"Research",icon:"research",href:"/app/research"},
   {label:"Engagement",icon:"engagement",href:"/app/engagement"},
+  {label:"Plan",icon:"shield",href:"/app/plans"},
 ];

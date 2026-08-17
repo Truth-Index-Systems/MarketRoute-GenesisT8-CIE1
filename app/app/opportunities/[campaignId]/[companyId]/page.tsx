@@ -1,8 +1,10 @@
 import { workspaceSessionOrRedirect } from "@/app/app/_lib/session";
+import { notFound,redirect } from "next/navigation";
 import { applicationReadServiceFromEnvironment } from "@/application/read-model/service";
+import { commercialAccessServiceFromEnvironment } from "@/application/commercial/service";
 import { asObject,asObjectArray,booleanValue,companyProfile,formatDateTime,percent,shortFingerprint,statusTone,text } from "@/application/read-model/presentation";
 import type { RouteNodeView } from "@/ui/intelligence/route-path";
-import { AuthorityStack,commercialVerdict,ContactRouteCard,EmptyState,humanStatus,Icon,MarketRouteNarrativeCard,PageHeader,Panel,ProvenanceDrawer,ProvenanceTrail,ResearchPressure,routeSummary,RoutePath,SectionHeading,StatusBadge,TruthGauge,truthStrength } from "@/ui";
+import { AuthorityStack,commercialVerdict,ContactRouteCard,EmptyState,humanStatus,Icon,LockedOpportunityDetail,MarketRouteNarrativeCard,PageHeader,Panel,ProvenanceDrawer,ProvenanceTrail,ResearchPressure,routeSummary,RoutePath,SectionHeading,StatusBadge,TruthGauge,truthStrength } from "@/ui";
 import { marketRouteConversationServiceFromEnvironment } from "@/application/conversation/service";
 import { contactRoutePresentation } from "@/application/opportunities/contact-route-presentation";
 
@@ -18,6 +20,10 @@ export default async function OpportunityWorkspace({params,searchParams}:{params
   const {campaignId,companyId}=await params;
   const query=await searchParams;
   const {workspace}=await workspaceSessionOrRedirect();
+  const commercial=commercialAccessServiceFromEnvironment();
+  const [commercialAccess,plans]=await Promise.all([commercial.access(workspace.organisationId),commercial.plans()]);
+  if(commercialAccess.mode==="DISCOVERY_FREE"&&!commercial.canReadCompany(commercialAccess,companyId)){const locked=commercial.lockedCompany(commercialAccess,companyId);if(locked)return <LockedOpportunityDetail item={locked} plans={plans} totalLocked={commercialAccess.lockedCount}/>;notFound();}
+  if(commercialAccess.mode==="UNENTITLED")redirect("/app/plans");
   const service=applicationReadServiceFromEnvironment();
   const canMutate=workspace.role!=="VIEWER";
   const [model,routes,claimIndex]=await Promise.all([
