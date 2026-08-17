@@ -2,7 +2,8 @@ import { workspaceSessionOrRedirect } from "@/app/app/_lib/session";
 import { applicationReadServiceFromEnvironment } from "@/application/read-model/service";
 import { asObject,asObjectArray,booleanValue,companyProfile,formatDateTime,percent,shortFingerprint,statusTone,text } from "@/application/read-model/presentation";
 import type { RouteNodeView } from "@/ui/intelligence/route-path";
-import { AuthorityStack,commercialVerdict,EmptyState,humanStatus,Icon,PageHeader,Panel,ProvenanceDrawer,ProvenanceTrail,ResearchPressure,routeSummary,RoutePath,SectionHeading,StatusBadge,TruthGauge,truthStrength } from "@/ui";
+import { AuthorityStack,commercialVerdict,EmptyState,humanStatus,Icon,MarketRouteNarrativeCard,PageHeader,Panel,ProvenanceDrawer,ProvenanceTrail,ResearchPressure,routeSummary,RoutePath,SectionHeading,StatusBadge,TruthGauge,truthStrength } from "@/ui";
+import { marketRouteConversationServiceFromEnvironment } from "@/application/conversation/service";
 
 function routeNodes(value:unknown):RouteNodeView[]{
   return asObjectArray(value).map((node)=>{
@@ -32,6 +33,7 @@ export default async function OpportunityWorkspace({params,searchParams}:{params
   const returnHref=`/app/opportunities/${campaignId}/${companyId}`;
   const actionError=typeof query.actionError==="string"?decodeURIComponent(query.actionError):null;
   const truthIndex=Math.round(percent(truth.truthIndex));
+  const narrative=await marketRouteConversationServiceFromEnvironment().opportunity(model,routes);
 
   const stages=[
     {stage:"R4",name:"Commercial reality",decision:text(r4.decision,"NO CURRENT R4"),detail:humanStatus(text(r4.decision,"NO_CURRENT_R4")),tone:statusTone(text(r4.decision,"UNKNOWN"))},
@@ -45,6 +47,8 @@ export default async function OpportunityWorkspace({params,searchParams}:{params
   return <div>
     <PageHeader eyebrow="OPPORTUNITY" title={profile.companyName} description={profile.canonicalDomain??"Canonical domain not yet established"} actions={<StatusBadge label={profile.executableNow?"Ready to contact":"Not ready to contact"} tone={profile.executableNow?"green":"slate"}/>}/>
     {actionError&&<div className="mr-alert mr-alert--error"><Icon name="shield" size={16}/><span>{actionError}</span></div>}
+
+    <MarketRouteNarrativeCard narrative={narrative} eyebrow="MARKETROUTE EXPLAINS"/>
 
     <section className="mr-opportunity-verdict">
       <div className="mr-opportunity-verdict__copy"><span>MarketRoute view</span><h2>{verdict}</h2><p>{profile.executableNow?"The current commercial case, organisational route and contact authority allow action now.":"MarketRoute is holding action until the required commercial, route and contact authority is current."}</p></div>

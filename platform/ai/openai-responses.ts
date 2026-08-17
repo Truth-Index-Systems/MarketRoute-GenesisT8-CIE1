@@ -21,8 +21,8 @@ function usageOf(response:any):OpenAIUsage{
 export function openAIModel():string{return process.env.OPENAI_MODEL?.trim()||"gpt-5.6-luna";}
 export class OpenAIResponsesClient{
   private readonly apiKey=required("OPENAI_API_KEY");
-  async structured<T>(input:{name:string;schema:Record<string,unknown>;instructions:string;prompt:string;webSearch?:boolean;allowedDomains?:string[];signal?:AbortSignal;maxOutputTokens?:number;usageContext?:OpenAIUsageContext}):Promise<OpenAIStructuredResult<T>>{
-    const started=Date.now();const model=openAIModel();
+  async structured<T>(input:{model?:string;name:string;schema:Record<string,unknown>;instructions:string;prompt:string;webSearch?:boolean;allowedDomains?:string[];signal?:AbortSignal;maxOutputTokens?:number;usageContext?:OpenAIUsageContext}):Promise<OpenAIStructuredResult<T>>{
+    const started=Date.now();const model=input.model?.trim()||openAIModel();
     const body:any={model,instructions:input.instructions,input:input.prompt,reasoning:{effort:process.env.OPENAI_REASONING_EFFORT?.trim()||"low"},text:{format:{type:"json_schema",name:input.name,strict:true,schema:input.schema}},max_output_tokens:input.maxOutputTokens??4000};
     if(input.webSearch){const tool:any={type:"web_search",search_context_size:process.env.OPENAI_WEB_SEARCH_CONTEXT?.trim()||"medium"};const allowed=(input.allowedDomains??[]).map(x=>x.trim().toLowerCase().replace(/^https?:\/\//,"").replace(/\/.*$/,"")).filter(Boolean).slice(0,100);if(allowed.length)tool.filters={allowed_domains:allowed};body.tools=[tool];body.tool_choice="required";body.include=["web_search_call.action.sources"];}
     let parsed:any=null;

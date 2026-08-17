@@ -1,12 +1,14 @@
 import { createHmac, randomBytes } from "node:crypto";
 import { anonymousDiscoveryRepositoryFromEnvironment, type AnonymousDiscoveryStatusRecord } from "../../platform/database/anonymous-discovery-repository";
+import { marketRouteConversationServiceFromEnvironment } from "../conversation/service";
+import type { MarketRouteNarrative } from "../conversation/contracts";
 
 export const ANONYMOUS_DISCOVERY_COOKIE="marketroute_anonymous_discovery_v1";
 const DEFAULT_OBJECTIVE="Win new B2B customers.";
 const DEFAULT_TARGET="Find organisations that are commercially relevant to the seller's current offering.";
 
 export interface AnonymousPipelineStage {key:"UNDERSTAND"|"MAP"|"DISCOVER"|"RESEARCH"|"EVALUATE"|"ROUTE"|"READY";label:string;status:"PENDING"|"ACTIVE"|"COMPLETE"|"ATTENTION";detail:string;count?:string;}
-export interface AnonymousDiscoveryView extends AnonymousDiscoveryStatusRecord {pipeline:AnonymousPipelineStage[];currentMessage:string;}
+export interface AnonymousDiscoveryView extends AnonymousDiscoveryStatusRecord {pipeline:AnonymousPipelineStage[];currentMessage:string;narrative:MarketRouteNarrative;}
 
 function requiredSecret(){const value=process.env.MARKETROUTE_ANONYMOUS_SESSION_SECRET?.trim();if(!value||value.length<32)throw new Error("MARKETROUTE_ANONYMOUS_SESSION_SECRET_MIN_32_CHARACTERS");return value;}
 function boundedNumber(name:string,fallback:number,min:number,max:number){const value=Number(process.env[name]??fallback);return Number.isFinite(value)?Math.max(min,Math.min(max,value)):fallback;}
@@ -63,6 +65,6 @@ export class AnonymousDiscoveryService{
     const targetMarketText=input.targetMarketText?.trim()?string(input.targetMarketText,3,2000,"MARKETROUTE_ANONYMOUS_TARGET_INVALID"):DEFAULT_TARGET;
     return this.repository.create({browserKeyHash:anonymousDiscoveryHash(input.browserSecret),ipHash:anonymousIpHash(input.ipAddress||"unknown"),companyName,websiteUrl,sellerOfferingText,targetMarketText,objectiveText:DEFAULT_OBJECTIVE,lifetimeBudgetUsd:boundedNumber("MARKETROUTE_ANONYMOUS_RESEARCH_BUDGET_USD",3,0.5,25),researchWindowHours:Math.floor(boundedNumber("MARKETROUTE_ANONYMOUS_RESEARCH_WINDOW_HOURS",24,1,72)),targetCount:Math.floor(boundedNumber("MARKETROUTE_ANONYMOUS_TARGET_COUNT",12,8,20))});
   }
-  async status(browserSecret:string):Promise<AnonymousDiscoveryView|null>{const raw=await this.repository.status(anonymousDiscoveryHash(browserSecret));if(!raw)return null;const pipeline=anonymousPipelineFromStatus(raw);return{...raw,pipeline,currentMessage:messageOf(raw,pipeline)};}
+  async status(browserSecret:string):Promise<AnonymousDiscoveryView|null>{const raw=await this.repository.status(anonymousDiscoveryHash(browserSecret));if(!raw)return null;const pipeline=anonymousPipelineFromStatus(raw);const narrative=await marketRouteConversationServiceFromEnvironment().discovery(raw,pipeline);return{...raw,pipeline,currentMessage:narrative.summary||messageOf(raw,pipeline),narrative};}
 }
 export function anonymousDiscoveryServiceFromEnvironment(){return new AnonymousDiscoveryService();}

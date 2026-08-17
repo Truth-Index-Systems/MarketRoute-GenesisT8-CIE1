@@ -99,14 +99,16 @@
     "certification:live-lineage": "node scripts/certification/live-lineage-trace.mjs",
     "release:certify": "npm run constitution:check && npm run certification:cutover-preflight",
     "production:env-check": "node scripts/production/validate-environment.mjs",
-    "production:check": "npm run constitution:check && node scripts/validate-production-activation.mjs && node scripts/validate-founder-dashboard.mjs && npm run validate:product-build19 && npm run validate:product-build20",
+    "production:check": "npm run constitution:check && node scripts/validate-production-activation.mjs && node scripts/validate-founder-dashboard.mjs && npm run validate:product-build19 && npm run validate:product-build20 && npm run validate:product-build21",
     "production:dashboard": "node scripts/validate-founder-dashboard.mjs",
     "production:growth": "npm run validate:product-build19",
     "production:hotfix": "node scripts/validate-production-hotfix-01832.mjs && node scripts/validate-production-hotfix-01831.mjs && npm run validate:hotfix-01837 && npm run validate:hotfix-01838 && npm run validate:hotfix-01839 && npm run validate:hotfix-018310 && npm run validate:hotfix-018311 && npm run validate:hotfix-018312 && npm run validate:hotfix-018313 && npm run validate:hotfix-018314 && npm run validate:hotfix-018315 && npm run validate:hotfix-018316 && npm run validate:hotfix-018317 && npm run validate:hotfix-018318 && npm run validate:hotfix-018319",
     "validate:policy-01835": "node scripts/validate-growth-seed-to-density-policy-01835.mjs",
     "validate:product-build19": "node scripts/validate-product-build19-demand-driven-genesis.mjs && node tests/adversarial/product-build19-demand-driven-genesis.mjs",
     "validate:product-build20": "node scripts/validate-product-build20-anonymous-discovery.mjs && node tests/adversarial/product-build20-anonymous-discovery.mjs",
-    "production:discovery": "npm run validate:product-build20"
+    "production:discovery": "npm run validate:product-build20",
+    "validate:product-build21": "node scripts/validate-product-build21-conversational-intelligence.mjs && node tests/adversarial/product-build21-conversational-intelligence.mjs",
+    "production:conversation": "npm run validate:product-build21"
   },
   "dependencies": {
     "next": "15.5.23",

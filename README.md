@@ -52,3 +52,7 @@ For the pre-V2 Forensic Build 8 database, generate the static one-way factual ex
 ## Production route hotfix 0.18.3.6
 
 Repairs the Build 7 relationship-claim insert so `claims.fingerprint_version` is populated with the canonical `MRV2-CLAIM-FP-1.0.0` value. See `MARKETROUTE-V2-PRODUCTION-HOTFIX-0.18.3.6.md`.
+
+## Product Build 21 — Conversational Intelligence
+
+MarketRoute now narrates anonymous discovery, Command Centre, campaign and opportunity state through a grounded, cached AI explanation layer over canonical engine outputs. AI remains non-authoritative and cannot browse, invent evidence, or mutate Truth/R4/R5/R6/opportunity state. See `MARKETROUTE-V2-PRODUCT-BUILD21-CONVERSATIONAL-INTELLIGENCE.md`.

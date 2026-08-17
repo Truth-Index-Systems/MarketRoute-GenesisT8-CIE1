@@ -1,7 +1,8 @@
 import { commandCentre } from "@/app/app/_lib/data";
 import { workspaceSessionOrRedirect } from "@/app/app/_lib/session";
 import { asObjectArray,campaignListItem,countFromObject,money } from "@/application/read-model/presentation";
-import { CampaignActivationProgress,EmptyState,humanStatus,Icon,MetricCard,PageHeader,Panel,SectionHeading,StatusBadge } from "@/ui";
+import { CampaignActivationProgress,EmptyState,humanStatus,Icon,MarketRouteNarrativeCard,MetricCard,PageHeader,Panel,SectionHeading,StatusBadge } from "@/ui";
+import { marketRouteConversationServiceFromEnvironment } from "@/application/conversation/service";
 
 export default async function CommandCentre(){
   const {workspace,activation}=await workspaceSessionOrRedirect();
@@ -12,6 +13,7 @@ export default async function CommandCentre(){
   const actionable=campaigns.reduce((a,c)=>a+countFromObject(c.dispositionCounts,"ACTIONABLE"),0);
   const reviewable=campaigns.reduce((a,c)=>a+countFromObject(c.workflowCounts,"REVIEWABLE"),0);
   const activationVisible=["PENDING","RUNNING","FAILED"].includes(activation.status);
+  const narrative=await marketRouteConversationServiceFromEnvironment().commandCentre(model);
 
   return <div>
     <PageHeader eyebrow="COMMAND CENTRE" title="Your market," accent="reduced to what matters." description="See what has been researched, which companies are worth pursuing, what is ready to act on and where MarketRoute still needs evidence."/>
@@ -23,11 +25,7 @@ export default async function CommandCentre(){
       <MetricCard label="Need your decision" value={String(reviewable)} meta="Commercially ready for human review" icon={<Icon name="check"/>}/>
     </section>
 
-    <section className="mr-command-brief">
-      <div><span>What can I act on?</span><strong>{actionable} compan{actionable===1?"y is":"ies are"} currently actionable.</strong><p>These opportunities have a current commercial case, route and contact authority.</p></div>
-      <div><span>Where should I look next?</span><strong>{reviewable} opportunit{reviewable===1?"y needs":"ies need"} a decision.</strong><p>Review them before engagement moves forward.</p></div>
-      <div><span>What is MarketRoute working on?</span><strong>{campaigns.length} active market view{campaigns.length===1?"":"s"}.</strong><p>Open a campaign to see its companies, research spend and opportunity population.</p></div>
-    </section>
+    <MarketRouteNarrativeCard narrative={narrative} eyebrow="MARKETROUTE BRIEF"/>
 
     {activationVisible&&<CampaignActivationProgress state={activation}/>} 
 

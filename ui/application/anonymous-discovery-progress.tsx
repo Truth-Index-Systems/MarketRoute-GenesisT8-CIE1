@@ -1,9 +1,10 @@
 "use client";
 import { useEffect,useRef,useState } from "react";
 import { Icon } from "@/ui/icons";
+import { MarketRouteNarrativeCard } from "@/ui/application/marketroute-narrative";
 import type { AnonymousDiscoveryView,AnonymousPipelineStage } from "@/application/discovery/service";
 
-function fingerprint(value:AnonymousDiscoveryView){return JSON.stringify({status:value.runStatus,activation:value.activation,metrics:value.metrics,pipeline:value.pipeline});}
+function fingerprint(value:AnonymousDiscoveryView){return JSON.stringify({status:value.runStatus,activation:value.activation,metrics:value.metrics,pipeline:value.pipeline,narrative:value.narrative.sourceFingerprint});}
 function pollDelay(value:AnonymousDiscoveryView){if(value.activation.status==="RUNNING")return 3000;if(value.activation.status==="PENDING")return 7000;if(value.metrics.authorisedRoutes>0)return 15000;return 8000;}
 function stateLabel(status:string){if(status==="ACTIVE")return"Working";if(status==="COMPLETE")return"Complete";if(status==="ATTENTION")return"Needs attention";return"Waiting";}
 
@@ -18,6 +19,7 @@ export function AnonymousDiscoveryProgress({initial}:{initial:AnonymousDiscovery
       <div><span>YOUR MARKETROUTE</span><h1>Building routes for <em>{state.companyName}</em></h1><p>{state.currentMessage}</p></div>
       <div className="mr-discovery-progress__pulse"><i className={active?.status==="ATTENTION"?"is-attention":""}/><strong>{active?.label??"Discovery saved"}</strong><small>{complete} of {state.pipeline.length} stages complete</small></div>
     </section>
+    <MarketRouteNarrativeCard narrative={state.narrative} eyebrow="WHAT I’VE ESTABLISHED"/>
     <section className="mr-discovery-pipeline">
       {state.pipeline.map((stage:AnonymousPipelineStage,index:number)=><article className={`mr-discovery-stage is-${stage.status.toLowerCase()}`} key={stage.key}>
         <div className="mr-discovery-stage__rail"><span>{stage.status==="COMPLETE"?<Icon name="check" size={14}/>:String(index+1).padStart(2,"0")}</span>{index<state.pipeline.length-1&&<i/>}</div>

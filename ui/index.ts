@@ -1,3 +1,4 @@
+export { MarketRouteNarrativeCard } from "./application/marketroute-narrative";
 export { AnonymousDiscoveryProgress } from "./application/anonymous-discovery-progress";
 export { MarketRouteLogo } from "./brand/marketroute-logo";
 export { Icon } from "./icons";
