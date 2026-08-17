@@ -10,6 +10,8 @@ export { Button, ButtonLink } from "./primitives/button";
 export { TruthGauge } from "./intelligence/truth-gauge";
 export { AuthorityStack } from "./intelligence/authority-stack";
 export { RoutePath } from "./intelligence/route-path";
+export { ContactRouteCard } from "./intelligence/contact-route-card";
+export { CopyValueButton } from "./primitives/copy-value-button";
 export { ResearchPressure } from "./intelligence/research-pressure";
 export { ProvenanceTrail } from "./intelligence/provenance-trail";
 export { PageHeader } from "./application/page-header";

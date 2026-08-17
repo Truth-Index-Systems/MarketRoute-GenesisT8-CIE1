@@ -2,13 +2,15 @@ import { workspaceSessionOrRedirect } from "@/app/app/_lib/session";
 import { applicationReadServiceFromEnvironment } from "@/application/read-model/service";
 import { asObject,asObjectArray,booleanValue,companyProfile,formatDateTime,percent,shortFingerprint,statusTone,text } from "@/application/read-model/presentation";
 import type { RouteNodeView } from "@/ui/intelligence/route-path";
-import { AuthorityStack,commercialVerdict,EmptyState,humanStatus,Icon,MarketRouteNarrativeCard,PageHeader,Panel,ProvenanceDrawer,ProvenanceTrail,ResearchPressure,routeSummary,RoutePath,SectionHeading,StatusBadge,TruthGauge,truthStrength } from "@/ui";
+import { AuthorityStack,commercialVerdict,ContactRouteCard,EmptyState,humanStatus,Icon,MarketRouteNarrativeCard,PageHeader,Panel,ProvenanceDrawer,ProvenanceTrail,ResearchPressure,routeSummary,RoutePath,SectionHeading,StatusBadge,TruthGauge,truthStrength } from "@/ui";
 import { marketRouteConversationServiceFromEnvironment } from "@/application/conversation/service";
+import { contactRoutePresentation } from "@/application/opportunities/contact-route-presentation";
 
-function routeNodes(value:unknown):RouteNodeView[]{
+function routeNodes(value:unknown,revealContact:boolean):RouteNodeView[]{
   return asObjectArray(value).map((node)=>{
     const kind=text(node.kind,"ORGANISATIONAL_UNIT");
-    return {label:text(node.label,"Unnamed node"),meta:text(node.meta,""),kind:kind==="COMPANY"?"company":kind==="PERSON"?"person":kind==="ACCESS_POINT"?"channel":"unit"};
+    const label=!revealContact&&kind==="PERSON"?"Named contact under verification":!revealContact&&kind==="ACCESS_POINT"?"Contact route under verification":text(node.label,"Unnamed node");
+    return {label,meta:text(node.meta,""),kind:kind==="COMPANY"?"company":kind==="PERSON"?"person":kind==="ACCESS_POINT"?"channel":"unit"};
   });
 }
 
@@ -33,6 +35,7 @@ export default async function OpportunityWorkspace({params,searchParams}:{params
   const returnHref=`/app/opportunities/${campaignId}/${companyId}`;
   const actionError=typeof query.actionError==="string"?decodeURIComponent(query.actionError):null;
   const truthIndex=Math.round(percent(truth.truthIndex));
+  const contactRoutes=contactRoutePresentation(routes);
   const narrative=await marketRouteConversationServiceFromEnvironment().opportunity(model,routes);
 
   const stages=[
@@ -50,6 +53,12 @@ export default async function OpportunityWorkspace({params,searchParams}:{params
 
     <MarketRouteNarrativeCard narrative={narrative} eyebrow="MARKETROUTE EXPLAINS"/>
 
+    <section className="mr-ready-routes">
+      <div className="mr-ready-routes__head"><div><span>READY TO USE</span><h2>{contactRoutes.ready.length>0?`${contactRoutes.ready.length} contact route${contactRoutes.ready.length===1?"":"s"} available`:"I'm still validating the route in"}</h2><p>{contactRoutes.ready.length>0?"Every route below is backed by current MarketRoute route/contact authority. Use the contact details directly, or open the evidence behind them.":"The route structure is forming, but MarketRoute has not yet verified a contact path strongly enough to present it as ready."}</p></div>{contactRoutes.ready.length>0&&<StatusBadge label="Ready to pursue" tone="green"/>}</div>
+      {contactRoutes.ready.length>0?<div className="mr-ready-routes__grid">{contactRoutes.ready.map((route,index)=><ContactRouteCard key={route.key} route={route} returnHref={returnHref} companyWebsiteHref={contactRoutes.companyWebsiteHref} index={index}/>)}</div>:<EmptyState icon="route" title="No ready contact route yet" body="MarketRoute is still checking route and contact evidence. This page will expose email, phone and direct links as soon as a route becomes current and authorised."/>}
+      {contactRoutes.researching.length>0&&<div className="mr-ready-routes__researching"><Icon name="search" size={14}/><span>{contactRoutes.researching.length} additional route{contactRoutes.researching.length===1?" is":"s are"} still being verified.</span></div>}
+    </section>
+
     <section className="mr-opportunity-verdict">
       <div className="mr-opportunity-verdict__copy"><span>MarketRoute view</span><h2>{verdict}</h2><p>{profile.executableNow?"The current commercial case, organisational route and contact authority allow action now.":"MarketRoute is holding action until the required commercial, route and contact authority is current."}</p></div>
       <dl className="mr-opportunity-verdict__facts">
@@ -66,7 +75,7 @@ export default async function OpportunityWorkspace({params,searchParams}:{params
       <Panel><SectionHeading eyebrow="Research quality · Truth Index" title="How strong is the research?" description="Coverage, evidence sufficiency, freshness and coherence are shown separately. Epistemic quality, not probability."/><TruthGauge value={truthIndex} state={humanStatus(text(truth.entityState,"NO CURRENT TRUTH"))}/><div className="mr-truth-dimensions">{truthDimensions.map(({label,value})=><div className="mr-truth-dimension" key={label}><div><span>{label}</span><strong>{Math.round(percent(value))}%</strong></div><div className="mr-progress"><span style={{width:`${percent(value)}%`}}/></div></div>)}</div><div className="mr-calibration-note"><Icon name="database" size={15}/><div><span>Probability calibration</span><strong>{humanStatus(text(truth.probabilityState,"UNCALIBRATED"))}</strong></div></div></Panel>
     </section>
 
-    <Panel className="mr-route-live-panel"><SectionHeading eyebrow="Route to buyer · R5 + R6" title="How do we reach the right person?" description="Structural paths come from current R5. A named person or channel only becomes usable when current R6 contact authority binds it."/>{paths.length===0?<EmptyState icon="route" title="No proven route yet" body="MarketRoute has not yet proved a structural path into this company."/>:<div className="mr-route-live-list">{paths.slice(0,8).map((path,index)=>{const authorised=booleanValue(path.authorised);return <article key={text(path.pathFingerprint)}><div className="mr-route-live-list__head"><div><span className="mr-route-live-list__number">Route {index+1}</span><StatusBadge compact label={authorised?"Contact-qualified":"Structural only"} tone={authorised?"green":"amber"}/></div><span title={text(path.pathState)}>{humanStatus(text(path.pathState))} · {shortFingerprint(path.pathFingerprint)}</span></div><RoutePath nodes={routeNodes(path.nodes)} caption={`${humanStatus(text(path.knowledgeState))} relationship knowledge · terminal access point ${text(path.terminalAccessPointId)}`}/></article>})}</div>}</Panel>
+    <Panel className="mr-route-live-panel"><SectionHeading eyebrow="Route structure & evidence" title="How was each route established?" description="This advanced view shows the structural path behind the ready contact panels above. It does not create or rank contact authority."/>{paths.length===0?<EmptyState icon="route" title="No proven route yet" body="MarketRoute has not yet proved a structural path into this company."/>:<div className="mr-route-live-list">{paths.slice(0,8).map((path,index)=>{const authorised=booleanValue(path.authorised);return <article key={text(path.pathFingerprint)}><div className="mr-route-live-list__head"><div><span className="mr-route-live-list__number">Route {index+1}</span><StatusBadge compact label={authorised?"Contact-qualified":"Structural only"} tone={authorised?"green":"amber"}/></div><span title={text(path.pathState)}>{humanStatus(text(path.pathState))} · {shortFingerprint(path.pathFingerprint)}</span></div><RoutePath nodes={routeNodes(path.nodes,authorised)} caption={`${humanStatus(text(path.knowledgeState))} relationship knowledge · terminal access point ${text(path.terminalAccessPointId)}`}/></article>})}</div>}</Panel>
 
     <section className="mr-dashboard-grid mr-dashboard-grid--secondary">
       <Panel><SectionHeading eyebrow="Open questions · Genesis research" title="What still needs to be known?" description={humanStatus(text(research.lifecycleState,"Current authority lifecycle"))}/>{gaps.length?<ResearchPressure items={gaps}/>:<EmptyState icon="check" title="No active research pressure" body="The current research read returned no pending knowledge gaps."/>}</Panel>

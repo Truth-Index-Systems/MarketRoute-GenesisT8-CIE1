@@ -56,3 +56,9 @@ Repairs the Build 7 relationship-claim insert so `claims.fingerprint_version` is
 ## Product Build 21 — Conversational Intelligence
 
 MarketRoute now narrates anonymous discovery, Command Centre, campaign and opportunity state through a grounded, cached AI explanation layer over canonical engine outputs. AI remains non-authoritative and cannot browse, invent evidence, or mutate Truth/R4/R5/R6/opportunity state. See `MARKETROUTE-V2-PRODUCT-BUILD21-CONVERSATIONAL-INTELLIGENCE.md`.
+
+## Product Build 22 — Opportunities, Routes & Contacts
+
+Authorised opportunities now expose actionable contact-route cards backed only by current R5/R6 state: named contacts and current roles, copyable email, an always-present phone row, click-to-call/email, professional/contact/company links, freshness and direct evidence links. Still-verifying paths are separated and redacted. See `MARKETROUTE-V2-PRODUCT-BUILD22-OPPORTUNITIES-ROUTES-CONTACTS.md`.
+
+**Genesis Growth remains paused by Product Build 19.** Customer-demand research is the active product policy.

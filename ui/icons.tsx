@@ -18,7 +18,10 @@ export type IconName =
   | "search"
   | "menu"
   | "user"
-  | "mail";
+  | "mail"
+  | "phone"
+  | "copy"
+  | "external";
 
 interface IconProps extends SVGProps<SVGSVGElement> {
   name: IconName;
@@ -44,6 +47,9 @@ const paths: Record<IconName, React.ReactNode> = {
   menu: <><path d="M4 7h16M4 12h16M4 17h16" /></>,
   user: <><circle cx="12" cy="8" r="3.5" /><path d="M5 20c.8-4.2 3.2-6.3 7-6.3s6.2 2.1 7 6.3" /></>,
   mail: <><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m4 7 8 6 8-6" /></>,
+  phone: <path d="M7.2 3.8 4.8 5.1c-.8.4-1.1 1.3-.8 2.2 1.8 5.6 6.1 9.9 11.7 11.7.9.3 1.8 0 2.2-.8l1.3-2.4c.4-.8.2-1.7-.5-2.2l-2.7-2c-.7-.5-1.6-.4-2.2.2l-1.1 1.1a13.4 13.4 0 0 1-4.6-4.6l1.1-1.1c.6-.6.7-1.5.2-2.2l-2-2.7c-.5-.7-1.4-.9-2.2-.5Z" />,
+  copy: <><rect x="8" y="8" width="11" height="11" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></>,
+  external: <><path d="M14 5h5v5"/><path d="m11 13 8-8"/><path d="M19 13v5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5"/></>,
 };
 
 export function Icon({ name, size = 18, ...props }: IconProps) {

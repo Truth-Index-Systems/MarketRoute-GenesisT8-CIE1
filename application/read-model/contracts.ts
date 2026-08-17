@@ -117,4 +117,4 @@ export interface ProvenanceClaimIndexReadModel extends CanonicalReadBase {
   claims: JsonObject[];
 }
 
-export interface RouteDisplayReadModel extends CanonicalReadBase { resourceType:"ROUTE_DISPLAY"; organisationId:string; campaignId:string; companyId:string; r5Decision:string; r6Decision:string; paths:JsonObject[]; }
+export interface RouteDisplayReadModel extends CanonicalReadBase { resourceType:"ROUTE_DISPLAY"; organisationId:string; campaignId:string; companyId:string; company:JsonObject; r5Decision:string; r6Decision:string; paths:JsonObject[]; }
