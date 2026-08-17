@@ -34,7 +34,10 @@ export class GenesisDatabaseGrowthService{
   private readonly relationships=relationshipServiceFromEnvironment();
   private readonly contacts=contactAuthorityServiceFromEnvironment();
 
-  private settings(){return{enabled:boolEnv("MARKETROUTE_GROWTH_ENABLED",true),seedTarget:intEnv("MARKETROUTE_GROWTH_SEED_TARGET_PER_INDUSTRY",50,1,10000),launchTarget:intEnv("MARKETROUTE_GROWTH_LAUNCH_TARGET_PER_INDUSTRY",500,1,100000),dailyBudgetUsd:numberEnv("MARKETROUTE_GROWTH_DAILY_BUDGET_USD",100,0,1_000_000),maxActionCostUsd:numberEnv("MARKETROUTE_GROWTH_MAX_ACTION_COST_USD",0.5,0.001,10000),discoveryBatch:intEnv("MARKETROUTE_GROWTH_DISCOVERY_BATCH",10,1,25),maxActions:intEnv("MARKETROUTE_CRON_GROWTH_ACTIONS",1,1,20),retryHours:intEnv("MARKETROUTE_GROWTH_RETRY_HOURS",24,1,720),refreshDays:intEnv("MARKETROUTE_GROWTH_REFRESH_DAYS",30,1,365)};}
+  private settings(){
+    const mode=(process.env.MARKETROUTE_GROWTH_MODE?.trim().toUpperCase()||"PAUSED");
+    const enabled=mode==="AUTONOMOUS"&&boolEnv("MARKETROUTE_GROWTH_ENABLED",false);
+    return{enabled,seedTarget:intEnv("MARKETROUTE_GROWTH_SEED_TARGET_PER_INDUSTRY",50,1,10000),launchTarget:intEnv("MARKETROUTE_GROWTH_LAUNCH_TARGET_PER_INDUSTRY",500,1,100000),dailyBudgetUsd:numberEnv("MARKETROUTE_GROWTH_DAILY_BUDGET_USD",100,0,1_000_000),maxActionCostUsd:numberEnv("MARKETROUTE_GROWTH_MAX_ACTION_COST_USD",0.5,0.001,10000),discoveryBatch:intEnv("MARKETROUTE_GROWTH_DISCOVERY_BATCH",10,1,25),maxActions:intEnv("MARKETROUTE_CRON_GROWTH_ACTIONS",1,1,20),retryHours:intEnv("MARKETROUTE_GROWTH_RETRY_HOURS",24,1,720),refreshDays:intEnv("MARKETROUTE_GROWTH_REFRESH_DAYS",30,1,365)};}
 
   private async persistClaim(companyId:string,row:GrowthClaimFinding){
     if(objectOf(row)===null||objectOf(row)===undefined)return null;

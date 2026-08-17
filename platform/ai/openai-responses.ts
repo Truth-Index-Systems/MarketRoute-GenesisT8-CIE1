@@ -1,7 +1,7 @@
 import { aiUsageRepositoryFromEnvironment } from "../database/ai-usage-repository";
 export interface OpenAIUsage { inputTokens:number; cachedInputTokens:number; outputTokens:number; webSearchCalls:number; estimatedCostUsd:number; }
 export interface OpenAIStructuredResult<T>{ value:T; responseId:string; model:string; usage:OpenAIUsage; sourceUrls:string[]; }
-export interface OpenAIUsageContext{requestKind:string;organisationId?:string|null;campaignId?:string|null;}
+export interface OpenAIUsageContext{requestKind:string;organisationId?:string|null;campaignId?:string|null;origin?:string|null;}
 
 function required(name:string):string{const value=process.env[name]?.trim();if(!value)throw new Error(`MARKETROUTE_ENV_REQUIRED:${name}`);return value;}
 function numeric(name:string,fallback:number):number{const raw=process.env[name]?.trim();const value=raw?Number(raw):fallback;return Number.isFinite(value)&&value>=0?value:fallback;}
@@ -31,10 +31,10 @@ export class OpenAIResponsesClient{
       const raw=await response.text();try{parsed=raw?JSON.parse(raw):null}catch{parsed={raw}}if(!response.ok)throw new Error(`MARKETROUTE_OPENAI_HTTP_${response.status}:${String(parsed?.error?.code??parsed?.error?.message??"REQUEST_FAILED")}`);
       const text=outputText(parsed);let value:T;try{value=JSON.parse(text) as T}catch{throw new Error("MARKETROUTE_OPENAI_STRUCTURED_PARSE_FAILED")}
       const usage=usageOf(parsed);const result={value,responseId:String(parsed.id??""),model:String(parsed.model??model),usage,sourceUrls:sourceUrlsOf(parsed)};
-      if(input.usageContext)void aiUsageRepositoryFromEnvironment().record({organisationId:input.usageContext.organisationId??null,campaignId:input.usageContext.campaignId??null,provider:"OPENAI_RESPONSES",model:result.model,requestKind:input.usageContext.requestKind,inputTokens:usage.inputTokens,outputTokens:usage.outputTokens,costUsd:usage.estimatedCostUsd,latencyMs:Date.now()-started,status:"SUCCEEDED",metadata:{cachedInputTokens:usage.cachedInputTokens,webSearchCalls:usage.webSearchCalls,responseId:result.responseId}}).catch(()=>{});
+      if(input.usageContext)void aiUsageRepositoryFromEnvironment().record({organisationId:input.usageContext.organisationId??null,campaignId:input.usageContext.campaignId??null,provider:"OPENAI_RESPONSES",model:result.model,requestKind:input.usageContext.requestKind,inputTokens:usage.inputTokens,outputTokens:usage.outputTokens,costUsd:usage.estimatedCostUsd,latencyMs:Date.now()-started,status:"SUCCEEDED",metadata:{cachedInputTokens:usage.cachedInputTokens,webSearchCalls:usage.webSearchCalls,responseId:result.responseId,researchOrigin:input.usageContext.origin??null}}).catch(()=>{});
       return result;
     }catch(error){
-      if(input.usageContext){const usage=usageOf(parsed);const status=input.signal?.aborted?"CANCELLED":"FAILED";void aiUsageRepositoryFromEnvironment().record({organisationId:input.usageContext.organisationId??null,campaignId:input.usageContext.campaignId??null,provider:"OPENAI_RESPONSES",model:String(parsed?.model??model),requestKind:input.usageContext.requestKind,inputTokens:usage.inputTokens,outputTokens:usage.outputTokens,costUsd:usage.estimatedCostUsd,latencyMs:Date.now()-started,status,metadata:{cachedInputTokens:usage.cachedInputTokens,webSearchCalls:usage.webSearchCalls,errorCode:error instanceof Error?error.message.slice(0,300):"UNKNOWN"}}).catch(()=>{});}
+      if(input.usageContext){const usage=usageOf(parsed);const status=input.signal?.aborted?"CANCELLED":"FAILED";void aiUsageRepositoryFromEnvironment().record({organisationId:input.usageContext.organisationId??null,campaignId:input.usageContext.campaignId??null,provider:"OPENAI_RESPONSES",model:String(parsed?.model??model),requestKind:input.usageContext.requestKind,inputTokens:usage.inputTokens,outputTokens:usage.outputTokens,costUsd:usage.estimatedCostUsd,latencyMs:Date.now()-started,status,metadata:{cachedInputTokens:usage.cachedInputTokens,webSearchCalls:usage.webSearchCalls,errorCode:error instanceof Error?error.message.slice(0,300):"UNKNOWN",researchOrigin:input.usageContext.origin??null}}).catch(()=>{});}
       throw error;
     }
   }

@@ -3,6 +3,7 @@ import {
   RESEARCH_PLANNER_VERSION,
   RESEARCH_SEMANTICS_VERSION,
   type ResearchGapCandidate,
+  type ResearchOrigin,
   type ResearchPlan,
   type ResearchPlannerContext,
   type ResearchTier,
@@ -35,6 +36,13 @@ function positiveInteger(value: number, code: string): number {
 function normalHints(values: string[] | undefined): string[] {
   return [...new Set((values ?? []).map((v) => v.normalize("NFKC").trim()).filter(Boolean))].sort();
 }
+
+function researchOrigin(candidate: ResearchGapCandidate): ResearchOrigin {
+  return candidate.tier === "CURRENTNESS_REPAIR" || candidate.tier === "EXPIRING_SOON"
+    ? "CUSTOMER_REFRESH"
+    : "CUSTOMER_CAMPAIGN";
+}
+
 function canonicalCandidate(candidate: ResearchGapCandidate): ResearchGapCandidate {
   if (!candidate.gapKey.trim() || !candidate.subjectId.trim() || !candidate.reasonCode.trim()) throw new Error("MARKETROUTE_RESEARCH_GAP_IDENTITY_REQUIRED");
   return {
@@ -101,7 +109,7 @@ export function planResearch(context: ResearchPlannerContext): ResearchPlan {
       queryHints: normalHints(candidate.queryHints),
       costCeilingUsd: Math.round(ceiling * 1e8) / 1e8,
       dedupeKey,
-      payload: { metadata: candidate.metadata ?? {}, authorityEnvelopeFingerprint: context.authorityEnvelopeFingerprint },
+      payload: { metadata: candidate.metadata ?? {}, authorityEnvelopeFingerprint: context.authorityEnvelopeFingerprint, researchOrigin: researchOrigin(candidate) },
     });
     if (!revalidationOnly) remaining = Math.max(0, Math.round((remaining - ceiling) * 1e8) / 1e8);
   }

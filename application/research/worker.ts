@@ -12,7 +12,8 @@ export class ResearchWorker {
     const now=(at?new Date(at):new Date()).toISOString();const work=await this.d.repository.claimNext(schedulerRunId,now);if(!work)return null;
     let incurredCostUsd=0;
     try{
-      let metadata:Record<string,unknown>={action:work.action};
+      const requestedOrigin=String(work.payload.researchOrigin??"CUSTOMER_CAMPAIGN");const executionOrigin=work.attemptNumber>1?"SYSTEM_RETRY":requestedOrigin;
+      let metadata:Record<string,unknown>={action:work.action,researchOrigin:requestedOrigin,executionOrigin,attemptNumber:work.attemptNumber};
       if(work.action==="REVALIDATE_R4") await this.d.r4.evaluate({organisationId:work.organisationId,campaignId:work.campaignId,companyId:work.companyId,referenceTime:now});
       else if(work.action==="REVALIDATE_R5") await this.d.relationships.evaluateRoutes({organisationId:work.organisationId,campaignId:work.campaignId,companyId:work.companyId,referenceTime:now});
       else if(work.action==="REVALIDATE_R6") await this.d.contacts.evaluate({organisationId:work.organisationId,campaignId:work.campaignId,companyId:work.companyId,referenceTime:now});

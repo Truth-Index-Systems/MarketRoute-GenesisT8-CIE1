@@ -6,6 +6,7 @@ export const RESEARCH_SEMANTICS_VERSION = "MRV2-RESEARCH-SEMANTICS-1.0.0" as con
 export const RESEARCH_PROVIDER_TIMEOUT_MS = 180_000 as const;
 
 export type ResearchLayer = "R4" | "R5" | "R6";
+export type ResearchOrigin = "CUSTOMER_CAMPAIGN" | "CUSTOMER_REFRESH" | "SYSTEM_RETRY";
 export type ResearchTier = "DECISION_BLOCKER" | "CURRENTNESS_REPAIR" | "EXPIRING_SOON" | "ENRICHMENT";
 export type ResearchAction =
   | "ACQUIRE_CLAIM_EVIDENCE"

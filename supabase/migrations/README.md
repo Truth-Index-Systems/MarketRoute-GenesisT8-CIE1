@@ -45,3 +45,4 @@ Build 13 keeps exactly three authority writers. The read model is presentation c
 - `0030_campaign_lifecycle_controls.sql` — owner/admin pause, resume and typed-name archival with append-only audit, active-campaign research claiming and archived-campaign filtering.
 - `0031_research_plan_persistence_hotfix.sql` — aligns PostgreSQL/JavaScript timestamp fingerprints and qualifies shadowed plan deduplication columns in the first live research-plan write.
 - `0032_r4_persistence_ambiguity_hotfix.sql` — qualifies the existing R4 writer’s input-fingerprint deduplication lookup without changing authority semantics.
+- Product Build 19: `0039_product_demand_driven_genesis.sql` — pauses speculative Genesis Growth, terminates any live growth lease, fail-closes the growth scheduler while paused, and preserves customer campaign research plus the reusable Genesis intelligence bank.
