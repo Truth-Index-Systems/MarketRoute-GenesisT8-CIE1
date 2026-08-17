@@ -1,3 +1,4 @@
+export { AnonymousDiscoveryProgress } from "./application/anonymous-discovery-progress";
 export { MarketRouteLogo } from "./brand/marketroute-logo";
 export { Icon } from "./icons";
 export { AppShell } from "./shell/app-shell";

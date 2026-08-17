@@ -3,11 +3,11 @@
   "crons": [
     {
       "path": "/api/cron/bootstrap",
-      "schedule": "*/10 * * * *"
+      "schedule": "* * * * *"
     },
     {
       "path": "/api/cron/research",
-      "schedule": "*/5 * * * *"
+      "schedule": "*/2 * * * *"
     },
     {
       "path": "/api/cron/delivery",

@@ -50,7 +50,7 @@ export default function Home() {
           </nav>
           <div className="mr-site-nav__actions">
             <a className="mr-site-nav__signin" href="/login">Sign in</a>
-            <ButtonLink href="/preview" variant="primary" icon={<Icon name="arrow" size={15} />}>See MarketRoute</ButtonLink>
+            <ButtonLink href="/discover" variant="primary" icon={<Icon name="arrow" size={15} />}>Find my routes</ButtonLink>
           </div>
         </div>
       </header>
@@ -64,13 +64,14 @@ export default function Home() {
               MarketRoute researches your market and the companies inside it, verifies whether they are worth pursuing and maps evidence-backed routes to the right buyer — so your team can move from a market to an actionable opportunity without guessing.
             </p>
             <div className="mr-site-hero__actions">
-              <ButtonLink href="/preview" variant="primary" icon={<Icon name="arrow" size={16} />}>See MarketRoute in action</ButtonLink>
+              <ButtonLink href="/discover" variant="primary" icon={<Icon name="arrow" size={16} />}>Find my routes — free</ButtonLink>
               <ButtonLink href="#how-it-works" variant="secondary">How it works</ButtonLink>
             </div>
             <div className="mr-site-hero__microproof">
               <span><Icon name="check" size={14} /> Commercial reason</span>
               <span><Icon name="check" size={14} /> Route to buyer</span>
               <span><Icon name="check" size={14} /> Evidence behind both</span>
+              <span><Icon name="check" size={14} /> No account required</span>
             </div>
           </div>
 
@@ -295,11 +296,11 @@ export default function Home() {
           <div className="mr-site-access__card">
             <div>
               <div className="mr-site-chip mr-site-chip--soft"><Icon name="spark" size={14}/> Launch access</div>
-              <h2>Start with the product, then build your market.</h2>
-              <p>We are keeping the acquisition flow deliberately simple: see the complete example first. If MarketRoute makes sense for your team, create your workspace from there.</p>
+              <h2>Tell MarketRoute what you sell. Watch it build the route.</h2>
+              <p>Start with one free discovery run. MarketRoute understands your business, maps the relevant market and begins researching real organisations before you create an account.</p>
             </div>
-            <div className="mr-site-access__steps"><span><b>1</b> See the example</span><i>→</i><span><b>2</b> Create your account</span><i>→</i><span><b>3</b> Add your company</span></div>
-            <ButtonLink href="/preview" variant="primary" icon={<Icon name="arrow" size={16}/>}>See MarketRoute in action</ButtonLink>
+            <div className="mr-site-access__steps"><span><b>1</b> Enter your business</span><i>→</i><span><b>2</b> Watch research progress</span><i>→</i><span><b>3</b> See routes emerge</span></div>
+            <ButtonLink href="/discover" variant="primary" icon={<Icon name="arrow" size={16}/>}>Start free discovery</ButtonLink>
           </div>
         </div>
       </section>
@@ -307,7 +308,7 @@ export default function Home() {
       <section className="mr-site-final">
         <div className="mr-site-shell mr-site-final__inner">
           <div><span>MarketRoute</span><h2>Turn your market into a route to revenue.</h2><p>Know which companies are worth pursuing, why they matter and how to reach the right people.</p></div>
-          <div className="mr-site-final__actions"><ButtonLink href="/preview" variant="primary" icon={<Icon name="arrow" size={16}/>}>See the product</ButtonLink><a href="/login">Already have an account? Sign in</a></div>
+          <div className="mr-site-final__actions"><ButtonLink href="/discover" variant="primary" icon={<Icon name="arrow" size={16}/>}>Find my routes — free</ButtonLink><a href="/login">Already have an account? Sign in</a></div>
         </div>
       </section>
 

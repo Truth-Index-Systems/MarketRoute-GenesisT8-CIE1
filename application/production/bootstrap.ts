@@ -16,17 +16,20 @@ export async function runWorkspaceActivationOnce(workerId=`ACTIVATION:${randomUU
   const job=await repo.claim(workerId,new Date().toISOString());
   if(!job)return null;
   try{
+    const anonymous=await repo.anonymousPolicy(job.organisation_id);
+    const activationOrigin=anonymous?"ANONYMOUS_DISCOVERY":"CUSTOMER_ACTIVATION";
     const material={websiteUrl:job.website_url,sellerOfferingText:job.seller_offering_text,objectiveText:job.objective_text,targetMarketText:job.target_market_text,hardConstraintsText:job.hard_constraints_text,noHardConstraints:job.no_hard_constraints};
     const sellerService=new SellerGenomeService(SellerGenomeRepository.fromEnvironment());
-    const persisted=await sellerService.extractAndPersist({organisationId:job.organisation_id,sellerBusinessId:job.seller_business_id,sellerDisplayName:job.seller_name,materialKind:"COMPOSITE",sourceContent:material,extractor:openAISellerGenomeExtractorFromEnvironment(),createdByUserId:job.created_by_user_id});
+    const persisted=await sellerService.extractAndPersist({organisationId:job.organisation_id,sellerBusinessId:job.seller_business_id,sellerDisplayName:job.seller_name,materialKind:"COMPOSITE",sourceContent:material,extractor:openAISellerGenomeExtractorFromEnvironment({organisationId:job.organisation_id,origin:activationOrigin}),createdByUserId:job.created_by_user_id});
     await repo.stage(job.job_id,workerId,"SELLER_CONTEXT_READY",30,{genomeSnapshotId:persisted.genomeSnapshotId,semanticCompleteness:persisted.semanticCompleteness});
     await repo.stage(job.job_id,workerId,"CREATING_CAMPAIGN",38,{campaignName:job.campaign_name??"Initial market research"});
     const campaignId=await repo.createCampaign(job.organisation_id,job.seller_business_id,job.campaign_name,job.objective_text);
     await repo.stage(job.job_id,workerId,"CAMPAIGN_CREATED",48,{campaignId});
     await sellerService.selectCampaignObjective({organisationId:job.organisation_id,campaignId,genomeSnapshotId:persisted.genomeSnapshotId,objectiveKey:"primary_objective",requestId:randomUUID()});
-    await repo.setResearchPolicy({organisationId:job.organisation_id,campaignId,dailyBudgetUsd:num("MARKETROUTE_DEFAULT_DAILY_RESEARCH_BUDGET_USD",100,1,10000),maxJobCostUsd:num("MARKETROUTE_DEFAULT_MAX_JOB_COST_USD",0.5,0.05,25),maxConcurrentJobs:Math.floor(num("MARKETROUTE_DEFAULT_RESEARCH_CONCURRENCY",2,1,20)),maxWorkUnitsPerPlan:Math.floor(num("MARKETROUTE_DEFAULT_WORK_UNITS_PER_PLAN",4,1,20)),refreshHorizonHours:Math.floor(num("MARKETROUTE_DEFAULT_REFRESH_HORIZON_HOURS",2,1,168))});
+    const anonymousBudget=anonymous?Math.max(0.5,Math.min(25,anonymous.lifetimeBudgetUsd)):null;
+    await repo.setResearchPolicy({organisationId:job.organisation_id,campaignId,dailyBudgetUsd:anonymousBudget??num("MARKETROUTE_DEFAULT_DAILY_RESEARCH_BUDGET_USD",100,1,10000),maxJobCostUsd:anonymous?Math.min(anonymousBudget!,num("MARKETROUTE_ANONYMOUS_MAX_JOB_COST_USD",0.35,0.05,2)):num("MARKETROUTE_DEFAULT_MAX_JOB_COST_USD",0.5,0.05,25),maxConcurrentJobs:anonymous?1:Math.floor(num("MARKETROUTE_DEFAULT_RESEARCH_CONCURRENCY",2,1,20)),maxWorkUnitsPerPlan:anonymous?Math.floor(num("MARKETROUTE_ANONYMOUS_WORK_UNITS_PER_PLAN",3,1,6)):Math.floor(num("MARKETROUTE_DEFAULT_WORK_UNITS_PER_PLAN",4,1,20)),refreshHorizonHours:anonymous?Math.floor(num("MARKETROUTE_ANONYMOUS_REFRESH_HORIZON_HOURS",24,1,168)):Math.floor(num("MARKETROUTE_DEFAULT_REFRESH_HORIZON_HOURS",2,1,168))});
 
-    const desiredCount=activationTargetCount();
+    const desiredCount=anonymous?.targetCount??activationTargetCount();
     const minimumBankTargets=activationMinimumBankTargets(desiredCount);
     const industryKeys=activationIndustryKeys(persisted.genome,job.target_market_text);
     const countryCodes=activationCountryCodes(persisted.genome,job.target_market_text);
@@ -39,7 +42,7 @@ export async function runWorkspaceActivationOnce(workerId=`ACTIVATION:${randomUU
     if(candidates.length<minimumBankTargets){
       await repo.stage(job.job_id,workerId,"DISCOVERING_TARGETS",66,{desiredCount,bankCandidateCount:candidates.length,remainingCount:Math.max(1,desiredCount-candidates.length)});
       const remaining=Math.max(1,desiredCount-candidates.length);
-      const discovery=await openAITargetDiscoveryProviderFromEnvironment().discover({sellerName:job.seller_name,sellerDomain:job.canonical_domain,objectiveText:job.objective_text,targetMarketText:job.target_market_text,canonicalSellerGenome:persisted.genome,organisationId:job.organisation_id,campaignId,count:remaining,excludedDomains:candidates.map(candidate=>candidate.domain)});
+      const discovery=await openAITargetDiscoveryProviderFromEnvironment().discover({sellerName:job.seller_name,sellerDomain:job.canonical_domain,objectiveText:job.objective_text,targetMarketText:job.target_market_text,canonicalSellerGenome:persisted.genome,organisationId:job.organisation_id,campaignId,count:remaining,excludedDomains:candidates.map(candidate=>candidate.domain),origin:activationOrigin});
       webMetadata=discovery.metadata;
       for(const company of discovery.companies){if(candidates.some(existing=>existing.domain===company.domain))continue;candidates.push(company);webCandidateCount++;if(candidates.length>=desiredCount)break;}
     }

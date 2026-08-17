@@ -37,7 +37,7 @@ x.push(check("refresh work is distinguished from campaign demand",()=>assert(pla
 x.push(check("retry execution is distinguished",()=>assert(worker.includes('work.attemptNumber>1?"SYSTEM_RETRY"')&&worker.includes("requestedOrigin")&&worker.includes("executionOrigin"),"retry origin")));
 x.push(check("AI usage records origin metadata",()=>assert(openai.includes("origin?:string|null")&&openai.includes("researchOrigin:input.usageContext.origin??null"),"usage origin")));
 x.push(check("campaign research propagates origin into AI usage",()=>assert(researchProvider.includes("origin:ids.researchOrigin"),"research usage")));
-x.push(check("activation AI calls are customer-originated",()=>assert(targetDiscovery.includes('origin:"CUSTOMER_ACTIVATION"')&&sellerGenome.includes('origin:"CUSTOMER_ACTIVATION"'),"activation origin")));
+x.push(check("activation AI calls are customer-originated",()=>assert(targetDiscovery.includes('??"CUSTOMER_ACTIVATION"')&&sellerGenome.includes('??"CUSTOMER_ACTIVATION"'),"activation origin")));
 x.push(check("founder dashboard treats paused growth as healthy",()=>assert(founder.includes('env.growthEnabled?')&&founder.includes('"DISABLED"')&&founderPage.includes('Paused — no cron')&&founderPage.includes('Paused by design'),"founder growth policy")));
 x.push(check("product build validation wired",()=>assert(pkg.scripts["validate:product-build19"],"script")));
 printResults("MarketRoute V2 Product Build 19 — Demand-Driven Genesis static gate",x);
