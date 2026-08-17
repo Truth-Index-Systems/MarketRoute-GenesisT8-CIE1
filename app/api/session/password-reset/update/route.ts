@@ -1,0 +1,4 @@
+import { NextResponse } from "next/server";
+import { sessionServiceFromEnvironment } from "@/application/session/service";
+import { sameOriginOrThrow } from "@/app/app/_lib/security";
+export async function POST(request:Request){try{sameOriginOrThrow(request);const body=await request.json() as {accessToken?:unknown;password?:unknown;passwordConfirmation?:unknown};const accessToken=String(body.accessToken??"");const password=String(body.password??"");const confirmation=String(body.passwordConfirmation??"");if(!accessToken)throw new Error("MARKETROUTE_PASSWORD_RECOVERY_TOKEN_REQUIRED");if(password!==confirmation)throw new Error("MARKETROUTE_PASSWORDS_DO_NOT_MATCH");await sessionServiceFromEnvironment().updatePassword(accessToken,password);return NextResponse.json({ok:true});}catch(error){return NextResponse.json({ok:false,error:error instanceof Error?error.message:"MARKETROUTE_PASSWORD_RESET_FAILED"},{status:400});}}

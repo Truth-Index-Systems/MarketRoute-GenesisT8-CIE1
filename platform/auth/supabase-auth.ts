@@ -52,6 +52,13 @@ export class SupabaseAuthClient {
     return parseSession(await request("/auth/v1/token?grant_type=refresh_token",{method:"POST",body:JSON.stringify({refresh_token:refreshToken})}));
   }
   async user(accessToken:string):Promise<AuthenticatedUser>{return parseUser(await request("/auth/v1/user",{method:"GET"},accessToken));}
+  async requestPasswordReset(email:string,redirectTo:string):Promise<void>{
+    const path=`/auth/v1/recover?redirect_to=${encodeURIComponent(redirectTo)}`;
+    await request(path,{method:"POST",body:JSON.stringify({email})});
+  }
+  async updatePassword(accessToken:string,password:string):Promise<void>{
+    await request("/auth/v1/user",{method:"PUT",body:JSON.stringify({password})},accessToken);
+  }
   async signOut(accessToken:string):Promise<void>{await request("/auth/v1/logout",{method:"POST"},accessToken);}
 }
 export function supabaseAuthClientFromEnvironment(){return new SupabaseAuthClient();}

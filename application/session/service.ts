@@ -1,3 +1,4 @@
+import { anonymousDiscoveryRepositoryFromEnvironment } from "../../platform/database/anonymous-discovery-repository";
 import { supabaseAuthClientFromEnvironment, type SupabaseAuthSession, type AuthenticatedUser } from "../../platform/auth/supabase-auth";
 import { workspaceRepositoryFromEnvironment, type WorkspaceMembership } from "../../platform/database/workspace-repository";
 import { AuthenticatedRpcClient } from "../../platform/database/authenticated-rpc";
@@ -34,6 +35,7 @@ function validatedActivationBrief(input:ActivationBriefInput){
 export class SessionService {
   private readonly auth=supabaseAuthClientFromEnvironment();
   private readonly workspace=workspaceRepositoryFromEnvironment();
+  private readonly discovery=anonymousDiscoveryRepositoryFromEnvironment();
   async signUp(email:string,password:string){
     const cleanEmail=email.trim().toLowerCase();
     if(!cleanEmail||!password)throw new Error("MARKETROUTE_SIGNUP_CREDENTIALS_REQUIRED");
@@ -47,6 +49,8 @@ export class SessionService {
   }
   async authenticate(accessToken:string):Promise<MarketRouteSession>{const user=await this.auth.user(accessToken);const memberships=await this.workspace.memberships(user.id);return {user,memberships};}
   async refresh(refreshToken:string){const auth=await this.auth.refresh(refreshToken);const memberships=await this.workspace.memberships(auth.user.id);return {auth,session:{user:auth.user,memberships}};}
+  async requestPasswordReset(email:string,redirectTo:string){const clean=email.trim().toLowerCase();if(!clean)throw new Error("MARKETROUTE_RESET_EMAIL_REQUIRED");await this.auth.requestPasswordReset(clean,redirectTo);}
+  async updatePassword(accessToken:string,password:string){if(password.length<8)throw new Error("MARKETROUTE_PASSWORD_MINIMUM_8_CHARACTERS");await this.auth.updatePassword(accessToken,password);}
   async signOut(accessToken:string){await this.auth.signOut(accessToken);}
   selectWorkspace(session:MarketRouteSession,requestedId:string|null|undefined):WorkspaceMembership{
     const selected=requestedId?session.memberships.find((m)=>m.organisationId===requestedId):null;const workspace=selected??session.memberships[0];if(!workspace)throw new Error("MARKETROUTE_NO_ACTIVE_WORKSPACE_MEMBERSHIP");return workspace;
@@ -83,13 +87,13 @@ export class SessionService {
   }
   async assertOpportunityScope(session:MarketRouteSession,opportunityId:string,organisationId:string):Promise<void>{
     if(!session.memberships.some((m)=>m.organisationId===organisationId))throw new Error("MARKETROUTE_WORKSPACE_ACCESS_DENIED");
-    const actual=await this.workspace.opportunityOrganisation(opportunityId);if(actual!==organisationId)throw new Error("MARKETROUTE_OPPORTUNITY_SCOPE_MISMATCH");
+    const actual=await this.workspace.opportunityOrganisation(opportunityId);if(actual!==organisationId)throw new Error("MARKETROUTE_OPPORTUNITY_SCOPE_MISMATCH");const access=await this.discovery.access(organisationId);if(access.mode==="DISCOVERY_FREE"&&!access.opportunityIds.includes(opportunityId))throw new Error("MARKETROUTE_DISCOVERY_UPGRADE_REQUIRED");
   }
   async assertOpportunityWriteScope(session:MarketRouteSession,opportunityId:string,organisationId:string):Promise<void>{
     const membership=session.memberships.find((m)=>m.organisationId===organisationId);
     if(!membership)throw new Error("MARKETROUTE_WORKSPACE_ACCESS_DENIED");
     if(membership.role==="VIEWER")throw new Error("MARKETROUTE_WORKSPACE_WRITE_ACCESS_DENIED");
-    const actual=await this.workspace.opportunityOrganisation(opportunityId);if(actual!==organisationId)throw new Error("MARKETROUTE_OPPORTUNITY_SCOPE_MISMATCH");
+    const actual=await this.workspace.opportunityOrganisation(opportunityId);if(actual!==organisationId)throw new Error("MARKETROUTE_OPPORTUNITY_SCOPE_MISMATCH");const access=await this.discovery.access(organisationId);if(access.mode==="DISCOVERY_FREE"&&!access.opportunityIds.includes(opportunityId))throw new Error("MARKETROUTE_DISCOVERY_UPGRADE_REQUIRED");
   }
 }
 export function sessionServiceFromEnvironment(){return new SessionService();}

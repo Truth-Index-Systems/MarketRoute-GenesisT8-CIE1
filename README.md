@@ -62,3 +62,7 @@ MarketRoute now narrates anonymous discovery, Command Centre, campaign and oppor
 Authorised opportunities now expose actionable contact-route cards backed only by current R5/R6 state: named contacts and current roles, copyable email, an always-present phone row, click-to-call/email, professional/contact/company links, freshness and direct evidence links. Still-verifying paths are separated and redacted. See `MARKETROUTE-V2-PRODUCT-BUILD22-OPPORTUNITIES-ROUTES-CONTACTS.md`.
 
 **Genesis Growth remains paused by Product Build 19.** Customer-demand research is the active product policy.
+
+## Product Build 23 — Free Eight + Account Claim
+
+Anonymous discovery now converts into a persistent free customer workspace without rerunning research. The first eight authority-ready opportunities are stored as permanent entitlements; exact contact values remain server-side until account claim, hidden opportunities are enforced server-side, and claimed discovery work may only finish within its original anonymous budget/window. Password recovery is also included. See `MARKETROUTE-V2-PRODUCT-BUILD23-FREE-EIGHT-ACCOUNT-CLAIM.md`.

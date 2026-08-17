@@ -1,0 +1,3 @@
+import { MarketRouteLogo } from "@/ui";
+import { ResetPasswordForm } from "@/ui/application/reset-password-form";
+export default function ResetPassword(){return <main className="mr-login"><section className="mr-login__context"><a href="/"><MarketRouteLogo/></a><div><span>ACCOUNT RECOVERY</span><h1>Choose a new password.</h1><p>Once updated, sign in normally and continue with the MarketRoute already saved to your account.</p></div><footer>MarketRoute · by Truth Index Systems</footer></section><section className="mr-login__panel"><div className="mr-kicker"><span/> NEW PASSWORD</div><h2>Reset your password</h2><p>Use at least eight characters.</p><ResetPasswordForm/></section></main>}

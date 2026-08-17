@@ -1,0 +1,4 @@
+import { NextResponse } from "next/server";
+import { sessionServiceFromEnvironment } from "@/application/session/service";
+import { sameOriginOrThrow } from "@/app/app/_lib/security";
+export async function POST(request:Request){try{sameOriginOrThrow(request);const form=await request.formData();const email=String(form.get("email")??"");const origin=new URL(request.url).origin;await sessionServiceFromEnvironment().requestPasswordReset(email,`${origin}/reset-password`);const notice=encodeURIComponent("If that email has a MarketRoute account, a password-reset link is on its way.");return NextResponse.redirect(new URL(`/forgot-password?notice=${notice}`,request.url),303);}catch(error){const code=encodeURIComponent(error instanceof Error?error.message:"MARKETROUTE_PASSWORD_RESET_REQUEST_FAILED");return NextResponse.redirect(new URL(`/forgot-password?error=${code}`,request.url),303);}}

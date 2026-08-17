@@ -23,3 +23,5 @@ export { EmptyState } from "./application/empty-state";
 export { IntelligenceTable } from "./application/intelligence-table";
 export { ProvenanceDrawer } from "./application/provenance-drawer";
 export { humanStatus, commercialVerdict, truthStrength, routeSummary, researchPressureLabel } from "./application/language";
+
+export { ResetPasswordForm } from "./application/reset-password-form";
