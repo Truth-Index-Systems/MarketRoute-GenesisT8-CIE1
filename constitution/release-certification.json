@@ -1,5 +1,5 @@
 {
-  "version": "MRV2-RELEASE-CERTIFICATION-1.0.0",
+  "version": "MRV2-RELEASE-CERTIFICATION-1.1.0",
   "build": 18,
   "candidate": "MarketRoute V2 / Genesis T8",
   "sourceBuild": 17,
@@ -13,9 +13,9 @@
     "marketroute.r6.contact-truth"
   ],
   "sourceCertification": "PASS",
-  "databaseMigrationRequired": false,
+  "databaseMigrationRequired": true,
   "liveCutoverState": "PENDING_REAL_V2_DATA_TRACE",
-  "freezeState": "SOURCE_FROZEN_PRODUCTION_CANDIDATE",
+  "freezeState": "SOURCE_FROZEN_PRODUCTION_CANDIDATE_WITH_CERTIFIED_OPERATIONAL_HOTFIXES",
   "cutoverRequirements": [
     "Build 17 factual/evidence migration applied to V2",
     "A real migrated company earns V2 Truth from evidence",
@@ -23,6 +23,22 @@
     "A canonical application read proves current authority lineage",
     "A current claim provenance read reaches source and evidence",
     "Queued engagement is blocked if current execution authority is lost",
+    "Operational migrations through 0061 are applied in order",
     "Production environment passes the Build 18 preflight"
+  ],
+  "latestOperationalMigration": 61,
+  "operationalMigrations": [
+    {
+      "migration": 60,
+      "file": "0060_anonymous_discovery_ready_quota_ssr_hardening.sql",
+      "authorityWriter": false,
+      "purpose": "Ready-opportunity quota and public SSR hardening"
+    },
+    {
+      "migration": 61,
+      "file": "0061_anonymous_discovery_refill_liveness_launch_certification.sql",
+      "authorityWriter": false,
+      "purpose": "Budget-aware refill liveness and launch certification"
+    }
   ]
 }

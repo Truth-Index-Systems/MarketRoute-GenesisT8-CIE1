@@ -1,0 +1,17 @@
+import assert from "node:assert/strict";
+import fs from "node:fs";
+const sql=fs.readFileSync(new URL("../../supabase/migrations/0060_anonymous_discovery_ready_quota_ssr_hardening.sql",import.meta.url),"utf8");
+const bootstrap=fs.readFileSync(new URL("../../application/production/bootstrap.ts",import.meta.url),"utf8");
+const commercial=fs.readFileSync(new URL("../../application/commercial/service.ts",import.meta.url),"utf8");
+const tests=[];const test=(name,fn)=>tests.push([name,fn]);
+test("ten scoped but five ready is still refill eligible",()=>{const claim=sql.slice(sql.indexOf("marketroute_claim_anonymous_discovery_extension_v1"),sql.indexOf("marketroute_link_anonymous_discovery_extension_company_v1"));assert.doesNotMatch(claim,/scoped_count[^\n]*<[^\n]*target_count/);assert.match(claim,/ready_count_v1\(r\.id,p_at\)<r\.target_count/);});
+test("ready target uses the same readiness predicate as free unlocks",()=>{assert.match(sql,/o\.workflow_state IN\('REVIEWABLE','APPROVED','ENGAGED'\)[\s\S]*marketroute_authority_ready_v1/);});
+test("refill still waits for current scoped companies to get first Truth research",()=>{assert.match(sql,/marketroute_anonymous_discovery_research_cycle_ready_v1\(r\.id\)/);});
+test("refill cannot move to a later customer campaign",()=>{assert.match(sql,/r\.original_campaign_id=j\.campaign_id/);assert.match(sql,/c\.id=r\.original_campaign_id/);});
+test("paid conversion and expiry still stop free refill",()=>{assert.match(sql,/NOT public\.marketroute_paid_entitlement_active_v1/);assert.match(sql,/r\.research_expires_at>p_at/);});
+test("candidate expansion cannot run without a hard ceiling",()=>{const link=sql.slice(sql.indexOf("marketroute_link_anonymous_discovery_extension_company_v1"),sql.indexOf("marketroute_complete_anonymous_discovery_extension_v1"));assert.match(link,/v_candidate_ceiling:=LEAST\(40/);assert.match(link,/IF v_before>=v_candidate_ceiling THEN RETURN/);assert.match(link,/IF v_after>v_candidate_ceiling THEN RAISE EXCEPTION/);});
+test("three extension attempts remain the orchestration ceiling",()=>{assert.match(sql,/j\.attempt_count<3/);assert.match(sql,/v_job\.attempt_count>=3/);});
+test("application does not cap extension by scoped target anymore",()=>{assert.doesNotMatch(bootstrap,/target_count-job\.scoped_count/);assert.doesNotMatch(bootstrap,/finalScoped>=linked\.target_count/);});
+test("public acquisition rendering no longer hard depends on Supabase",()=>{assert.match(commercial,/private repository\(\)/);assert.match(commercial,/async plans\(\)[\s\S]*try[\s\S]*catch\(error\)[\s\S]*return launchPlans\(\);/);assert.match(commercial,/MARKETROUTE_PUBLIC_PLAN_CATALOG_FALLBACK/);});
+test("authenticated entitlement access still fails closed rather than using the public fallback",()=>{const access=commercial.slice(commercial.indexOf("async access"),commercial.indexOf("async plans"));assert.match(access,/await this\.repository\(\)\.access/);assert.doesNotMatch(access,/launchPlans/);});
+let pass=0;console.log("\nAnonymous Discovery ready quota + SSR hardening — adversarial gate");for(const [name,fn] of tests){try{fn();pass++;console.log(`PASS  ${name}`);}catch(error){console.error(`FAIL  ${name}: ${error.message}`);}}console.log(`\n${pass}/${tests.length} PASS`);if(pass!==tests.length)process.exitCode=1;

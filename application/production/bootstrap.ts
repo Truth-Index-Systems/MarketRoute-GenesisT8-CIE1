@@ -75,13 +75,13 @@ export async function runAnonymousDiscoveryExtensionOnce(workerId=`ANON_EXTENSIO
   try{
     const sellerContext=await SellerGenomeRepository.fromEnvironment().getCurrentCampaignContext(job.organisation_id,job.campaign_id);
     if(!sellerContext)throw new Error("MARKETROUTE_ANONYMOUS_EXTENSION_SELLER_CONTEXT_REQUIRED");
-    const desired=Math.max(0,Math.min(job.remaining_count,job.target_count-job.scoped_count));
-    if(desired<=0){const completed=await repo.completeAnonymousExtension(job.job_id,workerId,{linkedCount:0,reason:"TARGET_ALREADY_MET"},new Date().toISOString());return{status:"SUCCEEDED" as const,jobId:job.job_id,linkedCount:0,completion:completed};}
+    const desired=Math.max(0,Math.min(job.target_count,job.remaining_count*2));
+    if(desired<=0){const completed=await repo.completeAnonymousExtension(job.job_id,workerId,{linkedCount:0,reason:"READY_TARGET_ALREADY_MET"},new Date().toISOString());return{status:"SUCCEEDED" as const,jobId:job.job_id,linkedCount:0,completion:completed};}
     const industryKeys=activationIndustryKeys(sellerContext.canonicalGenome,job.target_market_text);
     const countryCodes=activationCountryCodes(sellerContext.canonicalGenome,job.target_market_text);
     const existing=new Set((job.existing_domains??[]).map(canonicalDomain).filter(Boolean));
     const sellerDomain=canonicalDomain(job.canonical_domain);
-    const bankRows=industryKeys.length?await repo.bankCandidates(industryKeys,countryCodes,Math.min(25,job.target_count)):[];
+    const bankRows=industryKeys.length?await repo.bankCandidates(industryKeys,countryCodes,Math.min(25,Math.max(job.target_count,desired))):[];
     const candidates:DiscoveredTarget[]=[];
     for(const row of bankRows){const d=canonicalDomain(row.canonical_domain);if(!d||d===sellerDomain||existing.has(d)||candidates.some(c=>c.domain===d))continue;candidates.push({name:row.name,domain:d,websiteUrl:row.website_url,countryCode:row.country_code,researchReason:`Genesis intelligence bank · ${row.industry_key}`});if(candidates.length>=desired)break;}
     let webMetadata:Record<string,unknown>|null=null;
@@ -97,9 +97,8 @@ export async function runAnonymousDiscoveryExtensionOnce(workerId=`ANON_EXTENSIO
       if(!linked)break;
       finalScoped=linked.scoped_count;
       if(linked.inserted_scope){linkedCount++;existing.add(canonicalDomain(company.domain));}
-      if(finalScoped>=linked.target_count)break;
     }
-    const completed=await repo.completeAnonymousExtension(job.job_id,workerId,{linkedCount,bankCandidateCount:Math.max(0,candidates.length-webCandidateCount),webCandidateCount,provider:webMetadata,scopedCount:finalScoped,targetCount:job.target_count},new Date().toISOString());
+    const completed=await repo.completeAnonymousExtension(job.job_id,workerId,{linkedCount,bankCandidateCount:Math.max(0,candidates.length-webCandidateCount),webCandidateCount,provider:webMetadata,scopedCount:finalScoped,readyDeficitBefore:job.remaining_count,readyTarget:job.target_count},new Date().toISOString());
     return{status:"SUCCEEDED" as const,jobId:job.job_id,linkedCount,completion:completed};
   }catch(error){
     const code=marketrouteErrorCode(error,"MARKETROUTE_ANONYMOUS_EXTENSION_FAILED");
