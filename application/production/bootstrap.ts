@@ -16,7 +16,7 @@ export async function runWorkspaceActivationOnce(workerId=`ACTIVATION:${randomUU
   const job=await repo.claim(workerId,new Date().toISOString());
   if(!job)return null;
   try{
-    const anonymous=await repo.anonymousPolicy(job.organisation_id);
+    const anonymous=job.activation_kind==="ANONYMOUS_DISCOVERY"?await repo.anonymousPolicyForActivation(job.organisation_id,job.job_id):null;
     const activationOrigin=anonymous?"ANONYMOUS_DISCOVERY":"CUSTOMER_ACTIVATION";
     const material={websiteUrl:job.website_url,sellerOfferingText:job.seller_offering_text,objectiveText:job.objective_text,targetMarketText:job.target_market_text,hardConstraintsText:job.hard_constraints_text,noHardConstraints:job.no_hard_constraints};
     const sellerService=new SellerGenomeService(SellerGenomeRepository.fromEnvironment());

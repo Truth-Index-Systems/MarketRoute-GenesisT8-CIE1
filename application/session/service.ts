@@ -78,11 +78,11 @@ export class SessionService {
     const value=await new AuthenticatedRpcClient().call<unknown>(accessToken,"marketroute_submit_workspace_activation_v2",{p_organisation_id:input.organisationId,p_seller_offering_text:offering,p_objective_text:objective,p_target_market_text:target,p_hard_constraints_text:input.noHardConstraints?null:hard,p_no_hard_constraints:input.noHardConstraints});
     if(typeof value!=="string")throw new Error("MARKETROUTE_ACTIVATION_SUBMIT_INVALID_RESPONSE");return value;
   }
-  async submitReplacementCampaign(accessToken:string,input:ActivationBriefInput&{campaignName:string}):Promise<string>{
+  async submitCampaign(accessToken:string,input:ActivationBriefInput&{campaignName:string}):Promise<string>{
     const campaignName=input.campaignName.trim();
     if(campaignName.length<3||campaignName.length>120)throw new Error("MARKETROUTE_CAMPAIGN_NAME_REQUIRED");
     const {offering,objective,target,hard}=validatedActivationBrief(input);
-    const value=await new AuthenticatedRpcClient().call<unknown>(accessToken,"marketroute_submit_campaign_v2",{p_organisation_id:input.organisationId,p_campaign_name:campaignName,p_seller_offering_text:offering,p_objective_text:objective,p_target_market_text:target,p_hard_constraints_text:input.noHardConstraints?null:hard,p_no_hard_constraints:input.noHardConstraints});
+    const value=await new AuthenticatedRpcClient().call<unknown>(accessToken,"marketroute_submit_campaign_v3",{p_organisation_id:input.organisationId,p_campaign_name:campaignName,p_seller_offering_text:offering,p_objective_text:objective,p_target_market_text:target,p_hard_constraints_text:input.noHardConstraints?null:hard,p_no_hard_constraints:input.noHardConstraints});
     if(typeof value!=="string")throw new Error("MARKETROUTE_CAMPAIGN_CREATION_INVALID_RESPONSE");return value;
   }
   async assertOpportunityScope(session:MarketRouteSession,opportunityId:string,organisationId:string):Promise<void>{

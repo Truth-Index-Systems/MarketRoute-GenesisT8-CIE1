@@ -19,7 +19,7 @@ export async function POST(request:Request){
     const workspace=sessions.selectWorkspace(session,jar.get(ORG_COOKIE)?.value);
     if(!["OWNER","ADMIN"].includes(workspace.role))throw new Error("MARKETROUTE_CAMPAIGN_ADMIN_REQUIRED");
 
-    await sessions.submitReplacementCampaign(accessToken,{
+    await sessions.submitCampaign(accessToken,{
       organisationId:workspace.organisationId,
       campaignName:String(form.get("campaignName")??""),
       sellerOfferingText:String(form.get("sellerOfferingText")??""),

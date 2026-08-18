@@ -1,0 +1,16 @@
+import assert from "node:assert/strict";
+import crypto from "node:crypto";
+function stableEnvelopeFingerprint(env){const copy=structuredClone(env);delete copy.evaluatedAt;return crypto.createHash("sha256").update("MRV2-ENGAGEMENT-AUTHORITY-SNAPSHOT-1.0.0|"+JSON.stringify(copy)).digest("hex");}
+const base={version:"MRV2-AUTHORITY-LIFECYCLE-1.0.0",organisationId:"o",campaignId:"c",companyId:"x",evaluatedAt:"2026-08-18T09:00:00Z",lifecycleState:"AUTHORITY_READY",authorityReady:true,requiredLayer:null,reasonCode:"R4_R5_R6_CURRENT_AND_AUTHORISED",nextRevalidationAt:"2026-08-19T09:00:00Z",r4:{current:true,decision:"COMMERCIAL_CANDIDATE",authorityRecordId:"r4",authorityFingerprint:"f4",validUntil:"2026-08-19T09:00:00Z"},r5:{current:true,decision:"ROUTE_AUTHORISED",authorityRecordId:"r5",authorityFingerprint:"f5",parentAuthorityRecordId:"r4",validUntil:"2026-08-19T09:00:00Z"},r6:{current:true,decision:"CONTACT_AUTHORISED",authorityRecordId:"r6",authorityFingerprint:"f6",parentAuthorityRecordId:"r5",validUntil:"2026-08-19T09:00:00Z"}};
+const checks=[];const check=(n,f)=>checks.push([n,f]);
+check("time drift alone does not stale engagement authority",()=>{const later={...base,evaluatedAt:"2026-08-18T09:00:03Z"};assert.equal(stableEnvelopeFingerprint(base),stableEnvelopeFingerprint(later))});
+check("R4 authority change still invalidates",()=>{const x=structuredClone(base);x.r4.authorityFingerprint="changed";assert.notEqual(stableEnvelopeFingerprint(base),stableEnvelopeFingerprint(x))});
+check("R5 authority change still invalidates",()=>{const x=structuredClone(base);x.r5.authorityFingerprint="changed";assert.notEqual(stableEnvelopeFingerprint(base),stableEnvelopeFingerprint(x))});
+check("R6 authority change still invalidates",()=>{const x=structuredClone(base);x.r6.authorityFingerprint="changed";assert.notEqual(stableEnvelopeFingerprint(base),stableEnvelopeFingerprint(x))});
+check("R6 authority record replacement invalidates",()=>{const x=structuredClone(base);x.r6.authorityRecordId="r6-new";assert.notEqual(stableEnvelopeFingerprint(base),stableEnvelopeFingerprint(x))});
+check("decision change invalidates",()=>{const x=structuredClone(base);x.r5.decision="ROUTE_RESEARCH_REQUIRED";assert.notEqual(stableEnvelopeFingerprint(base),stableEnvelopeFingerprint(x))});
+check("validity change invalidates",()=>{const x=structuredClone(base);x.r6.validUntil="2026-08-18T10:00:00Z";assert.notEqual(stableEnvelopeFingerprint(base),stableEnvelopeFingerprint(x))});
+check("lifecycle readiness change invalidates",()=>{const x=structuredClone(base);x.authorityReady=false;x.lifecycleState="R6_REVALIDATION_REQUIRED";assert.notEqual(stableEnvelopeFingerprint(base),stableEnvelopeFingerprint(x))});
+check("campaign scope change invalidates",()=>{const x=structuredClone(base);x.campaignId="other";assert.notEqual(stableEnvelopeFingerprint(base),stableEnvelopeFingerprint(x))});
+check("company scope change invalidates",()=>{const x=structuredClone(base);x.companyId="other";assert.notEqual(stableEnvelopeFingerprint(base),stableEnvelopeFingerprint(x))});
+let p=0;console.log("\nMarketRoute RC — Engagement Stable Authority Snapshot adversarial gate");for(const [n,f] of checks){try{f();p++;console.log(`PASS  ${n}`)}catch(e){console.error(`FAIL  ${n}: ${e.message}`)}}console.log(`\n${p}/${checks.length} PASS`);if(p!==checks.length)process.exitCode=1;
