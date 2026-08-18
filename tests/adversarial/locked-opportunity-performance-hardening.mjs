@@ -1,0 +1,23 @@
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
+const root=path.resolve(import.meta.dirname,"../..");
+const read=p=>fs.readFileSync(path.join(root,p),"utf8");
+const sql=read("supabase/migrations/0063_locked_opportunity_projection_bootstrap_performance_hardening.sql");
+const prior=read("supabase/migrations/0058_market_map_opportunity_read_performance_hotfix.sql");
+const detail=read("app/app/opportunities/[campaignId]/[companyId]/page.tsx");
+const tests=[];const test=(n,f)=>tests.push([n,f]);
+function project(rows,unlocked=new Set()){
+  return rows.filter(r=>r.authorityReady&&r.materialisedSyncCurrent&&["REVIEWABLE","APPROVED","ENGAGED"].includes(r.workflowState)&&!unlocked.has(r.opportunityId)).sort((a,b)=>a.discoveredAt.localeCompare(b.discoveredAt)||a.opportunityId.localeCompare(b.opportunityId)).slice(0,2);
+}
+test("eight unlocked plus two current ready rows yields exactly two locked teasers",()=>{const unlocked=new Set(Array.from({length:8},(_,i)=>`o${i+1}`));const rows=Array.from({length:10},(_,i)=>({opportunityId:`o${i+1}`,authorityReady:true,materialisedSyncCurrent:true,workflowState:"REVIEWABLE",discoveredAt:`2026-08-18T00:${String(i).padStart(2,"0")}:00Z`}));assert.deepEqual(project(rows,unlocked).map(x=>x.opportunityId),["o9","o10"]);});
+test("stale sync can never become a locked teaser",()=>{const rows=[{opportunityId:"stale",authorityReady:true,materialisedSyncCurrent:false,workflowState:"REVIEWABLE",discoveredAt:"2026-08-18T00:00:00Z"},{opportunityId:"fresh",authorityReady:true,materialisedSyncCurrent:true,workflowState:"REVIEWABLE",discoveredAt:"2026-08-18T00:01:00Z"}];assert.deepEqual(project(rows).map(x=>x.opportunityId),["fresh"]);});
+test("non-ready or research workflow rows never become locked teasers",()=>{const rows=[{opportunityId:"a",authorityReady:false,materialisedSyncCurrent:true,workflowState:"REVIEWABLE",discoveredAt:"2026-08-18T00:00:00Z"},{opportunityId:"b",authorityReady:true,materialisedSyncCurrent:true,workflowState:"RESEARCHING",discoveredAt:"2026-08-18T00:01:00Z"}];assert.equal(project(rows).length,0);});
+test("more than two candidates cannot expand the commercial teaser boundary",()=>{const rows=Array.from({length:20},(_,i)=>({opportunityId:`o${i}`,authorityReady:true,materialisedSyncCurrent:true,workflowState:"APPROVED",discoveredAt:`2026-08-18T00:${String(i).padStart(2,"0")}:00Z`}));assert.equal(project(rows).length,2);});
+test("materialised projection is bounded and never invokes exact per-row authority graph",()=>{assert.match(sql,/least\(COALESCE\(p_limit,250\),250\)/);assert.doesNotMatch(sql,/marketroute_authority_envelope_v1\(|marketroute_r4_authority_current_v1\(|marketroute_r5_authority_current_v1\(|marketroute_r6_authority_current_v1\(/);});
+test("source materialised projection itself preserves R4 R5 R6 chain and revocation checks",()=>{for(const token of ["parent_r4_authority_record_id = f.r4_authority_record_id","parent_r5_authority_record_id = f.r5_authority_record_id","SUPERSEDED','INVALIDATED','REVOKED","sync_snapshot_ready"])assert(prior.includes(token),token);});
+test("commercial projection cannot grant execution or engagement",()=>{assert.doesNotMatch(sql,/marketroute_engagement_send_gate_v1|INSERT\s+INTO\s+public\.engagement_|UPDATE\s+public\.opportunities/i);});
+test("exact detail path remains protected by commercial visibility before canonical reads",()=>{assert.match(detail,/canReadCompany/);assert.match(detail,/commercial\.lockedCompany/);assert.match(detail,/LockedOpportunityDetail/);assert.match(detail,/service\.company\(/);});
+test("no authority tables can be written by migration 0063",()=>{assert.doesNotMatch(sql,/INSERT\s+INTO\s+public\.(authority_records|commercial_reality_r4_records|route_authority_r5_records|contact_authority_r6_records)/i);assert.doesNotMatch(sql,/UPDATE\s+public\.(authority_records|commercial_reality_r4_records|route_authority_r5_records|contact_authority_r6_records)/i);});
+test("free entitlement is original-campaign scoped and not latest-campaign scoped",()=>{const commercial=sql.slice(sql.indexOf("CREATE OR REPLACE FUNCTION public.marketroute_workspace_commercial_access_v1"));const discovery=commercial.slice(commercial.indexOf("SELECT * INTO v_run"));assert.match(discovery,/v_campaign:=COALESCE\(v_run\.original_campaign_id/);assert.doesNotMatch(discovery,/SELECT c\.id INTO v_campaign/);});
+let passed=0;console.log("\nMarketRoute RC 0.64 — Locked Opportunity + Bootstrap Performance adversarial gate");for(const [n,f] of tests){try{f();passed++;console.log(`PASS  ${n}`)}catch(e){console.error(`FAIL  ${n}: ${e instanceof Error?e.message:e}`)}}console.log(`\n${passed}/${tests.length} PASS`);if(passed!==tests.length)process.exitCode=1;

@@ -2987,3 +2987,114 @@ h1,h2,h3,h4,.mr-logo__wordmark {
   .mr-live-page-header h1 { font-size:40px; }
   .mr-live-page-header p { font-size:15px; }
 }
+
+/* MarketRoute RC 0.65 — live market summary alignment polish */
+.mr-live-card {
+  grid-template-columns: minmax(330px, 1.18fr) minmax(500px, .92fr) auto;
+  gap: 32px;
+  align-items: center;
+  padding: 24px 26px;
+}
+.mr-live-card__main {
+  align-self: center;
+}
+.mr-live-card__seller {
+  margin-bottom: 7px;
+  font-size: 12px !important;
+  line-height: 1.25;
+}
+.mr-live-card__title {
+  gap: 10px;
+  min-height: 30px;
+}
+.mr-live-card__title strong {
+  font-size: 19px !important;
+  line-height: 1.18;
+  letter-spacing: -.015em;
+}
+.mr-live-card__main p {
+  margin-top: 8px;
+  font-size: 13.5px !important;
+  line-height: 1.45;
+}
+.mr-live-card dl {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(92px, 1fr));
+  gap: 22px;
+  align-items: start;
+  margin: 0;
+}
+.mr-live-card dl div {
+  display: grid;
+  grid-template-rows: 38px 24px;
+  align-content: start;
+  min-width: 0;
+}
+.mr-live-card dt {
+  display: flex;
+  align-items: flex-start;
+  min-height: 38px;
+  margin: 0;
+  color: #71859a;
+  font-size: 12.5px !important;
+  font-weight: 500;
+  line-height: 1.35;
+}
+.mr-live-card dd {
+  align-self: end;
+  margin: 0;
+  color: #173b5c;
+  font-size: 16px !important;
+  font-weight: 650;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.mr-live-card__open {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 0 14px;
+  border: 1px solid rgba(52,127,192,.14);
+  border-radius: 999px;
+  background: rgba(52,127,192,.055);
+  color: #2f78b8;
+  font-size: 12.5px !important;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background-color .18s ease, border-color .18s ease, color .18s ease, transform .18s ease;
+}
+.mr-live-card:hover .mr-live-card__open {
+  background: rgba(52,127,192,.09);
+  border-color: rgba(52,127,192,.24);
+  color: #1f6ead;
+  transform: translateX(1px);
+}
+@media (max-width: 1180px) {
+  .mr-live-card {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+  .mr-live-card dl {
+    width: 100%;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .mr-live-card__open {
+    justify-self: start;
+  }
+}
+@media (max-width: 680px) {
+  .mr-live-card {
+    padding: 20px;
+  }
+  .mr-live-card dl {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px 24px;
+  }
+  .mr-live-card dl div {
+    grid-template-rows: 34px 22px;
+  }
+  .mr-live-card dt {
+    min-height: 34px;
+  }
+}

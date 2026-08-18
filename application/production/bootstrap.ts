@@ -13,9 +13,10 @@ function canonicalDomain(value:string|null|undefined){try{return new URL(value?.
 
 export async function runWorkspaceActivationOnce(workerId=`ACTIVATION:${randomUUID()}`){
   const repo=productionActivationRepositoryFromEnvironment();
-  const job=await repo.claim(workerId,new Date().toISOString());
-  if(!job)return null;
+  let job:Awaited<ReturnType<typeof repo.claim>>=null;
   try{
+    job=await repo.claim(workerId,new Date().toISOString());
+    if(!job)return null;
     const anonymous=job.activation_kind==="ANONYMOUS_DISCOVERY"?await repo.anonymousPolicyForActivation(job.organisation_id,job.job_id):null;
     const activationOrigin=anonymous?"ANONYMOUS_DISCOVERY":"CUSTOMER_ACTIVATION";
     const material={websiteUrl:job.website_url,sellerOfferingText:job.seller_offering_text,objectiveText:job.objective_text,targetMarketText:job.target_market_text,hardConstraintsText:job.hard_constraints_text,noHardConstraints:job.no_hard_constraints};
@@ -63,16 +64,17 @@ export async function runWorkspaceActivationOnce(workerId=`ACTIVATION:${randomUU
     return{status:"SUCCEEDED" as const,jobId:job.job_id,...result};
   }catch(error){
     const code=marketrouteErrorCode(error,"MARKETROUTE_ACTIVATION_FAILED");
-    await repo.fail(job.job_id,workerId,code,retryable(code),new Date().toISOString()).catch(()=>undefined);
-    return{status:"FAILED" as const,jobId:job.job_id,error:code};
+    if(job)await repo.fail(job.job_id,workerId,code,retryable(code),new Date().toISOString()).catch(()=>undefined);
+    return{status:"FAILED" as const,jobId:job?.job_id??null,error:code};
   }
 }
 
 export async function runAnonymousDiscoveryExtensionOnce(workerId=`ANON_EXTENSION:${randomUUID()}`){
   const repo=productionActivationRepositoryFromEnvironment();
-  const job=await repo.claimAnonymousExtension(workerId,new Date().toISOString());
-  if(!job)return null;
+  let job:Awaited<ReturnType<typeof repo.claimAnonymousExtension>>=null;
   try{
+    job=await repo.claimAnonymousExtension(workerId,new Date().toISOString());
+    if(!job)return null;
     const sellerContext=await SellerGenomeRepository.fromEnvironment().getCurrentCampaignContext(job.organisation_id,job.campaign_id);
     if(!sellerContext)throw new Error("MARKETROUTE_ANONYMOUS_EXTENSION_SELLER_CONTEXT_REQUIRED");
     const desired=Math.max(0,Math.min(job.target_count,job.remaining_count*2));
@@ -102,17 +104,18 @@ export async function runAnonymousDiscoveryExtensionOnce(workerId=`ANON_EXTENSIO
     return{status:"SUCCEEDED" as const,jobId:job.job_id,linkedCount,completion:completed};
   }catch(error){
     const code=marketrouteErrorCode(error,"MARKETROUTE_ANONYMOUS_EXTENSION_FAILED");
-    await repo.failAnonymousExtension(job.job_id,workerId,code,retryable(code),new Date().toISOString()).catch(()=>undefined);
-    return{status:"FAILED" as const,jobId:job.job_id,error:code};
+    if(job)await repo.failAnonymousExtension(job.job_id,workerId,code,retryable(code),new Date().toISOString()).catch(()=>undefined);
+    return{status:"FAILED" as const,jobId:job?.job_id??null,error:code};
   }
 }
 
 
 export async function runPaidCampaignRefillOnce(workerId=`PAID_REFILL:${randomUUID()}`){
   const repo=productionActivationRepositoryFromEnvironment();
-  const job=await repo.claimPaidRefill(workerId,new Date().toISOString());
-  if(!job)return null;
+  let job:Awaited<ReturnType<typeof repo.claimPaidRefill>>=null;
   try{
+    job=await repo.claimPaidRefill(workerId,new Date().toISOString());
+    if(!job)return null;
     const sellerContext=await SellerGenomeRepository.fromEnvironment().getCurrentCampaignContext(job.organisation_id,job.campaign_id);
     if(!sellerContext)throw new Error("MARKETROUTE_PAID_REFILL_SELLER_CONTEXT_REQUIRED");
     const desired=Math.max(0,Math.min(25,job.remaining_count*2));
@@ -134,7 +137,7 @@ export async function runPaidCampaignRefillOnce(workerId=`PAID_REFILL:${randomUU
     for(const company of candidates){const linked=await repo.linkPaidRefillCompany(job.job_id,workerId,company,new Date().toISOString());if(!linked)break;finalScoped=linked.scoped_count;if(linked.inserted_scope){linkedCount++;existing.add(canonicalDomain(company.domain));}}
     const completed=await repo.completePaidRefill(job.job_id,workerId,{linkedCount,bankCandidateCount:Math.max(0,candidates.length-webCandidateCount),webCandidateCount,provider:webMetadata,scopedCount:finalScoped,readyDeficitBefore:job.remaining_count,readyTarget:job.target_count},new Date().toISOString());
     return{status:"SUCCEEDED" as const,jobId:job.job_id,linkedCount,completion:completed};
-  }catch(error){const code=marketrouteErrorCode(error,"MARKETROUTE_PAID_REFILL_FAILED");await repo.failPaidRefill(job.job_id,workerId,code,retryable(code),new Date().toISOString()).catch(()=>undefined);return{status:"FAILED" as const,jobId:job.job_id,error:code};}
+  }catch(error){const code=marketrouteErrorCode(error,"MARKETROUTE_PAID_REFILL_FAILED");if(job)await repo.failPaidRefill(job.job_id,workerId,code,retryable(code),new Date().toISOString()).catch(()=>undefined);return{status:"FAILED" as const,jobId:job?.job_id??null,error:code};}
 }
 
 export async function runWorkspaceActivationCron(max=2){
