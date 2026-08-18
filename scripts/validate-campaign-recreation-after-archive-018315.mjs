@@ -13,6 +13,7 @@ const route=read("app/api/campaigns/route.ts");
 const page=read("app/app/campaigns/new/page.tsx");
 const list=read("app/app/campaigns/page.tsx");
 const commandCentre=read("app/app/page.tsx");
+const successor=read("supabase/migrations/0053_multi_campaign_plan_governance.sql");
 const authorityWrite=/INSERT\s+INTO\s+public\.(?:commercial_reality_r4_records|route_authority_r5_records|contact_authority_r6_records|authority_records)/i;
 const checks=[];
 const check=(name,fn)=>checks.push([name,fn]);
@@ -35,7 +36,8 @@ check("campaign names survive the activation queue and worker boundary",()=>{
   assert.match(migration,/marketroute_claim_workspace_activation_v3/);
   assert.match(repository,/campaign_name:string\|null/);
   assert.match(repository,/marketroute_claim_workspace_activation_v3/);
-  assert.match(repository,/marketroute_create_activation_campaign_v2/);
+  assert.match(repository,/marketroute_create_activation_campaign_v(?:2|3)/);
+  assert.match(successor,/marketroute_create_activation_campaign_v3/);
   assert.match(bootstrap,/job\.campaign_name/);
 });
 check("migration-first rollout keeps V1 campaign creation compatible",()=>{
@@ -45,7 +47,8 @@ check("migration-first rollout keeps V1 campaign creation compatible",()=>{
 });
 check("application validates the brief and calls only the guarded RPC",()=>{
   assert.match(session,/submitReplacementCampaign/);
-  assert.match(session,/marketroute_submit_replacement_campaign_v1/);
+  assert.match(session,/marketroute_submit_(?:replacement_campaign_v1|campaign_v2)/);
+  assert.match(successor,/marketroute_submit_campaign_v2/);
   assert.match(session,/MARKETROUTE_CAMPAIGN_NAME_REQUIRED/);
 });
 check("creation endpoint enforces origin, authenticated workspace and admin role",()=>{
@@ -54,12 +57,13 @@ check("creation endpoint enforces origin, authenticated workspace and admin role
   assert(route.includes('["OWNER","ADMIN"].includes(workspace.role)'));
   assert(route.includes("submitReplacementCampaign"));
 });
-check("UI exposes recovery only when the normal campaign read is empty",()=>{
-  assert(page.includes("asObjectArray(model.campaigns).length>0"));
-  assert(page.includes("MARKETROUTE_LIVE_CAMPAIGN_ALREADY_EXISTS"));
+check("successor UI always exposes configured Add campaign without bypassing the brief",()=>{
+  assert(!page.includes("asObjectArray(model.campaigns).length>0"));
+  assert(page.includes("Every campaign starts here"));
   assert(list.includes('href="/app/campaigns/new"'));
+  assert(list.includes("Add campaign"));
   assert(commandCentre.includes('href="/app/campaigns/new"'));
-  assert(list.includes('title="No live campaign"'));
+  assert(successor.includes("campaign_configuration_required',true"));
 });
 check("release preserves archived lineage and creates no authority writer",()=>{
   assert(migration.includes("'archived_campaigns_restored',false"));

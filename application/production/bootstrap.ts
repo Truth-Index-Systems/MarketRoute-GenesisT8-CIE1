@@ -23,7 +23,7 @@ export async function runWorkspaceActivationOnce(workerId=`ACTIVATION:${randomUU
     const persisted=await sellerService.extractAndPersist({organisationId:job.organisation_id,sellerBusinessId:job.seller_business_id,sellerDisplayName:job.seller_name,materialKind:"COMPOSITE",sourceContent:material,extractor:openAISellerGenomeExtractorFromEnvironment({organisationId:job.organisation_id,origin:activationOrigin}),createdByUserId:job.created_by_user_id});
     await repo.stage(job.job_id,workerId,"SELLER_CONTEXT_READY",30,{genomeSnapshotId:persisted.genomeSnapshotId,semanticCompleteness:persisted.semanticCompleteness});
     await repo.stage(job.job_id,workerId,"CREATING_CAMPAIGN",38,{campaignName:job.campaign_name??"Initial market research"});
-    const campaignId=await repo.createCampaign(job.organisation_id,job.seller_business_id,job.campaign_name,job.objective_text);
+    const campaignId=await repo.createCampaign(job.job_id,job.organisation_id,job.seller_business_id,job.campaign_name,job.objective_text);
     await repo.stage(job.job_id,workerId,"CAMPAIGN_CREATED",48,{campaignId});
     await sellerService.selectCampaignObjective({organisationId:job.organisation_id,campaignId,genomeSnapshotId:persisted.genomeSnapshotId,objectiveKey:"primary_objective",requestId:randomUUID()});
     const anonymousBudget=anonymous?Math.max(0.5,Math.min(25,anonymous.lifetimeBudgetUsd)):null;

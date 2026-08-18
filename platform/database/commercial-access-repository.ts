@@ -29,6 +29,19 @@ export interface CommercialAccessRecord {
   lockedOpportunities:LockedOpportunityTeaserRecord[];
   researchCapacity:ResearchCapacityRecord;
 }
+export interface CampaignCapacityRecord {
+  mode:"FULL"|"PAID"|"DISCOVERY_FREE"|"UNENTITLED";
+  planCode:string|null;
+  planName:string|null;
+  activeMarketLimit:number;
+  activeMarketCount:number;
+  remainingMarkets:number;
+  canCreate:boolean;
+  requiresUpgrade:boolean;
+  nextPlanCode:string|null;
+  nextPlanName:string|null;
+  nextPlanActiveMarketLimit:number|null;
+}
 export interface PublicPlanRecord {
   planCode:"STARTER"|"GROWTH"|"SCALE";
   displayName:string;
@@ -43,5 +56,6 @@ export class CommercialAccessRepository {
   constructor(private readonly rpc=new PostgrestRpcClient(databaseConfigFromEnvironment())){}
   access(organisationId:string){return this.rpc.call<CommercialAccessRecord>("marketroute_workspace_commercial_access_v1",{p_organisation_id:organisationId});}
   plans(){return this.rpc.call<PublicPlanRecord[]>("marketroute_public_plan_catalog_v1",{});}
+  campaignCapacity(organisationId:string){return this.rpc.call<CampaignCapacityRecord>("marketroute_campaign_capacity_v1",{p_organisation_id:organisationId});}
 }
 export function commercialAccessRepositoryFromEnvironment(){return new CommercialAccessRepository();}

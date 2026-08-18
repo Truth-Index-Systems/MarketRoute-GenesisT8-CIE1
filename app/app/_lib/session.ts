@@ -18,7 +18,7 @@ async function resolveWorkspaceSession():Promise<WorkspaceSession>{
   const service=sessionServiceFromEnvironment();
   const workspace=service.selectWorkspace(session,jar.get(ORG_COOKIE)?.value);
   const activation=await service.activationStatus(access,workspace.organisationId);
-  if(activation.status==="NOT_SUBMITTED"||activation.status==="NEEDS_INPUT")redirect("/setup");
+  if(activation.status==="NOT_SUBMITTED"||(activation.status==="NEEDS_INPUT"&&!activation.campaignName))redirect("/setup");
   return {session,workspace,activation};
 }
 export const workspaceSessionOrRedirect=cache(resolveWorkspaceSession);
