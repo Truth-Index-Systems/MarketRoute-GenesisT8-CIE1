@@ -22,7 +22,7 @@ export default async function OpportunityWorkspace({params,searchParams}:{params
   const {workspace}=await workspaceSessionOrRedirect();
   const commercial=commercialAccessServiceFromEnvironment();
   const [commercialAccess,plans]=await Promise.all([commercial.access(workspace.organisationId),commercial.plans()]);
-  if(commercialAccess.mode==="DISCOVERY_FREE"&&!commercial.canReadCompany(commercialAccess,companyId)){const locked=commercial.lockedCompany(commercialAccess,companyId);if(locked)return <LockedOpportunityDetail item={locked} plans={plans} totalLocked={commercialAccess.lockedCount}/>;notFound();}
+  if(commercialAccess.mode==="DISCOVERY_FREE"&&!commercial.canReadCompany(commercialAccess,campaignId,companyId)){const locked=commercial.lockedCompany(commercialAccess,campaignId,companyId);if(locked)return <LockedOpportunityDetail item={locked} plans={plans} totalLocked={commercialAccess.lockedCount}/>;notFound();}
   if(commercialAccess.mode==="UNENTITLED")redirect("/app/plans");
   const service=applicationReadServiceFromEnvironment();
   const canMutate=workspace.role!=="VIEWER";

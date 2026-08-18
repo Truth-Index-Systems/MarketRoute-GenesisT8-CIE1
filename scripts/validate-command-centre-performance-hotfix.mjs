@@ -15,6 +15,6 @@ check("research policy and budget remain campaign-scoped",()=>{assert.match(sql,
 check("detailed campaign read is explicitly left unchanged",()=>assert.match(sql,/detailed_campaign_read_unchanged',true/));
 check("migration declares no new authority writer and unchanged authority semantics",()=>{assert.match(sql,/new_authority_writer',false/);assert.match(sql,/authority_semantics_unchanged',true/);});
 check("Discovery command-centre redaction no longer performs repository campaign rereads",()=>{const block=service.slice(service.indexOf("async commandCentre"),service.indexOf("async campaign("));assert.doesNotMatch(block,/repository\.campaign\(/);assert.match(block,/DISCOVERY_FREE/);});
-check("non-entitled command-centre summaries fail closed to zero opportunity metrics",()=>assert.match(service,/materialisedOpportunities:0,dispositionCounts:\{\},workflowCounts:\{\},lifecycleCounts:\{\}/));
+check("non-entitled command-centre summaries fail closed to no campaign visibility",()=>assert.match(service,/if\(access\.mode!=="DISCOVERY_FREE"\)return \{\.\.\.model,campaigns:\[\]\}/));
 check("performance gate is wired into production check",()=>assert.match(pkg.scripts["production:check"],/validate:command-centre-performance/));
 let passed=0;console.log("\nMarketRoute RC — Command Centre read performance static gate");for(const [n,f] of tests){try{f();passed++;console.log(`PASS  ${n}`)}catch(e){console.error(`FAIL  ${n}: ${e instanceof Error?e.message:e}`)}}console.log(`\n${passed}/${tests.length} PASS`);if(passed!==tests.length)process.exitCode=1;

@@ -16,7 +16,7 @@ check("release candidate is Build 18",()=>assert.equal(release.build,18));
 check("source certification passed",()=>assert.equal(release.sourceCertification,"PASS"));
 check("authority writer count remains three",()=>assert.equal(manifest.authorityWriters.length,3));
 check("Build 17 remains schema owner",()=>assert.equal(manifest.schemaBuild,17));
-check("post-freeze operational migrations are explicitly declared",()=>{assert.equal(release.databaseMigrationRequired,true);assert.equal(release.latestOperationalMigration,61);assert(Array.isArray(release.operationalMigrations)&&release.operationalMigrations.length>=2);assert(release.operationalMigrations.every(m=>m.authorityWriter===false));});
+check("post-freeze operational migrations are explicitly declared",()=>{assert.equal(release.databaseMigrationRequired,true);assert.equal(release.latestOperationalMigration,62);assert(Array.isArray(release.operationalMigrations)&&release.operationalMigrations.length>=2);assert(release.operationalMigrations.every(m=>m.authorityWriter===false));});
 for(const file of requiredFiles)check(`required cutover artifact exists: ${file}`,()=>assert(fs.existsSync(path.join(ROOT,file)),file));
 check("live trace remains mandatory before production cutover",()=>assert.equal(manifest.rules.productionCutoverRequiresLiveLineageTrace,true));
 

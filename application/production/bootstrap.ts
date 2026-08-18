@@ -107,17 +107,50 @@ export async function runAnonymousDiscoveryExtensionOnce(workerId=`ANON_EXTENSIO
   }
 }
 
+
+export async function runPaidCampaignRefillOnce(workerId=`PAID_REFILL:${randomUUID()}`){
+  const repo=productionActivationRepositoryFromEnvironment();
+  const job=await repo.claimPaidRefill(workerId,new Date().toISOString());
+  if(!job)return null;
+  try{
+    const sellerContext=await SellerGenomeRepository.fromEnvironment().getCurrentCampaignContext(job.organisation_id,job.campaign_id);
+    if(!sellerContext)throw new Error("MARKETROUTE_PAID_REFILL_SELLER_CONTEXT_REQUIRED");
+    const desired=Math.max(0,Math.min(25,job.remaining_count*2));
+    if(desired<=0){const completed=await repo.completePaidRefill(job.job_id,workerId,{linkedCount:0,reason:"READY_TARGET_ALREADY_MET"},new Date().toISOString());return{status:"SUCCEEDED" as const,jobId:job.job_id,linkedCount:0,completion:completed};}
+    const industryKeys=activationIndustryKeys(sellerContext.canonicalGenome,job.target_market_text);
+    const countryCodes=activationCountryCodes(sellerContext.canonicalGenome,job.target_market_text);
+    const existing=new Set((job.existing_domains??[]).map(canonicalDomain).filter(Boolean));
+    const sellerDomain=canonicalDomain(job.canonical_domain);
+    const bankRows=industryKeys.length?await repo.bankCandidates(industryKeys,countryCodes,Math.min(25,Math.max(job.target_count,desired))):[];
+    const candidates:DiscoveredTarget[]=[];
+    for(const row of bankRows){const d=canonicalDomain(row.canonical_domain);if(!d||d===sellerDomain||existing.has(d)||candidates.some(c=>c.domain===d))continue;candidates.push({name:row.name,domain:d,websiteUrl:row.website_url,countryCode:row.country_code,researchReason:`Genesis intelligence bank · ${row.industry_key}`});if(candidates.length>=desired)break;}
+    let webMetadata:Record<string,unknown>|null=null;let webCandidateCount=0;
+    if(candidates.length<desired){
+      const discovery=await openAITargetDiscoveryProviderFromEnvironment().discover({sellerName:job.seller_name,sellerDomain:job.canonical_domain,objectiveText:job.objective_text,targetMarketText:job.target_market_text,canonicalSellerGenome:sellerContext.canonicalGenome,organisationId:job.organisation_id,campaignId:job.campaign_id,count:desired-candidates.length,excludedDomains:[...existing,...candidates.map(candidate=>candidate.domain)],origin:"PAID_CAMPAIGN_REFILL"});
+      webMetadata=discovery.metadata;
+      for(const company of discovery.companies){const d=canonicalDomain(company.domain);if(!d||d===sellerDomain||existing.has(d)||candidates.some(c=>c.domain===d))continue;candidates.push({...company,domain:d});webCandidateCount++;if(candidates.length>=desired)break;}
+    }
+    let linkedCount=0;let finalScoped=job.scoped_count;
+    for(const company of candidates){const linked=await repo.linkPaidRefillCompany(job.job_id,workerId,company,new Date().toISOString());if(!linked)break;finalScoped=linked.scoped_count;if(linked.inserted_scope){linkedCount++;existing.add(canonicalDomain(company.domain));}}
+    const completed=await repo.completePaidRefill(job.job_id,workerId,{linkedCount,bankCandidateCount:Math.max(0,candidates.length-webCandidateCount),webCandidateCount,provider:webMetadata,scopedCount:finalScoped,readyDeficitBefore:job.remaining_count,readyTarget:job.target_count},new Date().toISOString());
+    return{status:"SUCCEEDED" as const,jobId:job.job_id,linkedCount,completion:completed};
+  }catch(error){const code=marketrouteErrorCode(error,"MARKETROUTE_PAID_REFILL_FAILED");await repo.failPaidRefill(job.job_id,workerId,code,retryable(code),new Date().toISOString()).catch(()=>undefined);return{status:"FAILED" as const,jobId:job.job_id,error:code};}
+}
+
 export async function runWorkspaceActivationCron(max=2){
   const results=[];
   for(let i=0;i<Math.max(1,Math.min(max,5));i++){const result=await runWorkspaceActivationOnce();if(!result)break;results.push(result);}
   const extensionResults=[];
   for(let i=0;i<Math.max(1,Math.min(max,2));i++){const result=await runAnonymousDiscoveryExtensionOnce();if(!result)break;extensionResults.push(result);}
+  const paidRefillResults=[];
+  for(let i=0;i<Math.max(1,Math.min(max,2));i++){const result=await runPaidCampaignRefillOnce();if(!result)break;paidRefillResults.push(result);}
   const failed=results.filter(result=>result.status==="FAILED").length;
   const succeeded=results.length-failed;
   const extensionFailed=extensionResults.filter(result=>result.status==="FAILED").length;
-  const totalProcessed=results.length+extensionResults.length;
-  const totalFailed=failed+extensionFailed;
+  const paidRefillFailed=paidRefillResults.filter(result=>result.status==="FAILED").length;
+  const totalProcessed=results.length+extensionResults.length+paidRefillResults.length;
+  const totalFailed=failed+extensionFailed+paidRefillFailed;
   const status=totalProcessed===0?"IDLE":totalFailed===0?"SUCCEEDED":totalFailed===totalProcessed?"FAILED":"PARTIAL";
-  const errorCode=results.find(result=>result.status==="FAILED")?.error??extensionResults.find(result=>result.status==="FAILED")?.error??null;
-  return{status,processed:results.length,succeeded,failed,errorCode,results,extensionProcessed:extensionResults.length,extensionFailed,extensionResults};
+  const errorCode=results.find(result=>result.status==="FAILED")?.error??extensionResults.find(result=>result.status==="FAILED")?.error??paidRefillResults.find(result=>result.status==="FAILED")?.error??null;
+  return{status,processed:results.length,succeeded,failed,errorCode,results,extensionProcessed:extensionResults.length,extensionFailed,extensionResults,paidRefillProcessed:paidRefillResults.length,paidRefillFailed,paidRefillResults};
 }

@@ -78,8 +78,9 @@ export class CommercialAccessService {
     const mode=["FULL","PAID","DISCOVERY_FREE","UNENTITLED"].includes(value?.mode)?value.mode:"UNENTITLED";
     return {...value,mode,activeMarketLimit:Math.max(1,nonNegative(value?.activeMarketLimit,1)),activeMarketCount:nonNegative(value?.activeMarketCount),remainingMarkets:nonNegative(value?.remainingMarkets),canCreate:value?.canCreate===true,requiresUpgrade:value?.requiresUpgrade!==false,nextPlanCode:text(value?.nextPlanCode),nextPlanName:text(value?.nextPlanName),nextPlanActiveMarketLimit:value?.nextPlanActiveMarketLimit===null?null:Math.max(1,nonNegative(value?.nextPlanActiveMarketLimit,1))};
   }
-  lockedCompany(access:CommercialAccess,companyId:string){return access.lockedOpportunities.find(item=>item.companyId===companyId)??null;}
+  canReadCampaign(access:CommercialAccess,campaignId:string){return access.mode==="FULL"||access.mode==="PAID"||(access.mode==="DISCOVERY_FREE"&&access.campaignId===campaignId);}
+  lockedCompany(access:CommercialAccess,campaignId:string,companyId:string){if(access.mode!=="DISCOVERY_FREE"||access.campaignId!==campaignId)return null;return access.lockedOpportunities.find(item=>item.companyId===companyId)??null;}
   canReadOpportunity(access:CommercialAccess,opportunityId:string){return access.mode==="FULL"||access.mode==="PAID"||(access.mode==="DISCOVERY_FREE"&&access.opportunityIds.includes(opportunityId));}
-  canReadCompany(access:CommercialAccess,companyId:string){return access.mode==="FULL"||access.mode==="PAID"||(access.mode==="DISCOVERY_FREE"&&access.companyIds.includes(companyId));}
+  canReadCompany(access:CommercialAccess,campaignId:string,companyId:string){return access.mode==="FULL"||access.mode==="PAID"||(access.mode==="DISCOVERY_FREE"&&access.campaignId===campaignId&&access.companyIds.includes(companyId));}
 }
 export function commercialAccessServiceFromEnvironment(){return new CommercialAccessService();}

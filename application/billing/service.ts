@@ -12,6 +12,20 @@ export class BillingService {
   private readonly stripe=stripeBillingClientFromEnvironment();
   private readonly commercial=commercialAccessServiceFromEnvironment();
   async context(organisationId:string):Promise<BillingContextRecord>{return this.repository.context(organisationId);}
+  async reconcileDueSubscriptions(limit=10){
+    const due=await this.repository.dueReconciliations(new Date().toISOString(),Math.max(1,Math.min(limit,50)));
+    const results:{organisationId:string;subscriptionId:string;status:"RECONCILED"|"FAILED";error?:string}[]=[];
+    for(const item of due){
+      try{
+        await this.repository.markRecoveryAttempt(item.organisation_id,new Date().toISOString());
+        const subscription=await this.stripe.subscription(item.external_subscription_id);
+        if(subscription.customerId!==item.external_customer_id)throw new Error("MARKETROUTE_BILLING_RECOVERY_CUSTOMER_MISMATCH");
+        await this.reconcileSubscription(subscription,{organisationId:item.organisation_id,eventType:"billing.recovery_reconcile"});
+        results.push({organisationId:item.organisation_id,subscriptionId:item.external_subscription_id,status:"RECONCILED"});
+      }catch(error){results.push({organisationId:item.organisation_id,subscriptionId:item.external_subscription_id,status:"FAILED",error:error instanceof Error?error.message:"MARKETROUTE_BILLING_RECOVERY_FAILED"});}
+    }
+    return{processed:results.length,reconciled:results.filter(r=>r.status==="RECONCILED").length,failed:results.filter(r=>r.status==="FAILED").length,results};
+  }
   private async validatePrice(planCode:StripePlanCode){
     const catalog=(await this.commercial.plans()).find(row=>row.planCode===planCode);
     if(!catalog)throw new Error("MARKETROUTE_BILLING_PLAN_NOT_PUBLIC");
