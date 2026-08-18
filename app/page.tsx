@@ -1,30 +1,14 @@
 import { ButtonLink, Icon, MarketRouteLogo } from "@/ui";
+import { commercialAccessServiceFromEnvironment } from "@/application/commercial/service";
 
 const process = [
-  {
-    step: "01",
-    icon: "search" as const,
-    title: "Research the market",
-    body: "MarketRoute builds an evidence-backed view of the companies that could matter to your commercial objective.",
-  },
-  {
-    step: "02",
-    icon: "shield" as const,
-    title: "Prove the commercial case",
-    body: "It separates a real reason to pursue a company from assumptions, weak evidence and unanswered questions.",
-  },
-  {
-    step: "03",
-    icon: "route" as const,
-    title: "Map the route in",
-    body: "It traces the organisational path to the relevant buyer and verifies the access point you can actually use.",
-  },
-  {
-    step: "04",
-    icon: "check" as const,
-    title: "Act when it is ready",
-    body: "The opportunity becomes actionable only when the commercial case, route and contact authority are current.",
-  },
+  {step:"01",icon:"spark" as const,title:"Understand",body:"MarketRoute reads your business, offering and commercial objective."},
+  {step:"02",icon:"route" as const,title:"Map",body:"It defines the market that fits what you actually sell."},
+  {step:"03",icon:"companies" as const,title:"Discover",body:"Genesis searches existing intelligence first, then fills customer-specific gaps."},
+  {step:"04",icon:"research" as const,title:"Research",body:"Evidence is gathered only where it can change a commercial decision."},
+  {step:"05",icon:"opportunities" as const,title:"Evaluate",body:"Companies earn opportunity state only when a real commercial case exists."},
+  {step:"06",icon:"route" as const,title:"Route",body:"MarketRoute resolves the organisational path and the buyer access point."},
+  {step:"07",icon:"check" as const,title:"Ready",body:"Email, phone and direct routes appear when the evidence is current enough to use."},
 ];
 
 const trust = [
@@ -33,7 +17,8 @@ const trust = [
   ["Decisions, not lead scores", "Commercial readiness is earned through current authority, not a weighted score threshold."],
 ];
 
-export default function Home() {
+export default async function Home() {
+  const plans=await commercialAccessServiceFromEnvironment().plans();
   return (
     <main className="mr-site">
       <header className="mr-site-nav">
@@ -46,6 +31,7 @@ export default function Home() {
             <a href="#how-it-works">How it works</a>
             <a href="#intelligence">What you get</a>
             <a href="#genesis">Why trust it</a>
+            <a href="#pricing">Pricing</a>
             <a href="/preview">Product example</a>
           </nav>
           <div className="mr-site-nav__actions">
@@ -59,9 +45,9 @@ export default function Home() {
         <div className="mr-site-shell mr-site-hero__grid">
           <div className="mr-site-hero__copy">
             <div className="mr-site-chip"><span /> B2B commercial intelligence</div>
-            <h1>Know who to target.<br /><em>Know why. Know how to reach them.</em></h1>
+            <h1>Tell me what you sell.<br /><em>I’ll build the route to the companies that matter.</em></h1>
             <p>
-              MarketRoute researches your market and the companies inside it, verifies whether they are worth pursuing and maps evidence-backed routes to the right buyer — so your team can move from a market to an actionable opportunity without guessing.
+              MarketRoute understands your business, researches the market, finds the companies worth pursuing and resolves the routes into them — then explains what it found in plain commercial language.
             </p>
             <div className="mr-site-hero__actions">
               <ButtonLink href="/discover" variant="primary" icon={<Icon name="arrow" size={16} />}>Find my routes — free</ButtonLink>
@@ -72,6 +58,7 @@ export default function Home() {
               <span><Icon name="check" size={14} /> Route to buyer</span>
               <span><Icon name="check" size={14} /> Evidence behind both</span>
               <span><Icon name="check" size={14} /> No account required</span>
+              <span><Icon name="check" size={14} /> First 8 opportunities free</span>
             </div>
           </div>
 
@@ -95,7 +82,7 @@ export default function Home() {
                 <article><span><Icon name="user" size={16} /></span><div><small>Buyer access</small><strong>Qualified</strong></div></article>
               </div>
               <div className="mr-site-window__route">
-                <div className="mr-site-window__route-head"><span>Route to buyer</span><small>Current R5 + R6</small></div>
+                <div className="mr-site-window__route-head"><span>Route to buyer</span><small>Current & verified</small></div>
                 <div className="mr-site-window__route-line">
                   <span><i /><strong>Company</strong><small>Northstar</small></span>
                   <b>→</b>
@@ -158,8 +145,8 @@ export default function Home() {
       <section className="mr-site-section mr-site-how" id="how-it-works">
         <div className="mr-site-shell">
           <div className="mr-site-section-head">
-            <div><div className="mr-site-chip mr-site-chip--quiet"><span /> How MarketRoute works</div><h2>From a market to a route you can act on.</h2></div>
-            <p>MarketRoute does not simply search for contacts. It builds the commercial case in order, keeping unknowns visible until the evidence is strong enough to support the next step.</p>
+            <div><div className="mr-site-chip mr-site-chip--quiet"><span /> How MarketRoute works</div><h2>One clear pipeline. From your business to a route you can act on.</h2></div>
+            <p>Every stage is explicit. You can see what MarketRoute has completed, what it is working on now and what must happen before an opportunity becomes ready.</p>
           </div>
           <div className="mr-site-process">
             {process.map((item) => (
@@ -211,9 +198,9 @@ export default function Home() {
               <div className="mr-site-decision-card">
                 <div className="mr-site-decision-card__head"><span>Commercial decision</span><em><i /> Confirmed</em></div>
                 <h4>Why this company is worth pursuing</h4>
-                <div className="mr-site-decision-step"><b>R4</b><div><small>Commercial reality</small><strong>A current, evidence-backed reason to engage exists.</strong></div></div>
-                <div className="mr-site-decision-step"><b>R5</b><div><small>Route authority</small><strong>Two independent structural routes are available.</strong></div></div>
-                <div className="mr-site-decision-step"><b>R6</b><div><small>Contact authority</small><strong>A qualified work channel is current.</strong></div></div>
+                <div className="mr-site-decision-step"><b>01</b><div><small>Commercial case</small><strong>A current, evidence-backed reason to engage exists.</strong></div></div>
+                <div className="mr-site-decision-step"><b>02</b><div><small>Route in</small><strong>Two independent structural routes are available.</strong></div></div>
+                <div className="mr-site-decision-step"><b>03</b><div><small>Buyer access</small><strong>A qualified work channel is current.</strong></div></div>
               </div>
             </div>
           </div>
@@ -291,6 +278,16 @@ export default function Home() {
         </div>
       </section>
 
+      <section className="mr-site-section mr-site-pricing" id="pricing">
+        <div className="mr-site-shell">
+          <div className="mr-site-section-head"><div><div className="mr-site-chip mr-site-chip--quiet"><span/> Simple pricing</div><h2>See the value first. Upgrade when more is waiting.</h2></div><p>One free discovery run gives you the first eight opportunities. If MarketRoute keeps finding more, the new opportunities appear locked until you choose a plan.</p></div>
+          <div className="mr-site-pricing__grid">
+            <article className="mr-site-price-card mr-site-price-card--free"><span>DISCOVERY</span><h3>Free</h3><p>One business. One market run. Eight unlocked opportunities.</p><ul><li><Icon name="check" size={13}/> No account to start</li><li><Icon name="check" size={13}/> Real research</li><li><Icon name="check" size={13}/> Save routes when you create an account</li></ul><ButtonLink href="/discover" variant="secondary">Start free</ButtonLink></article>
+            {plans.map(plan=>{const meta=plan.metadata??{},recommended=meta.recommended===true;return <article className={`mr-site-price-card${recommended?" is-recommended":""}`} key={plan.planCode}>{recommended&&<b>RECOMMENDED</b>}<span>MARKETROUTE</span><h3>£{Math.round(plan.monthlyPriceGbp)}<small>/mo</small></h3><p><strong>{plan.displayName}</strong> · {String(meta.capacityLabel??"Research capacity")}</p><ul><li><Icon name="check" size={13}/>{String(meta.depthLabel??"Company research")}</li><li><Icon name="check" size={13}/>{String(meta.monitoringLabel??"Opportunity monitoring")}</li><li><Icon name="check" size={13}/> Email, phone and direct routes</li></ul><ButtonLink href="/discover" variant={recommended?"primary":"secondary"}>Start free first</ButtonLink></article>})}
+          </div><div className="mr-site-pricing__foot"><a href="/pricing">Compare plans in detail <Icon name="arrow" size={13}/></a><span>No annual commitment at launch.</span></div>
+        </div>
+      </section>
+
       <section className="mr-site-section mr-site-access">
         <div className="mr-site-shell">
           <div className="mr-site-access__card">
@@ -315,7 +312,7 @@ export default function Home() {
       <footer className="mr-site-footer">
         <div className="mr-site-shell mr-site-footer__inner">
           <div><MarketRouteLogo/><span>A Truth Index Systems product</span></div>
-          <nav><a href="#how-it-works">How it works</a><a href="#intelligence">What you get</a><a href="#genesis">Genesis T8</a><a href="/preview">Product example</a><a href="/login">Sign in</a></nav>
+          <nav><a href="#how-it-works">How it works</a><a href="#pricing">Pricing</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="/support">Support</a><a href="/login">Sign in</a></nav>
           <span>MarketRoute V2</span>
         </div>
       </footer>

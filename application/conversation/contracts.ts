@@ -1,6 +1,6 @@
 export const MARKETROUTE_CONVERSATION_CONTRACT_VERSION="MRV2-CONVERSATION-1.0.0" as const;
 
-export type MarketRouteNarrativeScope="DISCOVERY_PROGRESS"|"COMMAND_CENTRE"|"CAMPAIGN_OVERVIEW"|"OPPORTUNITY_SUMMARY";
+export type MarketRouteNarrativeScope="DISCOVERY_PROGRESS"|"COMMAND_CENTRE"|"CAMPAIGN_OVERVIEW"|"OPPORTUNITY_SUMMARY"|"OPPORTUNITY_QA";
 export type MarketRouteNarrativeGeneration="AI"|"DETERMINISTIC_FALLBACK";
 
 export interface MarketRouteNarrative{

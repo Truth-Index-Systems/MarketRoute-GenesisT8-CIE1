@@ -1,41 +1,43 @@
 import { workspaceSessionOrRedirect } from "@/app/app/_lib/session";
 import { applicationReadServiceFromEnvironment } from "@/application/read-model/service";
-import { asObject,asObjectArray,companyProfile,money,numberValue,statusTone,text } from "@/application/read-model/presentation";
-import { CampaignDangerZone,EmptyState,humanStatus,Icon,IntelligenceTable,MarketRouteNarrativeCard,MetricCard,PageHeader,Panel,SectionHeading,StatusBadge } from "@/ui";
+import { asObject,asObjectArray,companyProfile,numberValue,statusTone,text } from "@/application/read-model/presentation";
+import { CampaignDangerZone,EmptyState,humanStatus,Icon,IntelligenceTable,MarketRouteNarrativeCard,MetricCard,PageHeader,Panel,ProductPipeline,SectionHeading,StatusBadge } from "@/ui";
 import { marketRouteConversationServiceFromEnvironment } from "@/application/conversation/service";
 import { commercialAccessServiceFromEnvironment } from "@/application/commercial/service";
+import { productPipeline } from "@/application/product-experience/pipeline";
 
 function campaignErrorMessage(code:string):string{
-  if(code.includes("MARKETROUTE_CAMPAIGN_CHANGE_BLOCKED_DURING_DELIVERY"))return "This campaign cannot be paused or deleted while an outreach delivery is running. Try again after it finishes.";
-  if(code.includes("MARKETROUTE_CAMPAIGN_ADMIN_REQUIRED"))return "Only workspace owners and admins can manage campaigns.";
-  if(code.includes("MARKETROUTE_CAMPAIGN_NAME_CONFIRMATION_MISMATCH"))return "The campaign name did not match. Type it exactly as shown to delete the campaign.";
-  if(code.includes("MARKETROUTE_CAMPAIGN_PAUSE_STATE_INVALID"))return "This campaign cannot be paused from its current state.";
-  if(code.includes("MARKETROUTE_CAMPAIGN_RESUME_STATE_INVALID"))return "This campaign cannot be resumed from its current state.";
-  return "The campaign could not be updated. Please try again.";
+  if(code.includes("MARKETROUTE_CAMPAIGN_CHANGE_BLOCKED_DURING_DELIVERY"))return "This market cannot be paused or deleted while a delivery is running. Try again after it finishes.";
+  if(code.includes("MARKETROUTE_CAMPAIGN_ADMIN_REQUIRED"))return "Only workspace owners and admins can manage the market brief.";
+  if(code.includes("MARKETROUTE_CAMPAIGN_NAME_CONFIRMATION_MISMATCH"))return "The market name did not match. Type it exactly as shown to delete it.";
+  if(code.includes("MARKETROUTE_CAMPAIGN_PAUSE_STATE_INVALID"))return "This market cannot be paused from its current state.";
+  if(code.includes("MARKETROUTE_CAMPAIGN_RESUME_STATE_INVALID"))return "This market cannot be resumed from its current state.";
+  return "The market could not be updated. Please try again.";
 }
+function capacityLabel(value:{limitUnits:number|null;remainingUnits:number|null}){if(value.limitUnits===null)return"Included";if(!value.limitUnits)return"Discovery";return`${Math.round((Math.max(0,value.remainingUnits??0)/value.limitUnits)*100)}%`;}
 
 export default async function CampaignPage({params,searchParams}:{params:Promise<{campaignId:string}>;searchParams:Promise<Record<string,string|string[]|undefined>>}){
-  const {campaignId}=await params;
-  const query=await searchParams;
-  const {workspace}=await workspaceSessionOrRedirect();
+  const {campaignId}=await params;const query=await searchParams;const {workspace,activation}=await workspaceSessionOrRedirect();
   const [model,commercial]=await Promise.all([applicationReadServiceFromEnvironment().campaign({organisationId:workspace.organisationId,campaignId}),commercialAccessServiceFromEnvironment().access(workspace.organisationId)]);
-  const campaign=asObject(model.campaign),metrics=asObject(model.metrics),research=asObject(model.research),budget=asObject(research.budget),profiles=asObjectArray(model.opportunities).map(companyProfile);
-  const state=text(campaign.workflowState,"UNKNOWN");
-  const campaignName=text(campaign.name,"Campaign");
-  const canManage=workspace.role==="OWNER"||workspace.role==="ADMIN";
-  const action=typeof query.campaignAction==="string"?query.campaignAction:null;
-  const actionError=typeof query.actionError==="string"?campaignErrorMessage(query.actionError):null;
-  const narrative=await marketRouteConversationServiceFromEnvironment().campaign(model);
+  const campaign=asObject(model.campaign),metrics=asObject(model.metrics),profiles=asObjectArray(model.opportunities).map(companyProfile),state=text(campaign.workflowState,"UNKNOWN"),campaignName=text(campaign.name,"Market");
+  const canManage=workspace.role==="OWNER"||workspace.role==="ADMIN",action=typeof query.campaignAction==="string"?query.campaignAction:null,actionError=typeof query.actionError==="string"?campaignErrorMessage(query.actionError):null;
+  const narrative=await marketRouteConversationServiceFromEnvironment().campaign(model),stages=productPipeline({activation,campaign:model});const ready=profiles.filter(p=>p.executableNow).length,review=profiles.filter(p=>p.reviewableNow).length;
   return <div>
-    <PageHeader eyebrow="CAMPAIGN OVERVIEW" title={campaignName} description={text(campaign.objectiveText,"Commercial objective not yet declared.")} actions={<div className="mr-header-badge-row"><StatusBadge label={humanStatus(state)} title={state} tone={statusTone(state)}/><StatusBadge label={model.engagementPolicy==="AUTOPILOT"?"Autopilot engagement":"Human approval"} tone="slate"/></div>}/>
-    {action==="paused"&&<div className="mr-alert mr-alert--success"><Icon name="check" size={16}/><span>Campaign paused. Genesis will not claim new research work for it.</span></div>}
-    {action==="resumed"&&<div className="mr-alert mr-alert--success"><Icon name="check" size={16}/><span>Campaign resumed. Genesis can claim new research work again.</span></div>}
-    {actionError&&<div className="mr-alert mr-alert--error"><Icon name="shield" size={16}/><span>{actionError}</span></div>}
+    <PageHeader eyebrow="CURRENT MARKET" title={campaignName} description={text(campaign.objectiveText,"Commercial objective not yet declared.")} actions={<div className="mr-header-badge-row"><StatusBadge label={state==="ACTIVE"?"MarketRoute working":humanStatus(state)} title={state} tone={statusTone(state)}/></div>}/>
+    {action==="paused"&&<div className="mr-alert mr-alert--success"><Icon name="check" size={16}/><span>Market paused. MarketRoute will not claim new research work for it.</span></div>}
+    {action==="resumed"&&<div className="mr-alert mr-alert--success"><Icon name="check" size={16}/><span>Market resumed. MarketRoute can continue research.</span></div>}
+    {actionError&&<div className="mr-alert mr-alert--error"><Icon name="warning" size={16}/><span>{actionError}</span></div>}
+
+    <ProductPipeline stages={stages} title="How this market is progressing" compact/>
     <MarketRouteNarrativeCard narrative={narrative} eyebrow="MARKETROUTE VIEW"/>
-    {commercial.mode==="DISCOVERY_FREE"&&commercial.campaignId===campaignId&&commercial.lockedCount>0&&<a className="mr-upgrade-banner" href="/app/opportunities"><div><Icon name="spark" size={18}/><span><strong>{commercial.lockedCount} additional opportunit{commercial.lockedCount===1?"y has":"ies have"} become ready.</strong><small>They are server-locked until this workspace is upgraded.</small></span></div><b>Unlock opportunities →</b></a>}
-    <section className="mr-metric-grid"><MetricCard label="Companies in scope" value={String(numberValue(metrics.scopedCompanies))} meta="Currently being evaluated"/><MetricCard label="Qualified opportunities" value={String(numberValue(metrics.materialisedOpportunities))} meta="Commercially materialised"/><MetricCard label="Research used today" value={money(budget.spentTodayUsd)} meta="AI and acquisition spend"/><MetricCard label="Research budget remaining" value={money(budget.remainingTodayUsd)} meta="Available today" accent/></section>
-    <Panel><SectionHeading eyebrow="Commercial pipeline" title="Companies that have earned opportunity state" description="A company appears here only after MarketRoute can represent the commercial case and its current authority chain. Technical R4/R5/R6 states remain available in the row for auditability."/>{profiles.length===0?<EmptyState icon="opportunities" title="No qualified opportunities yet" body="MarketRoute is still researching this campaign, or no company has yet earned the required commercial, route and contact authority."/>:<IntelligenceTable head={["Company","Commercial status","Your workflow","Commercial case","Route","Contact","Access"]}>{profiles.map(p=><tr key={p.companyId}><td><a href={`/app/opportunities/${campaignId}/${p.companyId}`}><strong>{p.companyName}</strong><small>{p.canonicalDomain??"No domain"}</small></a></td><td><StatusBadge compact label={humanStatus(p.disposition)} title={p.disposition} tone={statusTone(p.disposition)}/></td><td>{humanStatus(p.workflowState,"Not reviewed")}</td><td><span className="mr-table-state" title={p.commercialReality}>{humanStatus(p.commercialReality)}</span></td><td><span className="mr-table-state" title={p.routeAuthority}>{humanStatus(p.routeAuthority)}</span></td><td><span className="mr-table-state" title={p.contactAuthority}>{humanStatus(p.contactAuthority)}</span></td><td>{p.authorisedRoutes} qualified / {p.structuralRoutes} structural</td></tr>)}</IntelligenceTable>}</Panel>
+
+    {commercial.mode==="DISCOVERY_FREE"&&commercial.campaignId===campaignId&&commercial.lockedCount>0&&<a className="mr-upgrade-banner mr-upgrade-banner--premium" href="/app/opportunities"><div><Icon name="spark" size={18}/><span><strong>{commercial.lockedCount} additional opportunit{commercial.lockedCount===1?"y is":"ies are"} ready.</strong><small>MarketRoute has completed the intelligence. Upgrade to reveal them.</small></span></div><b>Unlock opportunities →</b></a>}
+
+    <section className="mr-metric-grid"><MetricCard label="Companies in market" value={String(numberValue(metrics.scopedCompanies))} meta="Currently being evaluated" icon={<Icon name="companies"/>}/><MetricCard label="Opportunities" value={String(numberValue(metrics.materialisedOpportunities))} meta="Commercial cases established" icon={<Icon name="opportunities"/>}/><MetricCard label="Ready to pursue" value={String(ready)} meta="Current contact route available" icon={<Icon name="route"/>} accent/><MetricCard label="Research capacity" value={capacityLabel(commercial.researchCapacity)} meta={review?`${review} decision${review===1?"":"s"} waiting for you`:"Available this plan period"} icon={<Icon name="research"/>}/></section>
+
+    <Panel><SectionHeading eyebrow="OPPORTUNITY PIPELINE" title="Companies that have earned a commercial decision" description="The main view stays simple: whether the company matters, whether it is reachable, and whether MarketRoute needs more evidence. Detailed authority lineage remains inside each opportunity."/>{profiles.length===0?<EmptyState icon="opportunities" title="No qualified opportunities yet" body="MarketRoute is still researching this market, or no company has yet earned a commercial case."/>:<IntelligenceTable head={["Company","MarketRoute view","Your decision","Ready to contact","Routes","Research"]}>{profiles.map(p=><tr key={p.companyId}><td><a href={`/app/opportunities/${campaignId}/${p.companyId}`}><strong>{p.companyName}</strong><small>{p.canonicalDomain??"Company identity established"}</small></a></td><td><StatusBadge compact label={p.executableNow?"Worth pursuing":humanStatus(p.disposition)} title={p.disposition} tone={statusTone(p.disposition)}/></td><td>{humanStatus(p.workflowState??"Not reviewed")}</td><td><StatusBadge compact label={p.executableNow?"Yes":"Not yet"} tone={p.executableNow?"green":"slate"}/></td><td>{p.authorisedRoutes>0?`${p.authorisedRoutes} ready`:`${p.structuralRoutes} forming`}</td><td>{["RESEARCH_REQUIRED","REVALIDATION_REQUIRED"].includes(p.disposition)?"Still checking":"Current"}</td></tr>)}</IntelligenceTable>}</Panel>
+
     {canManage&&state!=="ARCHIVED"?<CampaignDangerZone campaignId={campaignId} campaignName={campaignName} workflowState={state}/>:null}
-    {!canManage&&<div className="mr-readonly-note mr-campaign-readonly"><Icon name="shield" size={15}/><span>Campaign controls are available to workspace owners and admins.</span></div>}
-  </div>
+    {!canManage&&<div className="mr-readonly-note mr-campaign-readonly"><Icon name="shield" size={15}/><span>Market controls are available to workspace owners and admins.</span></div>}
+  </div>;
 }

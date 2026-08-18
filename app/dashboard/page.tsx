@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { founderSessionIsValid } from "@/application/founder/auth";
 import { loadFounderDashboard,type FounderStageState } from "@/application/founder/dashboard";
+import { productEconomicsSnapshot } from "@/application/founder/product-economics";
 import { MarketRouteLogo } from "@/ui/brand/marketroute-logo";
 import { Icon,type IconName } from "@/ui/icons";
 
@@ -12,6 +13,7 @@ function obj(value:unknown):Record<string,unknown>{return value&&typeof value===
 function num(value:unknown){const n=Number(value??0);return Number.isFinite(n)?n:0;}
 function text(value:unknown,fallback="—"){return typeof value==="string"&&value?value:fallback;}
 function money(value:unknown){const n=num(value);return `$${n.toLocaleString("en-US",{minimumFractionDigits:n<10?2:0,maximumFractionDigits:2})}`;}
+function gbp(value:unknown){const n=num(value);return `£${n.toLocaleString("en-GB",{minimumFractionDigits:0,maximumFractionDigits:0})}`;}
 function integer(value:unknown){return Math.round(num(value)).toLocaleString("en-GB");}
 function relative(value:string|null){if(!value)return "No activity yet";const ms=Date.now()-Date.parse(value);if(!Number.isFinite(ms))return "No activity yet";const min=Math.max(0,Math.floor(ms/60000));if(min<1)return "just now";if(min<60)return `${min}m ago`;const h=Math.floor(min/60);if(h<48)return `${h}h ago`;return `${Math.floor(h/24)}d ago`;}
 function stateLabel(state:FounderStageState){return state==="LIVE"?"Live now":state==="WORKING"?"Producing data":state==="WAITING"?"Waiting for data":state==="ATTENTION"?"Needs attention":"Disabled";}
@@ -25,6 +27,7 @@ export default async function FounderDashboard(){
     return <main className="mr-founder"><header className="mr-founder__topbar"><MarketRouteLogo/><div><span>Founder operations</span><form method="post" action="/api/founder/logout"><button type="submit">Lock dashboard</button></form></div></header><section className="mr-founder__error"><span>DATA CONNECTION</span><h1>Founder dashboard is protected, but its observability data is not available yet.</h1><p>{message}</p><p>Apply the Founder Dashboard Supabase migration, then refresh this page.</p></section></main>;
   }
   const {snapshot,environment,stages}=model;
+  const economics=await productEconomicsSnapshot().catch(()=>null);
   const platform=obj(snapshot.platform),growth=obj(snapshot.growth),research=obj(snapshot.research),evidence=obj(snapshot.evidence),truth=obj(snapshot.truth),r4=obj(snapshot.r4),r5=obj(snapshot.r5),r6=obj(snapshot.r6),opportunity=obj(snapshot.opportunity),engagement=obj(snapshot.engagement),ai=obj(snapshot.ai),runtime=obj(snapshot.runtime),schema=obj(snapshot.schemaRelease);
   const criticalAttention=stages.filter(s=>s.state==="ATTENTION").length;
   const live=stages.filter(s=>s.state==="LIVE"||s.state==="WORKING").length;
@@ -61,6 +64,16 @@ export default async function FounderDashboard(){
       <article><span>Contact-qualified</span><strong>{integer(r6.contactQualifiedCompanies)}</strong><small>{integer(r6.authorisedAccessPoints)} authorised access points</small></article>
       <article><span>Opportunities</span><strong>{integer(opportunity.total)}</strong><small>{integer(opportunity.reviewable)} reviewable · {integer(opportunity.approved)} approved</small></article>
     </section>
+
+    <section className="mr-founder__section-head"><div><span>PRODUCT ECONOMICS</span><h2>From free discovery to recurring revenue</h2></div><p>Customer acquisition, conversion and AI cost from persisted MarketRoute state. This is product telemetry, not intelligence authority.</p></section>
+    {economics?<section className="mr-founder__summary-grid mr-founder__summary-grid--economics">
+      <article><span>Anonymous discoveries</span><strong>{integer(economics.anonymousRuns)}</strong><small>{integer(economics.claimedRuns)} claimed · {num(economics.claimRatePct).toFixed(1)}% claim rate</small></article>
+      <article><span>Checkout completion</span><strong>{num(economics.checkoutCompletionPct).toFixed(1)}%</strong><small>{integer(economics.checkoutCompleted)} of {integer(economics.checkoutAttempts)} attempts</small></article>
+      <article><span>Paid workspaces</span><strong>{integer(economics.activePaidWorkspaces)}</strong><small>{Object.entries(economics.activePlanCounts??{}).map(([plan,count])=>`${plan} ${integer(count)}`).join(" · ")||"No paid plans yet"}</small></article>
+      <article><span>MRR</span><strong>{gbp(economics.mrrGbp)}</strong><small>Verified active monthly subscriptions</small></article>
+      <article><span>Avg free discovery cost</span><strong>{money(economics.averageAnonymousRunCostUsd)}</strong><small>{money(economics.anonymousAiSpendUsd)} total anonymous AI spend</small></article>
+      <article><span>30-day AI spend</span><strong>{money(economics.aiSpend30dUsd)}</strong><small>{money(economics.paidWorkspaceAiSpend30dUsd)} on currently paid workspaces</small></article>
+    </section>:<section className="mr-founder-panel mr-founder-economics-unavailable"><span>PRODUCT ECONOMICS</span><h2>Economics snapshot not available yet.</h2><p>Apply Product Build 26 SQL, then refresh. The operational dashboard remains available independently.</p></section>}
 
     <section className="mr-founder__section-head"><div><span>END-TO-END PIPELINE</span><h2>Every production stage</h2></div><p>A zero is not automatically a failure. “Waiting for data” means the stage has not yet received enough upstream material; “Needs attention” means a persisted failure or failed runtime was observed.</p></section>
     <section className="mr-founder__pipeline">

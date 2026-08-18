@@ -74,3 +74,7 @@ Discovery workspaces keep their first eight authority-ready opportunities while 
 ## Product Build 25 — Billing + Instant Unlock
 
 Product Build 25 connects Stripe-hosted monthly subscriptions to the server-authoritative commercial entitlement layer. Run `APPLY-IN-SUPABASE-MARKETROUTE-V2-PRODUCT-BUILD25.sql`, configure the Build 25 Stripe environment variables from `.env.example`, and deploy. See `MARKETROUTE-V2-PRODUCT-BUILD25-BILLING-INSTANT-UNLOCK.md` for Stripe setup, webhook events, Customer Portal configuration, and test-mode verification.
+
+## Product Build 26 — Full Product Experience
+
+Product Build 26 converges the customer experience around a seven-stage progressive MarketRoute pipeline: Understand → Map → Discover → Research → Evaluate → Route → Ready. The authenticated Command Centre is pipeline/narrative-first, opportunity pages lead with explanation and actionable routes, contextual Q&A is grounded and read-only, customer research is expressed as capacity rather than provider spend, and the public site now carries the full discovery/pricing/support/legal funnel. Founder-only product economics add acquisition, MRR and AI-cost visibility without creating a new commercial-authority writer. Genesis Growth remains paused and autonomous outbound delivery remains off. See `MARKETROUTE-V2-PRODUCT-BUILD26-FULL-PRODUCT-EXPERIENCE.md`.

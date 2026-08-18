@@ -16,7 +16,7 @@ results.push(check("Build 16 presentation marker is active", () => {
 }));
 
 results.push(check("Build 16 homepage makes the product obvious", () => {
-  for (const phrase of ["Know who to target", "MarketRoute researches your market", "worth pursuing", "evidence-backed routes to the right buyer"]) assert(home.includes(phrase), phrase);
+  for (const phrase of ["Tell me what you sell", "Find my routes", "worth pursuing", "First 8 opportunities free"]) assert(home.includes(phrase), phrase);
 }));
 results.push(check("Build 16 homepage includes required product story", () => {
   for (const id of ['id="how-it-works"', 'id="intelligence"', 'id="example"', 'id="genesis"']) assert(home.includes(id), id);
@@ -25,9 +25,9 @@ results.push(check("Build 16 covers Company Truth, Commercial Reality, Relations
   for (const phrase of ["Company truth", "Commercial reality", "Relationship route", "Contact readiness"]) assert(home.includes(phrase), phrase);
 }));
 results.push(check("Build 16 acquisition remains value-first", () => {
-  assert(home.includes('href="/preview"'), "homepage preview link");
+  assert(home.includes('href="/discover"'), "anonymous discovery is the primary value-first route");
   assert(!home.includes('href="/signup"'), "signup must not precede public value");
-  assert(preview.includes('href="/signup"'), "signup follows walkthrough");
+  assert(preview.includes('href="/discover"'), "walkthrough routes into anonymous discovery rather than signup");
 }));
 results.push(check("Build 16 keeps sign-in available but secondary", () => {
   assert(home.includes('href="/login"'), "login link");

@@ -17,7 +17,7 @@ function number(value:unknown){const n=Number(value);return Number.isFinite(n)?n
 function boolean(value:unknown){return value===true;}
 function human(value:string){return value.replace(/_/g," ").toLowerCase().replace(/(^|\s)\S/g,c=>c.toUpperCase());}
 function cleanList(values:unknown,max:number){return(Array.isArray(values)?values:[]).filter((v):v is string=>typeof v==="string").map(v=>v.trim()).filter(Boolean).slice(0,max);}
-function ttlHours(scope:MarketRouteNarrativeScope){return scope==="DISCOVERY_PROGRESS"?48:scope==="OPPORTUNITY_SUMMARY"?168:72;}
+function ttlHours(scope:MarketRouteNarrativeScope){return scope==="DISCOVERY_PROGRESS"?48:scope==="OPPORTUNITY_SUMMARY"?168:scope==="OPPORTUNITY_QA"?24:72;}
 
 function fallback(facts:NarrativeFactSet,fp:string):MarketRouteNarrative{
   const known=facts.knownFacts.slice(0,6),uncertainties=facts.uncertainties.slice(0,5);
@@ -69,5 +69,17 @@ export class MarketRouteConversationService{
     const uncertainties=gaps.length?gaps:executable?[]:["The complete commercial, route and contact case is not yet current enough for action."];
     return this.narrate({scope:"OPPORTUNITY_SUMMARY",scopeKey:`${routes.campaignId}:${companyId}`,organisationId:routes.organisationId,campaignId:routes.campaignId,companyId,subject:executable?`${companyName} is ready to pursue.`:`I'm still qualifying ${companyName}.`,status:`Executable ${executable}; commercial ${text(r4.decision,"UNKNOWN")}; route ${text(r5.decision,"UNKNOWN")}; contact ${text(r6.decision,"UNKNOWN")}.`,knownFacts:known,uncertainties,allowedEvidenceReferences:refs,deterministicRecommendation:executable?"This opportunity has the current commercial case and route authority required for action; review the ready routes before contacting the company.":"Keep this opportunity in research until the missing commercial or contact evidence is resolved.",deterministicNextAction:executable?"Review the authorised routes and their evidence.":"Review the open research questions to see what MarketRoute is still trying to establish."});
   }
+  opportunityQuestion(model:CompanyIntelligenceReadModel,routes:RouteDisplayReadModel,question:string){
+    const clean=question.replace(/\s+/g," ").trim();if(clean.length<3||clean.length>320)throw new Error("MARKETROUTE_OPPORTUNITY_QUESTION_INVALID");
+    const profile=object(model.profile),authority=object(model.authority),truth=object(model.truth),research=object(model.research),r4=object(authority.r4),r5=object(authority.r5),r6=object(authority.r6);
+    const paths=objectArray(routes.paths),companyId=text(profile.companyId,routes.companyId),companyName=text(profile.companyName,"this company"),executable=boolean(profile.executableNow);
+    const refs=paths.map(p=>text(p.pathFingerprint)).filter(Boolean).slice(0,12),ready=paths.filter(p=>boolean(p.authorised));
+    const contacts=ready.slice(0,4).map(path=>{const name=text(path.personName),roles=cleanList(path.roleTitles,3),terminal=object(path.terminalAccessPoint),kind=human(text(terminal.accessPointKind,"direct route"));return name?`${name}${roles.length?` — ${roles.join(" / ")}`:""}; ${kind.toLowerCase()} route is authorised.`:`An authorised ${kind.toLowerCase()} organisational route is available.`;});
+    const gaps=objectArray(research.candidates).slice(0,5).map(g=>human(text(g.reasonCode,"Research is still needed.")));
+    const known=[`Company: ${companyName}.`,`Commercial case: ${human(text(r4.decision,"not established"))}.`,`Route state: ${human(text(r5.decision,"not established"))}.`,`Buyer access: ${human(text(r6.decision,"not established"))}.`,`Research state: ${human(text(truth.entityState,"not established"))}.`,...contacts].slice(0,8);
+    const hash=createHash("sha256").update(clean.toLowerCase()).digest("hex").slice(0,24);
+    return this.narrate({scope:"OPPORTUNITY_QA",scopeKey:`${routes.campaignId}:${companyId}:${hash}`,organisationId:routes.organisationId,campaignId:routes.campaignId,companyId,subject:`Answer the customer's question about ${companyName}: ${clean}`,status:`Executable ${executable}; commercial ${text(r4.decision,"UNKNOWN")}; route ${text(r5.decision,"UNKNOWN")}; contact ${text(r6.decision,"UNKNOWN")}.`,knownFacts:known,uncertainties:gaps,allowedEvidenceReferences:refs,deterministicRecommendation:executable?"Use the current authorised route if the question concerns next action; otherwise keep the answer bounded to the evidence shown.":"Do not imply this company is ready to pursue while required evidence remains unresolved.",deterministicNextAction:"Answer the question directly using only the supplied MarketRoute facts, and say clearly when the current evidence cannot answer it."});
+  }
+
 }
 export function marketRouteConversationServiceFromEnvironment(){return new MarketRouteConversationService();}

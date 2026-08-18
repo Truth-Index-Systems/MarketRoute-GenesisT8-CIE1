@@ -25,7 +25,7 @@ results.push(check("marketing page contains no browser database or secret access
   for (const term of ["process.env", "SUPABASE_SERVICE_ROLE_KEY", ".rpc(", "/rest/v1/"]) assert(!home.includes(term), term);
 }));
 results.push(check("marketing claims preserve evidence uncertainty", () => {
-  for (const phrase of ["unknowns visible", "stale", "contradicted", "evidence"]) assert(lower.includes(phrase), phrase);
+  for (const phrase of ["unknown", "stale", "contradicted", "evidence"]) assert(lower.includes(phrase), phrase);
 }));
 results.push(check("AI remains supporting language, not the product promise", () => {
   const firstHeading = home.match(/<h1>[\s\S]*?<\/h1>/)?.[0]?.toLowerCase() ?? "";

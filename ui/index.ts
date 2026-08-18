@@ -1,3 +1,6 @@
+export { PublicPageShell } from "./application/public-page-shell";
+export { AskMarketRoute } from "./application/ask-marketroute";
+export { ProductPipeline } from "./application/product-pipeline";
 export { LockedOpportunityFeed,LockedOpportunityDetail,PlanChooser } from "./application/commercial-upgrade";
 export { MarketRouteNarrativeCard } from "./application/marketroute-narrative";
 export { AnonymousDiscoveryProgress } from "./application/anonymous-discovery-progress";

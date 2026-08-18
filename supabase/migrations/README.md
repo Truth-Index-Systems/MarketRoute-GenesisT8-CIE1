@@ -46,3 +46,10 @@ Build 13 keeps exactly three authority writers. The read model is presentation c
 - `0031_research_plan_persistence_hotfix.sql` — aligns PostgreSQL/JavaScript timestamp fingerprints and qualifies shadowed plan deduplication columns in the first live research-plan write.
 - `0032_r4_persistence_ambiguity_hotfix.sql` — qualifies the existing R4 writer’s input-fingerprint deduplication lookup without changing authority semantics.
 - Product Build 19: `0039_product_demand_driven_genesis.sql` — pauses speculative Genesis Growth, terminates any live growth lease, fail-closes the growth scheduler while paused, and preserves customer campaign research plus the reusable Genesis intelligence bank.
+- Product Build 20: `0040_anonymous_discovery_progressive_pipeline.sql` — bounded anonymous discovery with persistent progress and no contact payload leakage.
+- Product Build 21: `0041_conversational_intelligence.sql` — service-only non-authoritative narration cache over canonical application reads.
+- Product Build 22: `0042_opportunity_routes_contacts.sql` — enriched read-only current R5/R6 contact-route projection for actionable opportunity presentation.
+- Product Build 23: `0043_free_eight_account_claim.sql` — persistent first-eight opportunity entitlements and anonymous-run claim lifecycle.
+- Product Build 24: `0044_locked_opportunities_commercial_boundary.sql` — server-owned plan catalogue, locked teaser projection and research-capacity enforcement.
+- Product Build 25: `0045_billing_instant_unlock.sql` — Stripe subscription reconciliation into the existing commercial entitlement boundary.
+- Product Build 26: `0046_product_experience_convergence.sql` — non-authoritative opportunity Q&A cache scope plus founder-only read-only product economics snapshot.
