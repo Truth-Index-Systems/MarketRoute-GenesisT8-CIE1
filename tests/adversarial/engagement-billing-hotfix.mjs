@@ -1,0 +1,15 @@
+import assert from "node:assert/strict";import fs from "node:fs";import path from "node:path";
+const root=path.resolve(import.meta.dirname,"../..");const read=p=>fs.readFileSync(path.join(root,p),"utf8");
+const sql=read("supabase/migrations/0054_engagement_currentness_billing_legacy_hotfix.sql"),base=read("supabase/migrations/0015_engagement_engine.sql"),service=read("application/engagement/service.ts"),billing=read("application/billing/service.ts"),plans=read("app/app/plans/page.tsx"),vercel=read("vercel.json");
+const tests=[];const test=(n,f)=>tests.push([n,f]);
+test("timestamp drift cannot stale otherwise identical generation context",()=>assert.match(sql,/\- 'evaluatedAt'/));
+test("strategy fingerprint still binds path and authority",()=>{assert.match(base,/authorityEnvelopeFingerprint/);assert.match(base,/r6AuthorityFingerprint/);assert.match(base,/pathFingerprint/);assert.match(base,/accessPointId/)});
+test("strategy currentness still rechecks executable opportunity",()=>assert.match(base,/marketroute_opportunity_executable_now_v1/));
+test("strategy currentness still rechecks R6 and envelope",()=>{assert.match(base,/authority_envelope_fingerprint/);assert.match(base,/r6_authority_fingerprint/)});
+test("ordinary FULL without legacy entitlement cannot checkout",()=>{assert.match(billing,/legacyFull=access\.mode==="FULL"&&access\.planCode==="LEGACY_FULL"/);assert.match(billing,/access\.mode!=="DISCOVERY_FREE"&&!legacyFull/)});
+test("legacy entitlement with live external subscription cannot masquerade as migration full",()=>assert.match(sql,/v_ent\.external_subscription_id IS NULL/));
+test("legacy conversion never removes access before Stripe reconciliation",()=>{assert.doesNotMatch(sql,/DELETE FROM public\.organisation_commercial_entitlements/);assert.doesNotMatch(sql,/UPDATE public\.organisation_commercial_entitlements/);});
+test("direct checkout cannot choose plan below active campaign count",()=>assert.match(sql,/v_active_markets>v_plan_limit/));
+test("paid subscription still uses portal path",()=>assert.match(plans,/Manage billing/));
+test("autonomous engagement remains disabled",()=>{assert.match(service,/MARKETROUTE_ASSISTED_ENGAGEMENT_ONLY/);assert.doesNotMatch(vercel,/api\/cron\/delivery/)});
+let passed=0;console.log("\nMarketRoute V2 RC — engagement/billing hotfix adversarial gate");for(const [n,f] of tests){try{f();passed++;console.log(`PASS  ${n}`)}catch(e){console.error(`FAIL  ${n}: ${e instanceof Error?e.message:e}`)}}console.log(`\n${passed}/${tests.length} PASS`);if(passed!==tests.length)process.exitCode=1;

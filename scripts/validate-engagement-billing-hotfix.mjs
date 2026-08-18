@@ -1,0 +1,14 @@
+import assert from "node:assert/strict";import fs from "node:fs";import path from "node:path";
+const root=path.resolve(import.meta.dirname,"..");const read=p=>fs.readFileSync(path.join(root,p),"utf8");const json=p=>JSON.parse(read(p));
+const sql=read("supabase/migrations/0054_engagement_currentness_billing_legacy_hotfix.sql"),plans=read("app/app/plans/page.tsx"),css=read("app/globals.css"),billing=read("application/billing/service.ts"),pkg=json("package.json");
+const tests=[];const check=(n,f)=>tests.push([n,f]);
+check("engagement fingerprint excludes evaluatedAt only",()=>{assert.match(sql,/COALESCE\(p_context,'\{\}'::jsonb\) - 'evaluatedAt'/);assert.match(sql,/ENGAGEMENT-GENERATION-CONTEXT-1\.0\.1/)});
+check("legacy full checkout is explicit and narrow",()=>{assert.match(sql,/v_ent\.plan_code='LEGACY_FULL'/);assert.match(sql,/v_ent\.external_subscription_id IS NULL/);assert.match(billing,/access\.mode==="FULL"&&access\.planCode==="LEGACY_FULL"/)});
+check("billing still blocks ordinary paid duplicate checkout",()=>assert.match(billing,/MARKETROUTE_BILLING_ALREADY_SUBSCRIBED/));
+check("plan campaign allowance is server enforced",()=>{assert.match(sql,/v_active_markets>v_plan_limit/);assert.match(sql,/MARKETROUTE_BILLING_PLAN_CAMPAIGN_LIMIT_TOO_LOW/)});
+check("legacy full page shows current access and plan chooser",()=>{assert.match(plans,/legacyFull/);assert.match(plans,/showChooser=!showCurrent\|\|legacyFull/);assert.match(plans,/Move onto a MarketRoute plan/)});
+check("legacy plan choices filter below current campaign count",()=>assert.match(plans,/activeMarketLimit>=Math\.max\(1,capacity\.activeMarketCount\)/));
+check("dark commercial styles are scoped to modal",()=>{assert.match(css,/\.mr-commercial-modal__panel \.mr-plan-card h3/);assert.match(css,/\.mr-commercial-modal__panel \.mr-plan-current strong\{color:#e4f1fa!important\}/);const stripped=css.replace(/\.mr-commercial-modal__panel \.mr-plan-current strong\{color:#e4f1fa!important\}/g,"");assert.doesNotMatch(stripped,/\.mr-plan-current strong\{color:#e4f1fa!important\}/)});
+check("light billing page has its own chooser surface",()=>assert.match(css,/\.mr-plans-page__chooser/));
+check("new hotfix remains wired into production check",()=>{assert(pkg.scripts["validate:engagement-billing-hotfix"]);assert.match(pkg.scripts["production:check"],/validate:engagement-billing-hotfix/)});
+let passed=0;console.log("\nMarketRoute V2 RC — engagement currentness + billing legacy hotfix static gate");for(const [n,f] of tests){try{f();passed++;console.log(`PASS  ${n}`)}catch(e){console.error(`FAIL  ${n}: ${e instanceof Error?e.message:e}`)}}console.log(`\n${passed}/${tests.length} PASS`);if(passed!==tests.length)process.exitCode=1;
