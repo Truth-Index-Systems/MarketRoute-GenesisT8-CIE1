@@ -1,0 +1,16 @@
+import assert from "node:assert/strict";
+import fs from "node:fs";
+const sql=fs.readFileSync(new URL("../supabase/migrations/0059_anonymous_discovery_quota_refill_cycle.sql",import.meta.url),"utf8");
+const checks=[];const check=(n,f)=>checks.push([n,f]);
+check("cycle readiness uses the existing COMPANY_CORE_V1 research marker",()=>{assert.match(sql,/marketroute_anonymous_discovery_research_cycle_ready_v1/);assert.match(sql,/profile_key='COMPANY_CORE_V1'/);});
+check("extension claim is gated by research-cycle readiness",()=>{const fn=sql.split("marketroute_claim_anonymous_discovery_extension_v1")[1];assert.match(fn,/marketroute_anonymous_discovery_research_cycle_ready_v1\(r\.id\)/);});
+check("10-company ceiling remains frozen",()=>assert.match(sql,/anonymous_target_company_ceiling',10/));
+check("1 USD lifetime research budget remains frozen",()=>assert.match(sql,/anonymous_lifetime_ai_budget_usd',1\.00/));
+check("12-hour research window remains frozen",()=>assert.match(sql,/anonymous_research_window_hours',12/));
+check("continuation stays at three bounded attempts",()=>{assert.match(sql,/j\.attempt_count<3/);assert.match(sql,/extension_attempt_ceiling',3/);});
+check("pre-fix exhausted jobs can be rearmed once",()=>{assert.match(sql,/cycle_policy_version<2/);assert.match(sql,/status='EXHAUSTED'/);assert.match(sql,/THEN 0/);});
+check("post-fix completions mark cycle policy v2",()=>assert.match(sql,/quotaCyclePolicyVersion',2/));
+check("paid conversion still blocks refill",()=>assert.match(sql,/NOT public\.marketroute_paid_entitlement_active_v1/));
+check("original Discovery campaign lineage remains required",()=>assert.match(sql,/r\.original_campaign_id=j\.campaign_id/));
+check("migration adds no authority writer",()=>{assert.match(sql,/new_authority_writer',false/);assert.doesNotMatch(sql,/INSERT\s+INTO\s+public\.(?:commercial_reality_r4_records|route_authority_r5_records|contact_authority_r6_records|authority_records)/i);});
+let pass=0;console.log("\nAnonymous Discovery quota refill cycle — static gate");for(const [n,f] of checks){try{f();pass++;console.log(`PASS  ${n}`)}catch(e){console.error(`FAIL  ${n}: ${e.message}`)}}console.log(`\n${pass}/${checks.length} PASS`);if(pass!==checks.length)process.exitCode=1;
