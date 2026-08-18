@@ -99,7 +99,7 @@
     "certification:live-lineage": "node scripts/certification/live-lineage-trace.mjs",
     "release:certify": "npm run constitution:check && npm run certification:cutover-preflight",
     "production:env-check": "node scripts/production/validate-environment.mjs",
-    "production:check": "npm run constitution:check && node scripts/validate-production-activation.mjs && node scripts/validate-founder-dashboard.mjs && npm run validate:product-build19 && npm run validate:product-build20 && npm run validate:product-build21 && npm run validate:product-build22 && npm run validate:product-build23 && npm run validate:product-build24",
+    "production:check": "npm run constitution:check && node scripts/validate-production-activation.mjs && node scripts/validate-founder-dashboard.mjs && npm run validate:product-build19 && npm run validate:product-build20 && npm run validate:product-build21 && npm run validate:product-build22 && npm run validate:product-build23 && npm run validate:product-build24 && npm run validate:product-build25",
     "production:dashboard": "node scripts/validate-founder-dashboard.mjs",
     "production:growth": "npm run validate:product-build19",
     "production:hotfix": "node scripts/validate-production-hotfix-01832.mjs && node scripts/validate-production-hotfix-01831.mjs && npm run validate:hotfix-01837 && npm run validate:hotfix-01838 && npm run validate:hotfix-01839 && npm run validate:hotfix-018310 && npm run validate:hotfix-018311 && npm run validate:hotfix-018312 && npm run validate:hotfix-018313 && npm run validate:hotfix-018314 && npm run validate:hotfix-018315 && npm run validate:hotfix-018316 && npm run validate:hotfix-018317 && npm run validate:hotfix-018318 && npm run validate:hotfix-018319",
@@ -114,7 +114,8 @@
     "validate:product-build23": "node scripts/validate-product-build23-free-eight-account-claim.mjs && node tests/adversarial/product-build23-free-eight-account-claim.mjs",
     "production:claim": "npm run validate:product-build23",
     "validate:product-build24": "node scripts/validate-product-build24-locked-opportunities-commercial-boundary.mjs && node tests/adversarial/product-build24-locked-opportunities-commercial-boundary.mjs",
-    "production:commercial": "npm run validate:product-build24"
+    "production:commercial": "npm run validate:product-build24",
+    "validate:product-build25": "node scripts/validate-product-build25-billing-instant-unlock.mjs && node tests/adversarial/product-build25-billing-instant-unlock.mjs"
   },
   "dependencies": {
     "next": "15.5.23",

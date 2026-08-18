@@ -5,12 +5,12 @@ import type { LockedOpportunityTeaser,PublicPlan } from "@/application/commercia
 
 function PlanCard({plan}:{plan:PublicPlan}){
   const meta=plan.metadata??{};const recommended=meta.recommended===true;
-  const bullets=[String(meta.capacityLabel??"Research capacity"),String(meta.depthLabel??"Company research"),String(meta.monitoringLabel??"Opportunity monitoring"),"Verified email, phone and direct routes","One active market"].filter(Boolean);
+  const bullets=[String(meta.capacityLabel??"Research capacity"),String(meta.depthLabel??"Company research"),String(meta.monitoringLabel??"Opportunity monitoring"),"Email, phone and direct route intelligence","One active market"].filter(Boolean);
   return <article className={`mr-plan-card ${recommended?"is-recommended":""}`}>
     {recommended&&<span className="mr-plan-card__recommended">RECOMMENDED</span>}
     <header><div><span>MARKETROUTE</span><h3>{plan.displayName}</h3></div><div className="mr-plan-card__price"><strong>£{Math.round(plan.monthlyPriceGbp)}</strong><small>/ month</small></div></header>
     <ul>{bullets.map((item,index)=><li key={`${item}-${index}`}><Icon name="check" size={13}/>{item}</li>)}</ul>
-    <a className={`mr-button ${recommended?"mr-button--primary":"mr-button--secondary"}`} href={`/app/plans?plan=${encodeURIComponent(plan.planCode)}`}>Choose {plan.displayName} <Icon name="arrow" size={14}/></a>
+    <form action="/api/billing/checkout" method="post"><input type="hidden" name="planCode" value={plan.planCode}/><button className={`mr-button ${recommended?"mr-button--primary":"mr-button--secondary"}`} type="submit">Choose {plan.displayName} <Icon name="arrow" size={14}/></button></form>
   </article>;
 }
 

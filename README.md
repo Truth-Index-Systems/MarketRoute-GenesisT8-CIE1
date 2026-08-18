@@ -70,3 +70,7 @@ Anonymous discovery now converts into a persistent free customer workspace witho
 ## Product Build 24 — Locked Opportunities + Commercial Boundary
 
 Discovery workspaces keep their first eight authority-ready opportunities while additional ready opportunities are exposed only as server-redacted locked teasers. Starter (£99), Growth (£249) and Scale (£599) now exist in a server-owned plan catalog, canonical reads/writes enforce the same commercial boundary, paid research capacity is enforced before new AI work is claimed, and existing pre-product customer workspaces are grandfathered. Billing is deliberately not connected yet; selecting a plan cannot grant access. See `MARKETROUTE-V2-PRODUCT-BUILD24-LOCKED-OPPORTUNITIES-COMMERCIAL-BOUNDARY.md`.
+
+## Product Build 25 — Billing + Instant Unlock
+
+Product Build 25 connects Stripe-hosted monthly subscriptions to the server-authoritative commercial entitlement layer. Run `APPLY-IN-SUPABASE-MARKETROUTE-V2-PRODUCT-BUILD25.sql`, configure the Build 25 Stripe environment variables from `.env.example`, and deploy. See `MARKETROUTE-V2-PRODUCT-BUILD25-BILLING-INSTANT-UNLOCK.md` for Stripe setup, webhook events, Customer Portal configuration, and test-mode verification.
