@@ -47,7 +47,7 @@ BEGIN
     AND r.research_expires_at>p_at
     AND NOT public.marketroute_paid_entitlement_active_v1(r.organisation_id,p_at)
     AND (SELECT count(DISTINCT s.company_id) FROM public.organisation_company_scopes s WHERE s.organisation_id=r.organisation_id AND s.campaign_id=c.id AND s.scope_kind='CAMPAIGN') < r.target_count
-  ON CONFLICT(run_id) DO UPDATE SET
+  ON CONFLICT ON CONSTRAINT anonymous_discovery_extension_jobs_run_id_key DO UPDATE SET
     campaign_id=EXCLUDED.campaign_id,
     status=CASE WHEN anonymous_discovery_extension_jobs.status IN('SUCCEEDED','EXHAUSTED') AND anonymous_discovery_extension_jobs.attempt_count<3 THEN 'PENDING' ELSE anonymous_discovery_extension_jobs.status END,
     available_at=CASE WHEN anonymous_discovery_extension_jobs.status IN('SUCCEEDED','EXHAUSTED') AND anonymous_discovery_extension_jobs.attempt_count<3 THEN p_at ELSE anonymous_discovery_extension_jobs.available_at END;

@@ -1,0 +1,10 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+const sql=fs.readFileSync(new URL('../../supabase/migrations/0052_anonymous_discovery_extension_claim_ambiguity_hotfix.sql',import.meta.url),'utf8');
+assert.doesNotMatch(sql,/ON CONFLICT\s*\(\s*run_id\s*\)/i);
+assert.match(sql,/REVOKE ALL ON FUNCTION public\.marketroute_claim_anonymous_discovery_extension_v1\(text,timestamptz\) FROM PUBLIC,anon,authenticated/);
+assert.match(sql,/GRANT EXECUTE ON FUNCTION public\.marketroute_claim_anonymous_discovery_extension_v1\(text,timestamptz\) TO service_role/);
+assert.match(sql,/j\.attempt_count<3/);
+assert.match(sql,/r\.research_expires_at>p_at/);
+assert.match(sql,/NOT public\.marketroute_paid_entitlement_active_v1/);
+console.log('6/6');

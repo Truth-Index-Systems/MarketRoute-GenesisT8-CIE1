@@ -122,7 +122,8 @@
     "validate:anonymous-launch-freeze": "node scripts/validate-anonymous-launch-cost-freeze.mjs && node tests/adversarial/anonymous-launch-cost-freeze.mjs",
     "validate:rc-hardening": "node scripts/validate-rc-research-ui-performance-hardening.mjs && node tests/adversarial/rc-research-ui-performance-hardening.mjs",
     "validate:assisted-engagement": "node scripts/validate-assisted-engagement-activation.mjs && node tests/adversarial/assisted-engagement-activation.mjs",
-    "validate:claim-continuation-ready": "node scripts/validate-claim-continuation-system-ready.mjs && node tests/adversarial/claim-continuation-system-ready.mjs"
+    "validate:claim-continuation-ready": "node scripts/validate-claim-continuation-system-ready.mjs && node tests/adversarial/claim-continuation-system-ready.mjs",
+    "test:extension-claim-hotfix": "node tests/static/anonymous-extension-claim-ambiguity-hotfix.mjs && node tests/adversarial/anonymous-extension-claim-ambiguity-hotfix.mjs"
   },
   "dependencies": {
     "next": "15.5.23",
