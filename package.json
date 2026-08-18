@@ -99,7 +99,7 @@
     "certification:live-lineage": "node scripts/certification/live-lineage-trace.mjs",
     "release:certify": "npm run constitution:check && npm run certification:cutover-preflight",
     "production:env-check": "node scripts/production/validate-environment.mjs",
-    "production:check": "npm run constitution:check && node scripts/validate-production-activation.mjs && node scripts/validate-founder-dashboard.mjs && npm run validate:product-build19 && npm run validate:product-build20 && npm run validate:product-build21 && npm run validate:product-build22 && npm run validate:product-build23 && npm run validate:product-build24 && npm run validate:product-build25 && npm run validate:product-build26 && npm run validate:research-queue-fairness && npm run validate:anonymous-launch-freeze && npm run validate:rc-hardening && npm run validate:assisted-engagement && npm run validate:claim-continuation-ready && npm run validate:multi-campaign && npm run validate:engagement-billing-hotfix && npm run validate:engagement-stable-authority && npm run validate:campaign-activation-lineage",
+    "production:check": "npm run constitution:check && node scripts/validate-production-activation.mjs && node scripts/validate-founder-dashboard.mjs && npm run validate:product-build19 && npm run validate:product-build20 && npm run validate:product-build21 && npm run validate:product-build22 && npm run validate:product-build23 && npm run validate:product-build24 && npm run validate:product-build25 && npm run validate:product-build26 && npm run validate:research-queue-fairness && npm run validate:anonymous-launch-freeze && npm run validate:rc-hardening && npm run validate:assisted-engagement && npm run validate:claim-continuation-ready && npm run validate:multi-campaign && npm run validate:engagement-billing-hotfix && npm run validate:engagement-stable-authority && npm run validate:campaign-activation-lineage && npm run validate:stripe-mode-hotfix && npm run validate:campaign-entry-ui",
     "production:dashboard": "node scripts/validate-founder-dashboard.mjs",
     "production:growth": "npm run validate:product-build19",
     "production:hotfix": "node scripts/validate-production-hotfix-01832.mjs && node scripts/validate-production-hotfix-01831.mjs && npm run validate:hotfix-01837 && npm run validate:hotfix-01838 && npm run validate:hotfix-01839 && npm run validate:hotfix-018310 && npm run validate:hotfix-018311 && npm run validate:hotfix-018312 && npm run validate:hotfix-018313 && npm run validate:hotfix-018314 && npm run validate:hotfix-018315 && npm run validate:hotfix-018316 && npm run validate:hotfix-018317 && npm run validate:hotfix-018318 && npm run validate:hotfix-018319",
@@ -127,7 +127,9 @@
     "validate:multi-campaign": "node scripts/validate-multi-campaign-plan-governance.mjs && node tests/adversarial/multi-campaign-plan-governance.mjs",
     "validate:engagement-billing-hotfix": "node scripts/validate-engagement-billing-hotfix.mjs && node tests/adversarial/engagement-billing-hotfix.mjs",
     "validate:engagement-stable-authority": "node scripts/validate-engagement-stable-authority-hotfix.mjs && node tests/adversarial/engagement-stable-authority-hotfix.mjs",
-    "validate:campaign-activation-lineage": "node scripts/validate-campaign-activation-lineage-modernisation.mjs && node tests/adversarial/campaign-activation-lineage-modernisation.mjs"
+    "validate:campaign-activation-lineage": "node scripts/validate-campaign-activation-lineage-modernisation.mjs && node tests/adversarial/campaign-activation-lineage-modernisation.mjs",
+    "validate:stripe-mode-hotfix": "node scripts/validate-stripe-mode-hotfix.mjs && node tests/adversarial/stripe-mode-hotfix.mjs",
+    "validate:campaign-entry-ui": "node scripts/validate-campaign-entry-ui-alignment.mjs && node tests/adversarial/campaign-entry-ui-alignment.mjs"
   },
   "dependencies": {
     "next": "15.5.23",

@@ -1,0 +1,18 @@
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
+const root=path.resolve(import.meta.dirname,"../..");
+const read=p=>fs.readFileSync(path.join(root,p),"utf8");
+const stripe=read("platform/billing/stripe.ts");
+const billing=read("application/billing/service.ts");
+const checkout=read("app/api/billing/checkout/route.ts");
+const tests=[];const check=(n,f)=>tests.push([n,f]);
+check("a test Price behind a live key cannot fall through to checkout creation",()=>{const mismatch=stripe.indexOf("LIVE_KEY_TEST_OBJECT");const create=stripe.indexOf("async createCheckout");assert(mismatch>0&&create>mismatch);});
+check("a live Price behind a test key is also rejected symmetrically",()=>assert.match(stripe,/TEST_KEY_LIVE_OBJECT/));
+check("mode mismatch cannot be translated into entitlement or reconciliation success",()=>{const section=billing.split("private async validatePrice")[1].split("async checkout")[0];assert.doesNotMatch(section,/reconcile|entitlement|attachCheckout|beginCheckout/);});
+check("checkout reservation starts only after remote price validation succeeds",()=>{const body=billing.split("async checkout")[1].split("async cancelCheckout")[0];assert(body.indexOf("validatePrice(planCode)")<body.indexOf("beginCheckout"));});
+check("raw provider failure messages are redacted before URL exposure",()=>{assert.match(checkout,/message\.startsWith\("MARKETROUTE_STRIPE_REQUEST_FAILED"\)/);assert.match(checkout,/MARKETROUTE_BILLING_PROVIDER_CONFIGURATION_ERROR/);});
+check("unknown non-MarketRoute errors collapse to generic checkout failure",()=>assert.match(checkout,/if\(!message\.startsWith\("MARKETROUTE_"\)\)return "MARKETROUTE_BILLING_CHECKOUT_FAILED"/));
+check("no code attempts to create Stripe Products or Prices automatically",()=>{assert.doesNotMatch(stripe,/\/v1\/products/);assert.doesNotMatch(stripe,/POST[^\n]*\/v1\/prices/);});
+check("no billing configuration fault can mutate commercial authority",()=>{for(const source of [stripe,billing,checkout])assert.doesNotMatch(source,/commercial_reality_r4_records|route_authority_r5_records|contact_authority_r6_records/);});
+let passed=0;console.log("\nMarketRoute RC — Stripe mode/configuration hotfix adversarial gate");for(const [n,f] of tests){try{f();passed++;console.log(`PASS  ${n}`)}catch(e){console.error(`FAIL  ${n}: ${e instanceof Error?e.message:e}`)}}console.log(`\n${passed}/${tests.length} PASS`);if(passed!==tests.length)process.exitCode=1;

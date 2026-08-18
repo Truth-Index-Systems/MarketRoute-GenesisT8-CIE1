@@ -12,7 +12,20 @@ export class BillingService {
   private readonly stripe=stripeBillingClientFromEnvironment();
   private readonly commercial=commercialAccessServiceFromEnvironment();
   async context(organisationId:string):Promise<BillingContextRecord>{return this.repository.context(organisationId);}
-  private async validatePrice(planCode:StripePlanCode){const catalog=(await this.commercial.plans()).find(row=>row.planCode===planCode);if(!catalog)throw new Error("MARKETROUTE_BILLING_PLAN_NOT_PUBLIC");const priceId=stripePriceIdForPlan(planCode);const price=await this.stripe.price(priceId);const expected=Math.round(catalog.monthlyPriceGbp*100);if(!price.active||price.currency!=="gbp"||price.unitAmount!==expected||price.recurringInterval!=="month")throw new Error("MARKETROUTE_BILLING_PRICE_CONFIGURATION_MISMATCH");return priceId;}
+  private async validatePrice(planCode:StripePlanCode){
+    const catalog=(await this.commercial.plans()).find(row=>row.planCode===planCode);
+    if(!catalog)throw new Error("MARKETROUTE_BILLING_PLAN_NOT_PUBLIC");
+    const priceId=stripePriceIdForPlan(planCode);
+    let price;
+    try{price=await this.stripe.price(priceId);}catch(error){
+      const code=error instanceof Error?error.message:"";
+      if(code.startsWith("MARKETROUTE_STRIPE_MODE_MISMATCH"))throw new Error(`MARKETROUTE_BILLING_STRIPE_MODE_MISMATCH:${planCode}`);
+      throw error;
+    }
+    const expected=Math.round(catalog.monthlyPriceGbp*100);
+    if(!price.active||price.currency!=="gbp"||price.unitAmount!==expected||price.recurringInterval!=="month")throw new Error("MARKETROUTE_BILLING_PRICE_CONFIGURATION_MISMATCH");
+    return priceId;
+  }
   async checkout(input:{organisationId:string;userId:string;email:string|null;planCode:string;requestOrigin:string}){
     const planCode=plan(input.planCode);const access=await this.commercial.access(input.organisationId);const legacyFull=access.mode==="FULL"&&access.planCode==="LEGACY_FULL";if(access.mode!=="DISCOVERY_FREE"&&!legacyFull)throw new Error(access.mode==="PAID"?"MARKETROUTE_BILLING_ALREADY_SUBSCRIBED":"MARKETROUTE_BILLING_CHECKOUT_NOT_AVAILABLE");const context=await this.repository.context(input.organisationId);if(context.externalSubscriptionId&&!["CANCELLED","EXPIRED"].includes(String(context.entitlementStatus??"")))throw new Error("MARKETROUTE_BILLING_EXISTING_SUBSCRIPTION_REQUIRES_PORTAL");const priceId=await this.validatePrice(planCode);const attempt=await this.repository.beginCheckout({organisationId:input.organisationId,userId:input.userId,planCode});const base=appBaseUrl(input.requestOrigin);const successUrl=`${base}/app/billing/success?session_id={CHECKOUT_SESSION_ID}`;const cancelUrl=`${base}/api/billing/cancel?attempt=${encodeURIComponent(attempt.attemptId)}`;try{const session=await this.stripe.createCheckout({organisationId:input.organisationId,planCode,priceId,customerId:context.externalCustomerId,customerEmail:input.email,successUrl,cancelUrl,attemptId:attempt.attemptId});await this.repository.attachCheckout({attemptId:attempt.attemptId,sessionId:session.id});return session.url;}catch(error){await this.repository.terminateCheckout({attemptId:attempt.attemptId,organisationId:input.organisationId,userId:input.userId,status:"FAILED",reason:error instanceof Error?error.message:"STRIPE_CHECKOUT_CREATE_FAILED"}).catch(()=>undefined);throw error;}
   }

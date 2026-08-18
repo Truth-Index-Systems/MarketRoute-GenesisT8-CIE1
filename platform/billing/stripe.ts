@@ -35,7 +35,15 @@ export class StripeBillingClient {
   private async request(path:string,init?:{method?:"GET"|"POST";body?:URLSearchParams;idempotencyKey?:string}):Promise<StripeRecord>{
     const response=await fetch(`https://api.stripe.com${path}`,{method:init?.method??"GET",headers:{Authorization:`Bearer ${this.secret}`,...(init?.body?{"Content-Type":"application/x-www-form-urlencoded"}:{ }),...(init?.idempotencyKey?{"Idempotency-Key":init.idempotencyKey}:{})},body:init?.body,cache:"no-store"});
     const raw=await response.text();let parsed:unknown=null;try{parsed=raw?JSON.parse(raw):null;}catch{parsed=raw;}
-    if(!response.ok){const error=parsed&&typeof parsed==="object"&&!Array.isArray(parsed)?object((parsed as StripeRecord).error):{};const message=str(error.message)??`HTTP_${response.status}`;throw new Error(`MARKETROUTE_STRIPE_REQUEST_FAILED:${message.slice(0,240)}`);}return record(parsed,"RESPONSE");
+    if(!response.ok){
+      const error=parsed&&typeof parsed==="object"&&!Array.isArray(parsed)?object((parsed as StripeRecord).error):{};
+      const message=str(error.message)??`HTTP_${response.status}`;
+      const lower=message.toLowerCase();
+      if(lower.includes("similar object exists in test mode")||lower.includes("test mode")&&lower.includes("live mode key"))throw new Error("MARKETROUTE_STRIPE_MODE_MISMATCH:LIVE_KEY_TEST_OBJECT");
+      if(lower.includes("similar object exists in live mode")||lower.includes("live mode")&&lower.includes("test mode key"))throw new Error("MARKETROUTE_STRIPE_MODE_MISMATCH:TEST_KEY_LIVE_OBJECT");
+      throw new Error(`MARKETROUTE_STRIPE_REQUEST_FAILED:${message.slice(0,240)}`);
+    }
+    return record(parsed,"RESPONSE");
   }
   async price(priceId:string):Promise<StripePriceSnapshot>{
     if(!/^price_[A-Za-z0-9]+$/.test(priceId))throw new Error("MARKETROUTE_STRIPE_PRICE_ID_INVALID");const value=await this.request(`/v1/prices/${encodeURIComponent(priceId)}`);const recurring=object(value.recurring);const amount=num(value.unit_amount);if(amount===null)throw new Error("MARKETROUTE_STRIPE_PRICE_AMOUNT_MISSING");return{id:String(value.id??""),active:bool(value.active),currency:String(value.currency??"").toLowerCase(),unitAmount:amount,recurringInterval:str(recurring.interval)};

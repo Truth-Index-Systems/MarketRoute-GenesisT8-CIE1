@@ -4,6 +4,8 @@ import { billingServiceFromEnvironment } from "@/application/billing/service";
 import { Icon,PageHeader,PlanChooser } from "@/ui";
 
 function billingMessage(code:string){
+  if(code.includes("STRIPE_MODE_MISMATCH"))return "Billing is temporarily unavailable because the configured Stripe prices do not match the Stripe account mode. No charge was created.";
+  if(code.includes("PROVIDER_CONFIGURATION"))return "Billing is temporarily unavailable because the payment provider configuration could not be verified. No charge was created.";
   if(code.includes("PRICE_CONFIGURATION"))return "Billing is not configured correctly yet. Please contact MarketRoute support.";
   if(code.includes("OWNER_REQUIRED"))return "Only the workspace owner can change billing.";
   if(code.includes("PLAN_CAMPAIGN_LIMIT_TOO_LOW"))return "That plan cannot hold all of your current campaigns. Choose a plan with a higher active-market allowance.";
