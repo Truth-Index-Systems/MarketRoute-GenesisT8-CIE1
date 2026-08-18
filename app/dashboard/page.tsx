@@ -62,7 +62,7 @@ export default async function FounderDashboard(){
       <article><span>Companies with Truth</span><strong>{integer(truth.researchedCompanies)}</strong><small>{researchCoverage.toFixed(0)}% of scoped companies</small></article>
       <article><span>Commercial candidates</span><strong>{integer(r4.candidates)}</strong><small>{integer(r5.reachableCompanies)} currently reachable</small></article>
       <article><span>Contact-qualified</span><strong>{integer(r6.contactQualifiedCompanies)}</strong><small>{integer(r6.authorisedAccessPoints)} authorised access points</small></article>
-      <article><span>Opportunities</span><strong>{integer(opportunity.total)}</strong><small>{integer(opportunity.reviewable)} reviewable · {integer(opportunity.approved)} approved</small></article>
+      <article><span>Opportunities</span><strong>{integer(opportunity.total)}</strong><small>{integer(opportunity.reviewable)+integer(opportunity.approved)} ready · {integer(opportunity.engaged)} engaged</small></article>
     </section>
 
     <section className="mr-founder__section-head"><div><span>PRODUCT ECONOMICS</span><h2>From free discovery to recurring revenue</h2></div><p>Customer acquisition, conversion and AI cost from persisted MarketRoute state. This is product telemetry, not intelligence authority.</p></section>

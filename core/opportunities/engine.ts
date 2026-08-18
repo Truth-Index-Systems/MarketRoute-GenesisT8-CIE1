@@ -55,7 +55,7 @@ export function buildOpportunityProfile(input:OpportunityProfileInput):Opportuni
   }
   const workflow=input.workflowState??null;
   const reviewableNow=workflow==="REVIEWABLE"&&input.authorityReady;
-  const executableNow=workflow==="APPROVED"&&input.authorityReady;
+  const executableNow=(workflow==="REVIEWABLE"||workflow==="APPROVED")&&input.authorityReady;
   return {
     engineVersion:OPPORTUNITY_ENGINE_VERSION,semanticsVersion:OPPORTUNITY_SEMANTICS_VERSION,
     organisationId:input.organisationId,campaignId:input.campaignId,companyId:input.companyId,

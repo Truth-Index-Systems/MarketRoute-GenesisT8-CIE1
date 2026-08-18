@@ -22,6 +22,7 @@ export class ResearchRepository {
   heartbeatRun(schedulerRunId:string,at:string):Promise<void>{return this.rpc.call("marketroute_heartbeat_research_scheduler_run_v1",{p_scheduler_run_id:schedulerRunId,p_at:at});}
   finishRun(schedulerRunId:string,status:"SUCCEEDED"|"PARTIAL"|"FAILED"|"CANCELLED",metadata:Record<string,unknown>,at:string):Promise<void>{return this.rpc.call("marketroute_finish_research_scheduler_run_v1",{p_scheduler_run_id:schedulerRunId,p_status:status,p_metadata:metadata,p_at:at});}
   claimNext(schedulerRunId:string,at:string):Promise<ClaimedResearchWork|null>{return this.rpc.call("marketroute_claim_research_work_v1",{p_scheduler_run_id:schedulerRunId,p_at:at});}
+  queueDiagnostics(at:string):Promise<Record<string,unknown>>{return this.rpc.call("marketroute_research_queue_diagnostics_v1",{p_at:at});}
   complete(workUnitId:string,schedulerRunId:string,actualCostUsd:number,metadata:Record<string,unknown>,at:string):Promise<void>{return this.rpc.call("marketroute_complete_research_work_v1",{p_work_unit_id:workUnitId,p_scheduler_run_id:schedulerRunId,p_actual_cost_usd:actualCostUsd,p_metadata:metadata,p_at:at});}
   fail(workUnitId:string,schedulerRunId:string,errorCode:string,actualCostUsd:number,retryable:boolean,at:string):Promise<void>{return this.rpc.call("marketroute_fail_research_work_v1",{p_work_unit_id:workUnitId,p_scheduler_run_id:schedulerRunId,p_error_code:errorCode,p_actual_cost_usd:actualCostUsd,p_retryable:retryable,p_at:at});}
 }

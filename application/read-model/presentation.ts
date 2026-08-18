@@ -14,8 +14,8 @@ export function money(value:unknown):string { return `$${numberValue(value,0).to
 export function countFromObject(value:unknown,key:string):number { return numberValue(asObject(value)[key],0); }
 
 export function statusTone(value:string):"blue"|"green"|"amber"|"red"|"slate"|"violet" {
-  if(["ACTIONABLE","AUTHORITY_READY","COMMERCIAL_CANDIDATE","ROUTE_STRUCTURALLY_OPEN","CONTACT_AUTHORISED","APPROVED","SENT","SUCCEEDED","ACTIVE","KNOWN"].includes(value)) return "green";
-  if(["REVIEWABLE","SUPPORTED","RUNNING","RESERVED","PENDING","AUTOPILOT"].includes(value)) return "blue";
+  if(["ACTIONABLE","AUTHORITY_READY","COMMERCIAL_CANDIDATE","ROUTE_STRUCTURALLY_OPEN","CONTACT_AUTHORISED","APPROVED","REVIEWABLE","SENT","SUCCEEDED","ACTIVE","KNOWN"].includes(value)) return "green";
+  if(["SUPPORTED","RUNNING","RESERVED","PENDING","AUTOPILOT"].includes(value)) return "blue";
   if(["RESEARCH_REQUIRED","REVALIDATION_REQUIRED","CONTACT_RESEARCH_REQUIRED","ROUTE_RESEARCH_REQUIRED","RESEARCHING","PAUSED","DEFERRED","REWRITE"].includes(value)) return "amber";
   if(["NOT_ADMISSIBLE","CONTRADICTED","FAILED","BLOCK","REJECTED","BLOCKED_STALE","RECONCILIATION_REQUIRED","CLOSED","SUSPENDED"].includes(value)) return "red";
   if(["CONTACT_NOT_APPLICABLE","ROUTE_NOT_APPLICABLE","ARCHIVED","STALE","UNRESOLVED"].includes(value)) return "slate";

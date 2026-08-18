@@ -14,7 +14,7 @@ import {
   validateReviewResult,
   type EngagementLanguageProvider,
 } from "../../platform/ai/engagement-provider";
-import { EngagementDeliveryError, type EngagementDeliveryProvider } from "../../platform/ai/engagement-delivery-provider";
+import type { EngagementDeliveryProvider } from "../../platform/ai/engagement-delivery-provider";
 import { openAIEngagementLanguageProviderFromEnvironment } from "../../platform/ai/openai-engagement-provider";
 import { resendDeliveryProviderFromEnvironment } from "../../platform/ai/resend-delivery-provider";
 import { EngagementRepository, engagementRepositoryFromEnvironment } from "../../platform/database/engagement-repository";
@@ -42,9 +42,10 @@ export class EngagementService {
     }
     throw new Error("MARKETROUTE_ENGAGEMENT_REWRITE_LIMIT_EXHAUSTED");
   }
-  setPolicy(command:{organisationId:string;campaignId:string;actorUserId:string;mode:"HUMAN_ONLY"|"AUTOPILOT";requestId?:string;at?:string}){return this.repository.setPolicy({...command,requestId:command.requestId??randomUUID(),at:now(command.at)});}
+  setPolicy(command:{organisationId:string;campaignId:string;actorUserId:string;mode:"HUMAN_ONLY"|"AUTOPILOT";requestId?:string;at?:string}){if(command.mode!=="HUMAN_ONLY")throw new Error("MARKETROUTE_ASSISTED_ENGAGEMENT_ONLY");return this.repository.setPolicy({...command,requestId:command.requestId??randomUUID(),at:now(command.at)});}
   approveMessage(command:{messageId:string;actorUserId:string;decision:"APPROVE"|"REJECT";requestId?:string;at?:string}){return this.repository.approveMessage({...command,requestId:command.requestId??randomUUID(),at:now(command.at)});}
-  queueMessage(command:{messageId:string;requestId?:string;at?:string}){return this.repository.queue({messageId:command.messageId,requestId:command.requestId??randomUUID(),at:now(command.at)});}
-  async deliverNext(workerId:string){const claim=await this.repository.claimDelivery({workerId,at:now()});if(!claim)return null;try{const result=await withTimeout(signal=>this.deliveryProvider.send(claim.delivery_payload,{signal}));await this.repository.completeDelivery({queueItemId:claim.queue_item_id,workerId,providerMessageId:result.providerMessageId,metadata:result.metadata??{},at:now()});return {status:"SENT" as const,claim,result};}catch(error){await this.repository.failDelivery({queueItemId:claim.queue_item_id,workerId,errorCode:error instanceof Error?error.message:"MARKETROUTE_ENGAGEMENT_DELIVERY_FAILED",deliveryStateUnknown:error instanceof EngagementDeliveryError?error.deliveryStateUnknown:true,at:now()});return {status:"FAILED" as const,claim,error};}}
+  queueMessage(_command:{messageId:string;requestId?:string;at?:string}){throw new Error("MARKETROUTE_ASSISTED_ENGAGEMENT_ONLY");}
+  recordManualContact(command:{opportunityId:string;pathFingerprint:string;messageId:string;actorUserId:string;note?:string|null;requestId?:string;at?:string}){return this.repository.recordManualAction({...command,requestId:command.requestId??randomUUID(),at:now(command.at)});}
+  async deliverNext(_workerId:string){throw new Error("MARKETROUTE_ASSISTED_ENGAGEMENT_ONLY");}
 }
 export function engagementServiceFromEnvironment(languageProvider?:EngagementLanguageProvider,deliveryProvider?:EngagementDeliveryProvider){return new EngagementService(engagementRepositoryFromEnvironment(),languageProvider??openAIEngagementLanguageProviderFromEnvironment(),deliveryProvider??resendDeliveryProviderFromEnvironment());}

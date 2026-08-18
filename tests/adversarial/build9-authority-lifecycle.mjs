@@ -17,7 +17,7 @@ try{
  test("R6 research stops at R6",()=>assert.equal(env(undefined,undefined,layer(true,"CONTACT_RESEARCH_REQUIRED")).lifecycleState,"CONTACT_RESEARCH_REQUIRED"));
  test("R6 not applicable terminates",()=>assert.equal(env(undefined,undefined,layer(true,"CONTACT_NOT_APPLICABLE")).lifecycleState,"CONTACT_NOT_APPLICABLE"));
  test("approved plus ready is executable",()=>assert.equal(m.isOpportunityExecutableNow("APPROVED",env()),true));
- test("reviewable plus ready is not executable",()=>assert.equal(m.isOpportunityExecutableNow("REVIEWABLE",env()),false));
+ test("system-ready reviewable plus ready is executable",()=>assert.equal(m.isOpportunityExecutableNow("REVIEWABLE",env()),true));
  test("researching plus ready is not executable",()=>assert.equal(m.isOpportunityExecutableNow("RESEARCHING",env()),false));
  test("rejected plus ready is not executable",()=>assert.equal(m.isOpportunityExecutableNow("REJECTED",env()),false));
  test("engaged plus ready is not newly executable",()=>assert.equal(m.isOpportunityExecutableNow("ENGAGED",env()),false));

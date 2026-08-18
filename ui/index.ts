@@ -1,3 +1,4 @@
+export { AssistedEngagementPanel } from "./application/assisted-engagement-panel";
 export { PublicPageShell } from "./application/public-page-shell";
 export { AskMarketRoute } from "./application/ask-marketroute";
 export { ProductPipeline } from "./application/product-pipeline";

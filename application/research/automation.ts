@@ -18,10 +18,11 @@ export class ResearchAutomationService {
       const targets=await this.repository.planningTargets(maxPlanning);
       for(let i=0;i<targets.length;i++){if(i%25===0)await this.repository.heartbeatRun(runId,new Date().toISOString());const target=targets[i]!;const result=await this.planner.planCompany({organisationId:target.organisation_id,campaignId:target.campaign_id,companyId:target.company_id,referenceTime:command.referenceTime?at:new Date().toISOString()});planned+=result.persisted.createdWorkUnits; if(result.plan.workUnits.length===0)emptyPlans++;}
       for(let i=0;i<maxExec;i++){await this.repository.heartbeatRun(runId,new Date().toISOString());const result=await this.worker.runOne(runId);if(!result)break;executed++;}
+      const queueDiagnostics=executed===0?await this.repository.queueDiagnostics(new Date().toISOString()).catch(error=>({diagnosticError:error instanceof Error?error.message:"UNKNOWN"})):null;
       const opportunitySync=await this.opportunities.syncCurrentTargets(Math.max(1,Math.min(maxPlanning,250)));
       const finalStatus=opportunitySync.errors.length?"PARTIAL":"SUCCEEDED";
-      await this.repository.finishRun(runId,finalStatus,{planningTargets:targets.length,plannedWorkUnits:planned,executedWorkUnits:executed,emptyPlans,opportunitySyncCount:opportunitySync.results.length,opportunitySyncErrors:opportunitySync.errors},new Date().toISOString());
-      return {runId,status:finalStatus,planningTargets:targets.length,plannedWorkUnits:planned,executedWorkUnits:executed,emptyPlans,opportunitySyncCount:opportunitySync.results.length,opportunitySyncErrors:opportunitySync.errors};
+      await this.repository.finishRun(runId,finalStatus,{planningTargets:targets.length,plannedWorkUnits:planned,executedWorkUnits:executed,emptyPlans,queueDiagnostics,opportunitySyncCount:opportunitySync.results.length,opportunitySyncErrors:opportunitySync.errors},new Date().toISOString());
+      return {runId,status:finalStatus,planningTargets:targets.length,plannedWorkUnits:planned,executedWorkUnits:executed,emptyPlans,queueDiagnostics,opportunitySyncCount:opportunitySync.results.length,opportunitySyncErrors:opportunitySync.errors};
     }catch(error){await this.repository.finishRun(runId,"FAILED",{plannedWorkUnits:planned,executedWorkUnits:executed,error:error instanceof Error?error.message:"UNKNOWN"},new Date().toISOString()).catch(()=>undefined);throw error;}
   }
 }

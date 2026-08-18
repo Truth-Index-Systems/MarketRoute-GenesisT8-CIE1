@@ -14,6 +14,7 @@ export class ApplicationReadService {
   private readonly accessCache=new Map<string,Promise<CommercialAccess>>();
   constructor(private readonly repository:ApplicationReadRepository){}
   private access(organisationId:string){let value=this.accessCache.get(organisationId);if(!value){value=this.commercial.access(organisationId);this.accessCache.set(organisationId,value);}return value;}
+  async commercialAccess(command:{organisationId:string}):Promise<CommercialAccess>{return this.access(requiredId(command.organisationId,"organisationId"));}
   private async assertCompanyVisible(organisationId:string,companyId:string){const access=await this.access(organisationId);if(!this.commercial.canReadCompany(access,companyId))throw new Error("MARKETROUTE_DISCOVERY_UPGRADE_REQUIRED");return access;}
   private async assertOpportunityVisible(organisationId:string,opportunityId:string){const access=await this.access(organisationId);if(!this.commercial.canReadOpportunity(access,opportunityId))throw new Error("MARKETROUTE_DISCOVERY_UPGRADE_REQUIRED");return access;}
   private filterCampaign(model:CampaignReadModel,access:CommercialAccess):CampaignReadModel{

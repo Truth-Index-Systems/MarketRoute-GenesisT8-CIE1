@@ -8,10 +8,6 @@
     {
       "path": "/api/cron/research",
       "schedule": "*/2 * * * *"
-    },
-    {
-      "path": "/api/cron/delivery",
-      "schedule": "*/2 * * * *"
     }
   ]
 }

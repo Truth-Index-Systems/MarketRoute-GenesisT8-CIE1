@@ -16,6 +16,8 @@ export interface EngagementApprovalRow { approval_id:string; decision:"APPROVE"|
 export interface EngagementQueueRow { queue_item_id:string; job_id:string; approval_mode:"HUMAN"|"AUTOPILOT"; deduplicated:boolean; }
 export interface EngagementClaimRow { queue_item_id:string; job_id:string; attempt_number:number; send_gate_fingerprint:string; delivery_payload:{queueItemId:string;idempotencyKey:string;channel:"EMAIL"|"CONTACT_FORM"|"LINKEDIN"|"PHONE"|"OTHER";accessPointValue:string;subjectText:string|null;bodyText:string}; }
 
+export interface EngagementManualActionRow { manual_action_id:string; workflow_event_id:string|null; prior_workflow_state:string; resulting_workflow_state:string; channel_kind:"EMAIL"|"CONTACT_FORM"|"LINKEDIN"|"PHONE"|"OTHER"; deduplicated:boolean; }
+
 function one<T>(v:T[]|T,code:string):T {if(Array.isArray(v)){if(v.length!==1)throw new Error(`${code}:${v.length}`);return v[0]!;}if(!v)throw new Error(`${code}:0`);return v;}
 
 export class EngagementRepository {
@@ -43,6 +45,9 @@ export class EngagementRepository {
   }
   async queue(input:{messageId:string;requestId:string;at:string}){
     return one(await this.rpc.call<EngagementQueueRow[]|EngagementQueueRow>("marketroute_queue_engagement_v1",{p_message_id:input.messageId,p_request_id:input.requestId,p_at:input.at}),"MARKETROUTE_ENGAGEMENT_QUEUE_ROW_COUNT");
+  }
+  async recordManualAction(input:{opportunityId:string;pathFingerprint:string;messageId:string;actorUserId:string;requestId:string;note?:string|null;at:string}){
+    return one(await this.rpc.call<EngagementManualActionRow[]|EngagementManualActionRow>("marketroute_record_manual_engagement_v1",{p_opportunity_id:input.opportunityId,p_path_fingerprint:input.pathFingerprint,p_message_id:input.messageId,p_actor_user_id:input.actorUserId,p_request_id:input.requestId,p_note:input.note??null,p_at:input.at}),"MARKETROUTE_MANUAL_ENGAGEMENT_ROW_COUNT");
   }
   async claimDelivery(input:{workerId:string;at:string}){
     const rows=await this.rpc.call<EngagementClaimRow[]>("marketroute_claim_engagement_delivery_v1",{p_worker_id:input.workerId,p_at:input.at});return rows[0]??null;

@@ -10,7 +10,7 @@ results.push(check("authority lifecycle version explicit",()=>assert(lifecycle.i
 for(const state of ["R4_REVALIDATION_REQUIRED","COMMERCIAL_RESEARCH_REQUIRED","NOT_ADMISSIBLE","R5_REVALIDATION_REQUIRED","ROUTE_RESEARCH_REQUIRED","ROUTE_NOT_APPLICABLE","R6_REVALIDATION_REQUIRED","CONTACT_RESEARCH_REQUIRED","CONTACT_NOT_APPLICABLE","AUTHORITY_READY"])
  results.push(check(`lifecycle state ${state}`,()=>assert(lifecycle.includes(`\"${state}\"`),state)));
 results.push(check("authority ready requires exact R4 R5 R6 positive chain",()=>assert(lifecycle.includes("R4_R5_R6_CURRENT_AND_AUTHORISED")&&lifecycle.includes("input.r4.decision === \"NOT_ADMISSIBLE\"")&&lifecycle.includes("input.r5.decision === \"ROUTE_NOT_APPLICABLE\"")&&lifecycle.includes("input.r6.decision === \"CONTACT_NOT_APPLICABLE\""),"chain")));
-results.push(check("execution requires APPROVED plus authority ready",()=>assert(lifecycle.includes('workflowState === "APPROVED" && envelope.authorityReady'),"execution")));
+results.push(check("execution requires system-ready REVIEWABLE or legacy APPROVED plus authority ready",()=>assert(lifecycle.includes('workflowState === "REVIEWABLE" || workflowState === "APPROVED"')&&lifecycle.includes('envelope.authorityReady'),"execution")));
 results.push(check("database envelope composes current R4",()=>assert(sql.includes("marketroute_r4_authority_current_v1(r.authority_record_id,p_at)"),"r4 current")));
 results.push(check("database envelope composes current R5",()=>assert(sql.includes("marketroute_r5_authority_current_v1(r.authority_record_id,p_at)"),"r5 current")));
 results.push(check("database envelope composes current R6",()=>assert(sql.includes("marketroute_r6_authority_current_v1(r.authority_record_id,p_at)"),"r6 current")));

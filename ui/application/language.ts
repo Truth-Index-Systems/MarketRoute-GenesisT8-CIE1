@@ -4,12 +4,12 @@ const STATUS_LABELS: Record<string, string> = {
   COMMERCIAL_CANDIDATE: "Commercial case confirmed",
   ROUTE_STRUCTURALLY_OPEN: "Route confirmed",
   CONTACT_AUTHORISED: "Contact confirmed",
-  APPROVED: "Approved",
+  APPROVED: "Ready",
   SENT: "Sent",
   SUCCEEDED: "Completed",
   ACTIVE: "Active",
   KNOWN: "Known",
-  REVIEWABLE: "Ready for review",
+  REVIEWABLE: "Ready",
   SUPPORTED: "Well supported",
   RUNNING: "In progress",
   RESERVED: "Reserved",
@@ -59,7 +59,7 @@ export function humanStatus(value: string | null | undefined, fallback = "Not av
 export function commercialVerdict(disposition: string, executableNow: boolean) {
   if (executableNow) return "Worth pursuing — reachable now";
   if (disposition === "ACTIONABLE" || disposition === "AUTHORITY_READY") return "Worth pursuing — action available";
-  if (disposition === "REVIEWABLE") return "Worth pursuing — awaiting your review";
+  if (disposition === "REVIEWABLE") return "Worth pursuing — ready";
   if (disposition === "NOT_ADMISSIBLE") return "Not currently worth pursuing";
   if (disposition.includes("RESEARCH")) return "Promising, but more evidence is needed";
   return humanStatus(disposition);

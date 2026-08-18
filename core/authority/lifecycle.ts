@@ -72,5 +72,5 @@ export function evaluateAuthorityEnvelope(input: AuthorityEnvelopeInput): Author
 export type OpportunityWorkflowState = "RESEARCHING" | "REVIEWABLE" | "APPROVED" | "REJECTED" | "ENGAGED" | "ARCHIVED";
 
 export function isOpportunityExecutableNow(workflowState: OpportunityWorkflowState, envelope: AuthorityEnvelopeEvaluation): boolean {
-  return workflowState === "APPROVED" && envelope.authorityReady;
+  return (workflowState === "REVIEWABLE" || workflowState === "APPROVED") && envelope.authorityReady;
 }

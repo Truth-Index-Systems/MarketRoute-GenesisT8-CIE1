@@ -39,7 +39,7 @@ export async function runWorkspaceActivationOnce(workerId=`ACTIVATION:${randomUU
     const candidates:DiscoveredTarget[]=bankRows.filter(row=>canonicalDomain(row.canonical_domain)!==sellerDomain).map(row=>({name:row.name,domain:row.canonical_domain,websiteUrl:row.website_url,countryCode:row.country_code,researchReason:`Genesis intelligence bank · ${row.industry_key} · profile:${row.profile_complete?"complete":"pending"} · routes:${row.routes_complete?"complete":"pending"} · contacts:${row.contacts_complete?"complete":"pending"}`}));
     let webMetadata:Record<string,unknown>|null=null;
     let webCandidateCount=0;
-    if(candidates.length<minimumBankTargets){
+    if(anonymous?candidates.length<desiredCount:candidates.length<minimumBankTargets){
       await repo.stage(job.job_id,workerId,"DISCOVERING_TARGETS",66,{desiredCount,bankCandidateCount:candidates.length,remainingCount:Math.max(1,desiredCount-candidates.length)});
       const remaining=Math.max(1,desiredCount-candidates.length);
       const discovery=await openAITargetDiscoveryProviderFromEnvironment().discover({sellerName:job.seller_name,sellerDomain:job.canonical_domain,objectiveText:job.objective_text,targetMarketText:job.target_market_text,canonicalSellerGenome:persisted.genome,organisationId:job.organisation_id,campaignId,count:remaining,excludedDomains:candidates.map(candidate=>candidate.domain),origin:activationOrigin});
@@ -68,12 +68,57 @@ export async function runWorkspaceActivationOnce(workerId=`ACTIVATION:${randomUU
   }
 }
 
+export async function runAnonymousDiscoveryExtensionOnce(workerId=`ANON_EXTENSION:${randomUUID()}`){
+  const repo=productionActivationRepositoryFromEnvironment();
+  const job=await repo.claimAnonymousExtension(workerId,new Date().toISOString());
+  if(!job)return null;
+  try{
+    const sellerContext=await SellerGenomeRepository.fromEnvironment().getCurrentCampaignContext(job.organisation_id,job.campaign_id);
+    if(!sellerContext)throw new Error("MARKETROUTE_ANONYMOUS_EXTENSION_SELLER_CONTEXT_REQUIRED");
+    const desired=Math.max(0,Math.min(job.remaining_count,job.target_count-job.scoped_count));
+    if(desired<=0){const completed=await repo.completeAnonymousExtension(job.job_id,workerId,{linkedCount:0,reason:"TARGET_ALREADY_MET"},new Date().toISOString());return{status:"SUCCEEDED" as const,jobId:job.job_id,linkedCount:0,completion:completed};}
+    const industryKeys=activationIndustryKeys(sellerContext.canonicalGenome,job.target_market_text);
+    const countryCodes=activationCountryCodes(sellerContext.canonicalGenome,job.target_market_text);
+    const existing=new Set((job.existing_domains??[]).map(canonicalDomain).filter(Boolean));
+    const sellerDomain=canonicalDomain(job.canonical_domain);
+    const bankRows=industryKeys.length?await repo.bankCandidates(industryKeys,countryCodes,Math.min(25,job.target_count)):[];
+    const candidates:DiscoveredTarget[]=[];
+    for(const row of bankRows){const d=canonicalDomain(row.canonical_domain);if(!d||d===sellerDomain||existing.has(d)||candidates.some(c=>c.domain===d))continue;candidates.push({name:row.name,domain:d,websiteUrl:row.website_url,countryCode:row.country_code,researchReason:`Genesis intelligence bank · ${row.industry_key}`});if(candidates.length>=desired)break;}
+    let webMetadata:Record<string,unknown>|null=null;
+    let webCandidateCount=0;
+    if(candidates.length<desired&&job.attempt_count<=2){
+      const discovery=await openAITargetDiscoveryProviderFromEnvironment().discover({sellerName:job.seller_name,sellerDomain:job.canonical_domain,objectiveText:job.objective_text,targetMarketText:job.target_market_text,canonicalSellerGenome:sellerContext.canonicalGenome,organisationId:job.organisation_id,campaignId:job.campaign_id,count:desired-candidates.length,excludedDomains:[...existing,...candidates.map(candidate=>candidate.domain)],origin:"ANONYMOUS_DISCOVERY_EXTENSION"});
+      webMetadata=discovery.metadata;
+      for(const company of discovery.companies){const d=canonicalDomain(company.domain);if(!d||d===sellerDomain||existing.has(d)||candidates.some(c=>c.domain===d))continue;candidates.push({...company,domain:d});webCandidateCount++;if(candidates.length>=desired)break;}
+    }
+    let linkedCount=0;let finalScoped=job.scoped_count;
+    for(const company of candidates){
+      const linked=await repo.linkAnonymousExtensionCompany(job.job_id,workerId,company,new Date().toISOString());
+      if(!linked)break;
+      finalScoped=linked.scoped_count;
+      if(linked.inserted_scope){linkedCount++;existing.add(canonicalDomain(company.domain));}
+      if(finalScoped>=linked.target_count)break;
+    }
+    const completed=await repo.completeAnonymousExtension(job.job_id,workerId,{linkedCount,bankCandidateCount:Math.max(0,candidates.length-webCandidateCount),webCandidateCount,provider:webMetadata,scopedCount:finalScoped,targetCount:job.target_count},new Date().toISOString());
+    return{status:"SUCCEEDED" as const,jobId:job.job_id,linkedCount,completion:completed};
+  }catch(error){
+    const code=marketrouteErrorCode(error,"MARKETROUTE_ANONYMOUS_EXTENSION_FAILED");
+    await repo.failAnonymousExtension(job.job_id,workerId,code,retryable(code),new Date().toISOString()).catch(()=>undefined);
+    return{status:"FAILED" as const,jobId:job.job_id,error:code};
+  }
+}
+
 export async function runWorkspaceActivationCron(max=2){
   const results=[];
   for(let i=0;i<Math.max(1,Math.min(max,5));i++){const result=await runWorkspaceActivationOnce();if(!result)break;results.push(result);}
+  const extensionResults=[];
+  for(let i=0;i<Math.max(1,Math.min(max,2));i++){const result=await runAnonymousDiscoveryExtensionOnce();if(!result)break;extensionResults.push(result);}
   const failed=results.filter(result=>result.status==="FAILED").length;
   const succeeded=results.length-failed;
-  const status=results.length===0?"IDLE":failed===0?"SUCCEEDED":succeeded===0?"FAILED":"PARTIAL";
-  const errorCode=results.find(result=>result.status==="FAILED")?.error??null;
-  return{status,processed:results.length,succeeded,failed,errorCode,results};
+  const extensionFailed=extensionResults.filter(result=>result.status==="FAILED").length;
+  const totalProcessed=results.length+extensionResults.length;
+  const totalFailed=failed+extensionFailed;
+  const status=totalProcessed===0?"IDLE":totalFailed===0?"SUCCEEDED":totalFailed===totalProcessed?"FAILED":"PARTIAL";
+  const errorCode=results.find(result=>result.status==="FAILED")?.error??extensionResults.find(result=>result.status==="FAILED")?.error??null;
+  return{status,processed:results.length,succeeded,failed,errorCode,results,extensionProcessed:extensionResults.length,extensionFailed,extensionResults};
 }
