@@ -53,3 +53,4 @@ Build 13 keeps exactly three authority writers. The read model is presentation c
 - Product Build 24: `0044_locked_opportunities_commercial_boundary.sql` — server-owned plan catalogue, locked teaser projection and research-capacity enforcement.
 - Product Build 25: `0045_billing_instant_unlock.sql` — Stripe subscription reconciliation into the existing commercial entitlement boundary.
 - Product Build 26: `0046_product_experience_convergence.sql` — non-authoritative opportunity Q&A cache scope plus founder-only read-only product economics snapshot.
+- Production hotfix: `0047_research_queue_fairness_hotfix.sql` — restores active-campaign research claiming and removes global head-of-line starvation by scanning past blocked work while preserving anonymous, paid-capacity and zero-cost deterministic research controls.
