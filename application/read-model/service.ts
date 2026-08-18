@@ -22,9 +22,21 @@ export class ApplicationReadService {
   }
   async commandCentre(command:{organisationId:string;at?:string}):Promise<CommandCentreReadModel>{
     const organisationId=requiredId(command.organisationId,"organisationId"),at=currentIso(command.at);const value=await this.repository.commandCentre(organisationId,at);let model=assertCanonicalApplicationRead<CommandCentreReadModel>(value,"COMMAND_CENTRE");const access=await this.access(organisationId);if(access.mode==="FULL"||access.mode==="PAID")return model;
-    const campaigns=[] as CommandCentreReadModel["campaigns"];
-    for(const item of model.campaigns){const campaignId=text(item.campaign.campaignId);if(!campaignId){campaigns.push(item);continue;}const raw=await this.repository.campaign(organisationId,campaignId,at);const filtered=this.filterCampaign(assertCanonicalApplicationRead<CampaignReadModel>(raw,"CAMPAIGN"),access);campaigns.push({...item,metrics:filtered.metrics});}
-    model={...model,campaigns};return model;
+    // Command Centre is deliberately a lightweight summary read. Do not fetch the
+    // full campaign read per row merely to redact Discovery counters; that path
+    // evaluates every company authority profile and turns navigation into N+1 work.
+    if(access.mode!=="DISCOVERY_FREE")return {...model,campaigns:model.campaigns.map(item=>({...item,metrics:{...object(item.metrics),materialisedOpportunities:0,dispositionCounts:{},workflowCounts:{},lifecycleCounts:{}}}))};
+    const visible=Math.max(0,access.opportunityIds.length);
+    let remaining=visible;
+    model={...model,campaigns:model.campaigns.map(item=>{
+      const metrics=object(item.metrics),materialised=Math.max(0,Number(metrics.materialisedOpportunities??0)||0),allowed=Math.min(materialised,remaining);remaining=Math.max(0,remaining-allowed);
+      const dispositions=object(metrics.dispositionCounts),workflows=object(metrics.workflowCounts),lifecycle=object(metrics.lifecycleCounts);
+      const ready=Math.min(allowed,Math.max(0,Number(dispositions.ACTIONABLE??0)||0));
+      const reviewable=Math.min(allowed,Math.max(0,Number(workflows.REVIEWABLE??0)||0));
+      const approved=Math.min(Math.max(0,allowed-reviewable),Math.max(0,Number(workflows.APPROVED??0)||0));
+      const engaged=Math.min(Math.max(0,allowed-reviewable-approved),Math.max(0,Number(workflows.ENGAGED??0)||0));
+      return {...item,metrics:{...metrics,materialisedOpportunities:allowed,dispositionCounts:{...dispositions,ACTIONABLE:ready},workflowCounts:{REVIEWABLE:reviewable,APPROVED:approved,ENGAGED:engaged},lifecycleCounts:{...lifecycle,AUTHORITY_READY:ready}}};
+    })};return model;
   }
   async campaign(command:{organisationId:string;campaignId:string;at?:string}):Promise<CampaignReadModel>{const organisationId=requiredId(command.organisationId,"organisationId");const value=await this.repository.campaign(organisationId,requiredId(command.campaignId,"campaignId"),currentIso(command.at));const model=assertCanonicalApplicationRead<CampaignReadModel>(value,"CAMPAIGN");return this.filterCampaign(model,await this.access(organisationId));}
   async company(command:{organisationId:string;campaignId:string;companyId:string;at?:string}):Promise<CompanyIntelligenceReadModel>{const organisationId=requiredId(command.organisationId,"organisationId"),companyId=requiredId(command.companyId,"companyId");await this.assertCompanyVisible(organisationId,companyId);const value=await this.repository.company(organisationId,requiredId(command.campaignId,"campaignId"),companyId,currentIso(command.at));return assertCanonicalApplicationRead<CompanyIntelligenceReadModel>(value,"COMPANY_INTELLIGENCE");}
