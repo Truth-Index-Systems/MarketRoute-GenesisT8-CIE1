@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { workspaceSessionOrRedirect } from "@/app/app/_lib/session";
+import { campaignOverviewFromSummary } from "@/app/app/_lib/data";
 import { applicationReadServiceFromEnvironment } from "@/application/read-model/service";
 import { asObject,asObjectArray,companyProfile,numberValue,statusTone,text } from "@/application/read-model/presentation";
 import { CampaignDangerZone,EmptyState,humanStatus,Icon,IntelligenceTable,MarketRouteNarrativeCard,MetricCard,PageHeader,Panel,ProductPipeline,SectionHeading,StatusBadge } from "@/ui";
@@ -17,7 +18,11 @@ function campaignErrorMessage(code:string):string{
 export default async function CampaignPage({params,searchParams}:{params:Promise<{campaignId:string}>;searchParams:Promise<Record<string,string|string[]|undefined>>}){
   const {campaignId}=await params;const query=await searchParams;const {workspace,activation}=await workspaceSessionOrRedirect();
   const read=applicationReadServiceFromEnvironment();
-  const [model,commercial]=await Promise.all([read.campaign({organisationId:workspace.organisationId,campaignId}),read.commercialAccess({organisationId:workspace.organisationId})]);
+  const [commandModel,commercial]=await Promise.all([read.commandCentre({organisationId:workspace.organisationId}),read.commercialAccess({organisationId:workspace.organisationId})]);
+  const summaryExists=asObjectArray(commandModel.campaigns).some(row=>text(asObject(row.campaign).campaignId,"")===campaignId);
+  const index=summaryExists?await read.opportunityIndex({organisationId:workspace.organisationId,campaignId,limit:200}):null;
+  const model=summaryExists&&index?campaignOverviewFromSummary(commandModel,campaignId,index):await read.campaign({organisationId:workspace.organisationId,campaignId});
+  if(!model)throw new Error("MARKETROUTE_CAMPAIGN_SUMMARY_NOT_FOUND");
   const campaign=asObject(model.campaign),metrics=asObject(model.metrics),profiles=asObjectArray(model.opportunities).map(companyProfile),state=text(campaign.workflowState,"UNKNOWN"),campaignName=text(campaign.name,"Market");
   const canManage=workspace.role==="OWNER"||workspace.role==="ADMIN",action=typeof query.campaignAction==="string"?query.campaignAction:null,actionError=typeof query.actionError==="string"?campaignErrorMessage(query.actionError):null;
   const narrative=await marketRouteConversationServiceFromEnvironment().campaign(model),stages=productPipeline({activation,campaign:model});const ready=profiles.filter(p=>p.executableNow).length,checking=profiles.filter(p=>["RESEARCH_REQUIRED","REVALIDATION_REQUIRED"].includes(p.disposition)).length;

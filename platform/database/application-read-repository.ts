@@ -19,6 +19,9 @@ export class ApplicationReadRepository {
   companyIndex(organisationId:string,campaignId:string,limit:number,offset:number,at:string):Promise<unknown>{
     return this.rpc.call("marketroute_application_company_index_read_v1",{p_organisation_id:organisationId,p_campaign_id:campaignId,p_limit:limit,p_offset:offset,p_at:at});
   }
+  opportunityIndex(organisationId:string,campaignId:string,limit:number,offset:number,at:string):Promise<unknown>{
+    return this.rpc.call("marketroute_application_opportunity_index_read_v1",{p_organisation_id:organisationId,p_campaign_id:campaignId,p_limit:limit,p_offset:offset,p_at:at});
+  }
   researchActivity(organisationId:string,campaignId:string,at:string):Promise<unknown>{
     return this.rpc.call("marketroute_application_research_activity_read_v1",{p_organisation_id:organisationId,p_campaign_id:campaignId,p_at:at});
   }

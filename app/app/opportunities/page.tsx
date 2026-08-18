@@ -14,8 +14,8 @@ export default async function Opportunities({searchParams}:{searchParams:Promise
   const campaigns=asObjectArray(cc.campaigns).map(campaignListItem);
   const campaignId=resolveCampaignId(cc,typeof query.campaign==="string"?query.campaign:null);
   if(!campaignId)return <div><PageHeader eyebrow="OPPORTUNITIES" title="Which companies are" accent="worth pursuing?" description="MarketRoute turns research into an opportunity only when a current commercial case and route can be represented."/><Panel><EmptyState icon="opportunities" title="No opportunities yet" body="MarketRoute is still preparing or researching your first market. Opportunities appear only after the evidence and commercial route support them."/></Panel></div>;
-  const campaign=await read.campaign({organisationId:workspace.organisationId,campaignId});
-  const profiles=asObjectArray(campaign.opportunities).map(companyProfile);
+  const index=await read.opportunityIndex({organisationId:workspace.organisationId,campaignId,limit:200});
+  const profiles=asObjectArray(index.opportunities).map(companyProfile);
   const locked=access.campaignId===campaignId?access.lockedOpportunities:[];
   return <div>
     {query.billing==="active"&&<div className="mr-alert mr-alert--success"><Icon name="check" size={16}/><span>Your subscription is active. The opportunities MarketRoute had waiting are now unlocked.</span></div>}

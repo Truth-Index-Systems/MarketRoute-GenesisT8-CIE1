@@ -4,7 +4,7 @@ export type JsonPrimitive = string | number | boolean | null;
 export type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue };
 export type JsonObject = { [key: string]: JsonValue };
 
-export type ApplicationResourceType = "COMMAND_CENTRE" | "CAMPAIGN" | "COMPANY_INTELLIGENCE" | "CLAIM_PROVENANCE" | "COMPANY_INDEX" | "RESEARCH_ACTIVITY" | "ENGAGEMENT_INDEX" | "PROVENANCE_CLAIM_INDEX" | "ROUTE_DISPLAY";
+export type ApplicationResourceType = "COMMAND_CENTRE" | "CAMPAIGN" | "COMPANY_INTELLIGENCE" | "CLAIM_PROVENANCE" | "COMPANY_INDEX" | "RESEARCH_ACTIVITY" | "ENGAGEMENT_INDEX" | "PROVENANCE_CLAIM_INDEX" | "ROUTE_DISPLAY" | "OPPORTUNITY_INDEX";
 
 export interface CanonicalReadBase {
   contractVersion: typeof APPLICATION_READ_CONTRACT_VERSION;
@@ -84,6 +84,17 @@ export interface CompanyIndexReadModel extends CanonicalReadBase {
   limit: number;
   returnedCount: number;
   companies: JsonObject[];
+}
+
+export interface OpportunityIndexReadModel extends CanonicalReadBase {
+  resourceType: "OPPORTUNITY_INDEX";
+  organisationId: string;
+  campaignId: string;
+  totalCount: number;
+  offset: number;
+  limit: number;
+  returnedCount: number;
+  opportunities: JsonObject[];
 }
 
 export interface ResearchActivityReadModel extends CanonicalReadBase {

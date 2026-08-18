@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { resolveCampaignId } from "@/app/app/_lib/data";
+import { campaignOverviewFromSummary, resolveCampaignId } from "@/app/app/_lib/data";
 import { workspaceSessionOrRedirect } from "@/app/app/_lib/session";
 import { applicationReadServiceFromEnvironment } from "@/application/read-model/service";
 import { asObjectArray,campaignListItem,companyProfile,countFromObject } from "@/application/read-model/presentation";
@@ -12,8 +12,9 @@ export default async function CommandCentre(){
   const read=applicationReadServiceFromEnvironment();
   const [model,commercial]=await Promise.all([read.commandCentre({organisationId:workspace.organisationId}),read.commercialAccess({organisationId:workspace.organisationId})]);
   const campaigns=asObjectArray(model.campaigns).map(campaignListItem);const activeCampaignId=resolveCampaignId(model,activation.campaignId);
-  const campaign=activeCampaignId?await read.campaign({organisationId:workspace.organisationId,campaignId:activeCampaignId}):null;
-  const profiles=campaign?asObjectArray(campaign.opportunities).map(companyProfile):[];const ready=profiles.filter(p=>p.executableNow);const researchNeeded=profiles.filter(p=>["RESEARCH_REQUIRED","REVALIDATION_REQUIRED"].includes(p.disposition));
+  const opportunityIndex=activeCampaignId?await read.opportunityIndex({organisationId:workspace.organisationId,campaignId:activeCampaignId,limit:200}):null;
+  const campaign=activeCampaignId&&opportunityIndex?campaignOverviewFromSummary(model,activeCampaignId,opportunityIndex):null;
+  const profiles=opportunityIndex?asObjectArray(opportunityIndex.opportunities).map(companyProfile):[];const ready=profiles.filter(p=>p.executableNow);const researchNeeded=profiles.filter(p=>["RESEARCH_REQUIRED","REVALIDATION_REQUIRED"].includes(p.disposition));
   const scoped=campaigns.reduce((a,c)=>a+c.scopedCompanies,0),opps=campaigns.reduce((a,c)=>a+c.materialisedOpportunities,0),actionable=campaigns.reduce((a,c)=>a+countFromObject(c.dispositionCounts,"ACTIONABLE"),0);
   const narrative=await marketRouteConversationServiceFromEnvironment().commandCentre(model);const stages=productPipeline({activation,campaign});const current=stages.find(s=>s.status==="ACTIVE"||s.status==="ATTENTION")??stages.at(-1);
   const marketName=campaigns.find(c=>c.campaignId===activeCampaignId)?.name??campaigns[0]?.name??"your market";
