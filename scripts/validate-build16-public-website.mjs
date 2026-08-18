@@ -16,13 +16,13 @@ results.push(check("Build 16 presentation marker is active", () => {
 }));
 
 results.push(check("Build 16 homepage makes the product obvious", () => {
-  for (const phrase of ["Tell me what you sell", "Find my routes", "worth pursuing", "First 8 opportunities free"]) assert(home.includes(phrase), phrase);
+  for (const phrase of ["Know who to target", "Find my first opportunities", "worth pursuing", "First 8 opportunities free"]) assert(home.includes(phrase), phrase);
 }));
 results.push(check("Build 16 homepage includes required product story", () => {
   for (const id of ['id="how-it-works"', 'id="intelligence"', 'id="example"', 'id="genesis"']) assert(home.includes(id), id);
 }));
-results.push(check("Build 16 covers Company Truth, Commercial Reality, Relationship Route and Contact readiness", () => {
-  for (const phrase of ["Company truth", "Commercial reality", "Relationship route", "Contact readiness"]) assert(home.includes(phrase), phrase);
+results.push(check("Build 16 covers research strength, commercial reason, buyer route and contact readiness", () => {
+  for (const phrase of ["Research strength", "Why it matters", "Route to the buyer", "Contact route"]) assert(home.includes(phrase), phrase);
 }));
 results.push(check("Build 16 acquisition remains value-first", () => {
   assert(home.includes('href="/discover"'), "anonymous discovery is the primary value-first route");

@@ -3,7 +3,9 @@ import path from "node:path";
 import { ROOT, assert, check, printResults } from "../../scripts/lib/constitution.mjs";
 
 const home = fs.readFileSync(path.join(ROOT, "app/page.tsx"), "utf8");
+const preview = fs.readFileSync(path.join(ROOT, "app/preview/page.tsx"), "utf8");
 const lower = home.toLowerCase();
+const previewLower = preview.toLowerCase();
 const results = [];
 
 results.push(check("public website does not lead with architecture jargon", () => {
@@ -13,10 +15,10 @@ results.push(check("public website does not lead with architecture jargon", () =
 results.push(check("public website never claims a score creates opportunity authority", () => {
   assert(!/score\s*(?:>=|>)\s*\d/i.test(home), "numeric score threshold language");
   assert(!/score\s+(?:creates|grants|authorises|authorizes)\s+(?:an\s+)?opportunity/i.test(home), "score authority claim");
-  assert(home.includes("not because a score crossed a line"), "explicit anti-score explanation");
+  assert(home.includes("Instead of another generic fit score") && home.includes("enough evidence to make a useful commercial call"), "explicit evidence-over-score explanation");
 }));
 results.push(check("example data is visibly identified as example", () => {
-  assert(lower.includes("example view") && lower.includes("example outcome"), "example labels");
+  assert(lower.includes("example result") && previewLower.includes("illustrative example") && previewLower.includes("example data"), "example labels");
 }));
 results.push(check("homepage cannot bypass walkthrough directly into signup", () => {
   assert(!/href=["']\/signup["']/.test(home), "direct signup link");
@@ -25,7 +27,7 @@ results.push(check("marketing page contains no browser database or secret access
   for (const term of ["process.env", "SUPABASE_SERVICE_ROLE_KEY", ".rpc(", "/rest/v1/"]) assert(!home.includes(term), term);
 }));
 results.push(check("marketing claims preserve evidence uncertainty", () => {
-  for (const phrase of ["unknown", "stale", "contradicted", "evidence"]) assert(lower.includes(phrase), phrase);
+  for (const phrase of ["unknown", "stale", "conflicting", "evidence"]) assert(lower.includes(phrase), phrase);
 }));
 results.push(check("AI remains supporting language, not the product promise", () => {
   const firstHeading = home.match(/<h1>[\s\S]*?<\/h1>/)?.[0]?.toLowerCase() ?? "";

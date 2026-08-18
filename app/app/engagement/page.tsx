@@ -22,7 +22,7 @@ export default async function Engagement({searchParams}:{searchParams:Promise<Re
   const cc=await commandCentre(workspace.organisationId);
   const campaigns=asObjectArray(cc.campaigns).map(campaignListItem);
   const campaignId=resolveCampaignId(cc,typeof query.campaign==="string"?query.campaign:null);
-  if(!campaignId)return <div><PageHeader eyebrow="ENGAGEMENT" title="Your commercial" accent="action desk." description="MarketRoute prepares the route and the message. You stay in control of every external contact."/><Panel><EmptyState icon="engagement" title="No active market" body="Engagement becomes available when MarketRoute has classed an opportunity ready to pursue."/></Panel></div>;
+  if(!campaignId)return <div><PageHeader eyebrow="OUTREACH" title="Your" accent="outreach desk." description="Use the routes MarketRoute has found, prepare messages and keep every external contact under your control."/><Panel><EmptyState icon="engagement" title="No active market" body="Outreach becomes available when an opportunity is ready to contact."/></Panel></div>;
 
   const [model,access]=await Promise.all([
     applicationReadServiceFromEnvironment().engagementIndex({organisationId:workspace.organisationId,campaignId,limit:200}),
@@ -39,20 +39,20 @@ export default async function Engagement({searchParams}:{searchParams:Promise<Re
   const actionError=typeof query.actionError==="string"?decodeURIComponent(query.actionError):null;
 
   return <div>
-    <PageHeader eyebrow="ENGAGEMENT" title="Turn ready opportunities" accent="into human action." description="MarketRoute prepares evidence-grounded outreach and puts the verified route in front of you. Nothing is sent automatically." actions={<CampaignSwitcher campaigns={campaigns.map(c=>({campaignId:c.campaignId,name:c.name,workflowState:c.workflowState}))} current={campaignId} action="/app/engagement"/>}/>
+    <PageHeader eyebrow="OUTREACH" title="Turn strong opportunities" accent="into conversations." description="MarketRoute can prepare the message and put a usable contact route in front of you. Nothing is sent automatically." actions={<CampaignSwitcher campaigns={campaigns.map(c=>({campaignId:c.campaignId,name:c.name,workflowState:c.workflowState}))} current={campaignId} action="/app/engagement"/>}/>
     {actionError&&<div className="mr-alert mr-alert--error"><Icon name="shield" size={16}/><span>{actionError}</span></div>}
-    <div className="mr-assisted-mode-banner"><div><Icon name="shield" size={18}/><span>ASSISTED MODE</span><strong>You make every external contact.</strong></div><p>MarketRoute can prepare and quality-check the message, but there is no outbound delivery cron and no customer-facing autopilot.</p></div>
+    <div className="mr-assisted-mode-banner"><div><Icon name="shield" size={18}/><span>YOU STAY IN CONTROL</span><strong>Nothing gets sent without you.</strong></div><p>MarketRoute can prepare and check the message. You choose when, where and whether to send it.</p></div>
 
     <section className="mr-metric-grid">
-      <MetricCard label="Ready to contact" value={String(ready)} meta="Approved message + current route" icon={<Icon name="engagement"/>} accent/>
-      <MetricCard label="Prepared" value={String(prepared)} meta="Messages currently prepared" icon={<Icon name="mail"/>}/>
-      <MetricCard label="Needs approval" value={String(awaiting)} meta="Human decision required" icon={<Icon name="shield"/>}/>
-      <MetricCard label="Contacted" value={String(contacted)} meta="Manually recorded actions" icon={<Icon name="check"/>}/>
+      <MetricCard label="Ready to contact" value={String(ready)} meta="Message and route ready" icon={<Icon name="engagement"/>} accent/>
+      <MetricCard label="Prepared" value={String(prepared)} meta="Messages ready to review" icon={<Icon name="mail"/>}/>
+      <MetricCard label="Needs approval" value={String(awaiting)} meta="Waiting for your approval" icon={<Icon name="shield"/>}/>
+      <MetricCard label="Contacted" value={String(contacted)} meta="Conversations you recorded" icon={<Icon name="check"/>}/>
     </section>
 
-    {!paidAccess&&<div className="mr-assisted-engagement-note"><Icon name="shield" size={16}/><div><strong>Your free contact routes still work.</strong><span>AI message preparation is reserved for paid plans so the free Discovery run stays cost-bounded. You can continue using email, phone and LinkedIn directly from Opportunities.</span></div></div>}
+    {!paidAccess&&<div className="mr-assisted-engagement-note"><Icon name="shield" size={16}/><div><strong>Your free contact routes are yours to use.</strong><span>Message preparation is available on paid plans. You can still use email, phone and LinkedIn routes directly from Opportunities.</span></div></div>}
 
-    {items.length===0?<Panel><EmptyState icon="engagement" title="Nothing is ready for engagement yet" body="When MarketRoute classifies an opportunity ready and its contact route is current, it will appear here as a human-controlled next action."/></Panel>:
+    {items.length===0?<Panel><EmptyState icon="engagement" title="Nothing is ready for outreach yet" body="When an opportunity has a usable contact route, it will appear here."/></Panel>:
     <section className="mr-engagement-desk-grid">{items.map(item=>{
       const e=asObject(item.engagement),strategy=asObject(e.strategy),message=asObject(e.message),review=asObject(e.aiReview),approval=asObject(e.approval),manual=asObject(e.manualAction),actions=asObject(e.actions);
       const opportunityId=text(item.opportunityId,"");const companyId=text(item.companyId,"");const href=`/app/opportunities/${campaignId}/${companyId}`;
@@ -61,11 +61,11 @@ export default async function Engagement({searchParams}:{searchParams:Promise<Re
       const approved=text(approval.decision,"")==="APPROVE"&&text(approval.mode,"")==="HUMAN";const contactedNow=typeof manual.manualActionId==="string";
       const external=channel&&accessPoint?safeActionHref(channel,accessPoint,subject,body):null;
       return <article className={`mr-engagement-desk-card${contactedNow?" mr-engagement-desk-card--done":""}`} key={opportunityId}>
-        <header><div><span>{contactedNow?"CONTACTED":approved?"READY TO ACT":messageId?"MESSAGE PREPARED":"READY OPPORTUNITY"}</span><h2>{text(item.companyName)}</h2><p>{text(item.canonicalDomain,"Direct company route")}</p></div><StatusBadge label={contactedNow?"Contacted":humanStatus(text(item.workflowState))} tone={contactedNow?"green":approved?"blue":"slate"}/></header>
+        <header><div><span>{contactedNow?"CONTACTED":approved?"READY TO ACT":messageId?"MESSAGE PREPARED":"READY TO CONTACT"}</span><h2>{text(item.companyName)}</h2><p>{text(item.canonicalDomain,"Direct company route")}</p></div><StatusBadge label={contactedNow?"Contacted":humanStatus(text(item.workflowState))} tone={contactedNow?"green":approved?"blue":"slate"}/></header>
         {contactedNow?<div className="mr-engagement-desk-card__done"><Icon name="check" size={18}/><div><strong>Contact recorded</strong><span>{formatDateTime(manual.occurredAt)} · {humanStatus(text(manual.channel,"Manual contact"))}</span></div></div>:
-        !messageId?<div className="mr-engagement-desk-card__empty"><p>{paidAccess?"Open the opportunity and choose the authorised route MarketRoute should use to prepare the message.":"Use the verified contact route directly, or upgrade when you want MarketRoute to prepare the message as well."}</p><Link className="mr-button mr-button--secondary" href={href}>{paidAccess?"Prepare outreach":"Open contact routes"}<Icon name="arrow" size={14}/></Link></div>:
+        !messageId?<div className="mr-engagement-desk-card__empty"><p>{paidAccess?"Open the opportunity and choose the authorised route MarketRoute should use to prepare the message.":"Use the contact route directly, or upgrade if you want MarketRoute to prepare the message too."}</p><Link className="mr-button mr-button--secondary" href={href}>{paidAccess?"Prepare message":"See contact routes"}<Icon name="arrow" size={14}/></Link></div>:
         <>
-          <div className="mr-engagement-desk-card__status"><span>{humanStatus(channel)}</span><span>Review: <strong>{humanStatus(text(review.verdict,"Pending"))}</strong></span><span>Approval: <strong>{approved?"Approved":humanStatus(text(approval.decision,"Pending"))}</strong></span></div>
+          <div className="mr-engagement-desk-card__status"><span>{humanStatus(channel)}</span><span>Message check: <strong>{humanStatus(text(review.verdict,"Pending"))}</strong></span><span>Your approval: <strong>{approved?"Approved":humanStatus(text(approval.decision,"Pending"))}</strong></span></div>
           {subject&&<div className="mr-engagement-desk-card__subject"><span>Subject</span><strong>{subject}</strong></div>}
           {body&&<div className="mr-engagement-desk-card__message"><p>{body}</p><CopyValueButton value={body} label="Copy message"/></div>}
           <div className="mr-engagement-desk-card__actions">

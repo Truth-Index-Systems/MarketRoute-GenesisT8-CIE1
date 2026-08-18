@@ -45,7 +45,11 @@ results.push(check("MarketRoute primary blue token preserved", () => assert(css.
 results.push(check("MarketRoute soft blue token preserved", () => assert(css.toLowerCase().includes("--mr-blue-400: #76b6ff"), "#76B6FF")));
 results.push(check("near-black workspace token explicit", () => assert(css.toLowerCase().includes("--mr-bg: #05080d"), "#05080D")));
 results.push(check("product shell is namespaced under /app", () => assert(appLayout.includes("<AppShell") && fs.existsSync(path.join(ROOT, "app/app/page.tsx")), "/app shell")));
-results.push(check("public root explains MarketRoute purpose", () => assert((home.includes("Know who to target") && home.includes("researches your market") && home.includes("evidence-backed routes")) || (home.includes("Tell me what you sell") && home.includes("researches the market") && home.includes("routes into them")), "purpose copy")));
+results.push(check("public root explains MarketRoute purpose", () => assert(
+  (home.includes("Know who to target") && home.includes("MarketRoute researches your market") && home.includes("maps a real route to the right buyer")) ||
+  (home.includes("Tell me what you sell") && home.includes("researches the market") && home.includes("routes into them")),
+  "purpose copy"
+)));
 results.push(check("Build 14 preview is either preserved or superseded by live Build 15", () => assert((appPage.includes("Non-authoritative sample data") && appPage.includes("Design system preview")) || (manifest.presentationBuild >= 15 && appPage.includes("commandCentre")), "presentation successor")));
 results.push(check("app shell preserves navigation boundary through Build 15", () => assert((shell.includes("Build 15") && shell.includes("aria-disabled")) || manifest.presentationBuild >= 15, "navigation successor")));
 results.push(check("responsive application shell present", () => assert(css.includes("@media (max-width: 820px)") && css.includes(".mr-mobile-nav"), "responsive shell")));
@@ -54,7 +58,15 @@ results.push(check("reduced-motion accessibility present", () => assert(css.incl
 results.push(check("keyboard focus treatment present", () => assert(css.includes(":focus-visible"), "focus-visible")));
 results.push(check("Truth presentation preserves epistemic-not-probability language", () => { const live=fs.readFileSync(path.join(ROOT,"app/app/opportunities/[campaignId]/[companyId]/page.tsx"),"utf8"); assert(appPage.includes("Epistemic quality, not probability.") || live.includes("epistemic quality, not a probability"), "truth language"); }));
 results.push(check("route presentation preserves structural provenance", () => { const live=fs.readFileSync(path.join(ROOT,"app/app/opportunities/[campaignId]/[companyId]/page.tsx"),"utf8"); assert(appPage.includes("Every edge is structural or Truth-qualified") || live.includes("Structural paths come from current R5") || live.includes("Every path remains structural or Truth-qualified"), "route provenance"); }));
-results.push(check("human action remains downstream of system-owned readiness", () => { const live=fs.readFileSync(path.join(ROOT,"app/app/opportunities/[campaignId]/[companyId]/page.tsx"),"utf8"); assert((appPage.includes("founder review required") && appPage.includes("Send gate re-checks R4 → R5 → R6")) || (manifest.presentationBuild >= 15 && ((live.includes("Human workflow remains independent")) || (live.includes("MarketRoute decides readiness from current evidence") && live.includes("Human approval is reserved for the message")))), "workflow language"); }));
+results.push(check("human action remains downstream of system-owned readiness", () => { const live=fs.readFileSync(path.join(ROOT,"app/app/opportunities/[campaignId]/[companyId]/page.tsx"),"utf8"); assert(
+  (appPage.includes("founder review required") && appPage.includes("Send gate re-checks R4 → R5 → R6")) ||
+  (manifest.presentationBuild >= 15 && (
+    live.includes("Human workflow remains independent") ||
+    (live.includes("MarketRoute decides readiness from current evidence") && live.includes("Human approval is reserved for the message")) ||
+    (live.includes("MarketRoute decides when the research is strong enough") && live.includes("You stay in control of the message you choose to send"))
+  )),
+  "workflow language"
+); }));
 
 const presentationFiles = sourceFiles().filter((file) => {
   const rel = relative(file);

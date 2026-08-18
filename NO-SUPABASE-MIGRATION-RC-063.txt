@@ -1,0 +1,3 @@
+No Supabase migration is required for MarketRoute RC 0.63.
+This release is presentation-only.
+Deploy the application code only.

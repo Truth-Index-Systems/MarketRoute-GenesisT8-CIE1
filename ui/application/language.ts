@@ -1,9 +1,9 @@
 const STATUS_LABELS: Record<string, string> = {
-  ACTIONABLE: "Ready to pursue",
+  ACTIONABLE: "Ready to contact",
   AUTHORITY_READY: "Ready for action",
-  COMMERCIAL_CANDIDATE: "Commercial case confirmed",
-  ROUTE_STRUCTURALLY_OPEN: "Route confirmed",
-  CONTACT_AUTHORISED: "Contact confirmed",
+  COMMERCIAL_CANDIDATE: "Strong opportunity",
+  ROUTE_STRUCTURALLY_OPEN: "Possible route found",
+  CONTACT_AUTHORISED: "Contact route ready",
   APPROVED: "Ready",
   SENT: "Sent",
   SUCCEEDED: "Completed",
@@ -16,20 +16,20 @@ const STATUS_LABELS: Record<string, string> = {
   PENDING: "Pending",
   AUTOPILOT: "Autopilot",
   RESEARCH_REQUIRED: "More research needed",
-  REVALIDATION_REQUIRED: "Needs revalidation",
-  CONTACT_RESEARCH_REQUIRED: "Contact research needed",
-  ROUTE_RESEARCH_REQUIRED: "Route research needed",
+  REVALIDATION_REQUIRED: "Needs another check",
+  CONTACT_RESEARCH_REQUIRED: "Finding a better contact route",
+  ROUTE_RESEARCH_REQUIRED: "Finding a route in",
   RESEARCHING: "Researching",
   PAUSED: "Paused",
   DEFERRED: "Deferred",
   REWRITE: "Rewrite needed",
-  NOT_ADMISSIBLE: "Not worth pursuing",
-  CONTRADICTED: "Evidence conflicts",
+  NOT_ADMISSIBLE: "Not a priority right now",
+  CONTRADICTED: "Research needs resolving",
   FAILED: "Failed",
   BLOCK: "Blocked",
   REJECTED: "Rejected",
-  BLOCKED_STALE: "Blocked — stale",
-  RECONCILIATION_REQUIRED: "Needs reconciliation",
+  BLOCKED_STALE: "Needs fresh research",
+  RECONCILIATION_REQUIRED: "Needs another check",
   CLOSED: "Closed",
   SUSPENDED: "Suspended",
   CONTACT_NOT_APPLICABLE: "No named contact required",
@@ -37,14 +37,14 @@ const STATUS_LABELS: Record<string, string> = {
   ARCHIVED: "Archived",
   STALE: "Stale",
   UNRESOLVED: "Unresolved",
-  OPEN: "Route open",
+  OPEN: "Route available",
   CURRENT: "Current",
   HUMAN_ONLY: "Human approval",
   NONE: "None",
-  NO_CURRENT_R4: "Commercial case not established",
-  NO_CURRENT_R5: "Route not established",
-  NO_CURRENT_R6: "Contact not established",
-  NO_CURRENT_TRUTH: "Research not established",
+  NO_CURRENT_R4: "Why it fits is not clear yet",
+  NO_CURRENT_R5: "No usable route yet",
+  NO_CURRENT_R6: "No usable contact route yet",
+  NO_CURRENT_TRUTH: "Research still developing",
 };
 
 export function humanStatus(value: string | null | undefined, fallback = "Not available") {
@@ -57,11 +57,11 @@ export function humanStatus(value: string | null | undefined, fallback = "Not av
 }
 
 export function commercialVerdict(disposition: string, executableNow: boolean) {
-  if (executableNow) return "Worth pursuing — reachable now";
-  if (disposition === "ACTIONABLE" || disposition === "AUTHORITY_READY") return "Worth pursuing — action available";
-  if (disposition === "REVIEWABLE") return "Worth pursuing — ready";
-  if (disposition === "NOT_ADMISSIBLE") return "Not currently worth pursuing";
-  if (disposition.includes("RESEARCH")) return "Promising, but more evidence is needed";
+  if (executableNow) return "Strong opportunity — ready to contact";
+  if (disposition === "ACTIONABLE" || disposition === "AUTHORITY_READY") return "Strong opportunity — ready to act";
+  if (disposition === "REVIEWABLE") return "Strong opportunity";
+  if (disposition === "NOT_ADMISSIBLE") return "Not a priority right now";
+  if (disposition.includes("RESEARCH")) return "Promising — still researching";
   return humanStatus(disposition);
 }
 
@@ -73,12 +73,12 @@ export function truthStrength(value: number) {
 }
 
 export function routeSummary(authorised: number, structural: number) {
-  if (authorised > 0) return `${authorised} contact-qualified route${authorised === 1 ? "" : "s"}`;
-  if (structural > 0) return `${structural} structural route${structural === 1 ? "" : "s"}`;
-  return "No proven route yet";
+  if (authorised > 0) return `${authorised} ready contact route${authorised === 1 ? "" : "s"}`;
+  if (structural > 0) return `${structural} possible route${structural === 1 ? "" : "s"}`;
+  return "No usable route yet";
 }
 
 export function researchPressureLabel(value: string) {
-  const normal = humanStatus(value, "No active research pressure");
-  return normal === "None" ? "No active research pressure" : normal;
+  const normal = humanStatus(value, "No urgent research needed");
+  return normal === "None" ? "No urgent research needed" : normal;
 }

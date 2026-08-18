@@ -10,9 +10,9 @@ check("campaign submission accepts a complete fresh brief",()=>{for(const code o
 check("new activation creates a distinct job-bound campaign",()=>{assert.match(sql,/marketroute_create_activation_campaign_v3/);assert.match(sql,/p_job_id uuid/);assert.match(sql,/INSERT INTO public\.campaigns/);assert.doesNotMatch(sql,/UPDATE public\.campaigns\s+SET name=v_name/s)});
 check("activation repository and bootstrap use job-bound modern activation",()=>{assert.match(repo,/marketroute_create_activation_campaign_v4/);assert.match(repo,/marketroute_claim_workspace_activation_v4/);assert.match(repo,/p_job_id:jobId/);assert.match(bootstrap,/createCampaign\(job\.job_id/)});
 check("session uses the multi-campaign submit RPC",()=>assert.match(session,/marketroute_submit_campaign_v3/));
-check("Add campaign is always visible to campaign managers",()=>{assert.match(campaigns,/Add campaign/);assert.doesNotMatch(campaigns,/campaigns\.length===0&&canCreate/)});
+check("Add market is always visible to campaign managers",()=>{assert.match(campaigns,/Add market/);assert.doesNotMatch(campaigns,/campaigns\.length===0&&canCreate/)});
 check("configuration page does not redirect free or full plans away",()=>{assert.doesNotMatch(newPage,/commercial\.mode===\"DISCOVERY_FREE\".*redirect/s);assert.doesNotMatch(newPage,/campaigns\)\.length>0\)redirect/)});
-check("paywall occurs from the configured campaign form",()=>{assert.match(form,/onSubmit=\{submit\}/);assert.match(form,/if\(gated\)\{event\.preventDefault\(\);setPaywallOpen\(true\)/);assert.match(form,/Unlock another active market/)});
+check("paywall occurs from the configured campaign form",()=>{assert.match(form,/onSubmit=\{submit\}/);assert.match(form,/if\(gated\)\{event\.preventDefault\(\);setPaywallOpen\(true\)/);assert.match(form,/Work another market at the same time|ADD ANOTHER MARKET/)});
 check("paywall offers only plans large enough for the next campaign",()=>assert.match(form,/activeMarketLimit>=capacity\.activeMarketCount\+1/));
 check("existing paid subscribers upgrade via billing portal",()=>assert.match(form,/action=\"\/api\/billing\/portal\"/));
 check("public and in-product pricing show dynamic market counts",()=>{assert.match(pricing,/plan\.activeMarketLimit/);assert.match(upgrade,/plan\.activeMarketLimit/)});
