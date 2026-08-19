@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { App } from "aws-cdk-lib";
 import { loadAwsV0Config } from "../lib/config";
+import { MrAwsV0DatabaseStack } from "../lib/database-stack";
 import { FoundationStack } from "../lib/foundation-stack";
 import { MrAwsV0IdentityStack } from "../lib/identity-stack";
 import { applyMandatoryTags } from "../lib/tags";
@@ -15,10 +16,9 @@ const identity = new MrAwsV0IdentityStack(app, "MrAwsV0IdentityStack", {
   description: "MarketRoute AWS V0 identity and CI federation boundary",
 });
 
-const database = new FoundationStack(app, "MrAwsV0DatabaseStack", {
+const database = new MrAwsV0DatabaseStack(app, "MrAwsV0DatabaseStack", {
   env,
-  purpose: "Reserved for AWS-V0 Build 2 Aurora foundation",
-  description: "MarketRoute AWS V0 database boundary (Build 1 placeholder only)",
+  description: "MarketRoute AWS V0 fresh Aurora PostgreSQL foundation (Build 2)",
 });
 
 const application = new FoundationStack(app, "MrAwsV0ApplicationStack", {
