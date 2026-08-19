@@ -17,12 +17,15 @@ export class MrAwsV0IdentityStack extends Stack {
 
     if (!props.githubSubject) return;
 
-    const provider = new iam.OpenIdConnectProvider(this, "GitHubActionsOidcProvider", {
+    // Use the native CloudFormation IAM OIDC provider resource. This keeps the
+    // Build 1 identity boundary free of CDK custom-resource Lambda machinery.
+    const provider = new iam.CfnOIDCProvider(this, "GitHubActionsOidcProvider", {
       url: "https://token.actions.githubusercontent.com",
-      clientIds: ["sts.amazonaws.com"],
+      clientIdList: ["sts.amazonaws.com"],
     });
 
-    const githubPrincipal = new iam.WebIdentityPrincipal(provider.openIdConnectProviderArn, {
+    const providerArn = `arn:${Aws.PARTITION}:iam::${Aws.ACCOUNT_ID}:oidc-provider/token.actions.githubusercontent.com`;
+    const githubPrincipal = new iam.WebIdentityPrincipal(providerArn, {
       StringEquals: {
         "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
         "token.actions.githubusercontent.com:sub": props.githubSubject,
@@ -35,6 +38,10 @@ export class MrAwsV0IdentityStack extends Stack {
       assumedBy: githubPrincipal,
       maxSessionDuration: Duration.hours(1),
     });
+
+    // CloudFormation must create the federated identity provider before it
+    // creates a role whose trust policy names that provider ARN.
+    deployRole.node.addDependency(provider);
 
     deployRole.addToPolicy(new iam.PolicyStatement({
       sid: "AssumeMarketRouteCdkBootstrapRoles",
