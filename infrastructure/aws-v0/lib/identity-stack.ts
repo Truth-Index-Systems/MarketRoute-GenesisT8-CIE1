@@ -24,8 +24,9 @@ export class MrAwsV0IdentityStack extends Stack {
       clientIdList: ["sts.amazonaws.com"],
     });
 
-    const providerArn = `arn:${Aws.PARTITION}:iam::${Aws.ACCOUNT_ID}:oidc-provider/token.actions.githubusercontent.com`;
-    const githubPrincipal = new iam.WebIdentityPrincipal(providerArn, {
+    // Ref for AWS::IAM::OIDCProvider is the provider ARN. Using the resource
+    // token directly also gives CloudFormation an explicit dependency edge.
+    const githubPrincipal = new iam.WebIdentityPrincipal(provider.ref, {
       StringEquals: {
         "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
         "token.actions.githubusercontent.com:sub": props.githubSubject,
@@ -38,10 +39,6 @@ export class MrAwsV0IdentityStack extends Stack {
       assumedBy: githubPrincipal,
       maxSessionDuration: Duration.hours(1),
     });
-
-    // CloudFormation must create the federated identity provider before it
-    // creates a role whose trust policy names that provider ARN.
-    deployRole.node.addDependency(provider);
 
     deployRole.addToPolicy(new iam.PolicyStatement({
       sid: "AssumeMarketRouteCdkBootstrapRoles",
