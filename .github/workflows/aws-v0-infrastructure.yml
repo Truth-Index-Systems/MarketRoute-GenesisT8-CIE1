@@ -100,35 +100,42 @@ jobs:
       - name: Install AWS V0 IaC dependencies
         working-directory: infrastructure/aws-v0
         run: npm ci --no-audit --no-fund
-      - name: Configure short-lived AWS credentials
+      - name: Configure short-lived AWS deploy credentials
         uses: aws-actions/configure-aws-credentials@v6.2.3
         with:
           role-to-assume: ${{ vars.AWS_V0_DEPLOY_ROLE_ARN }}
           role-session-name: MarketRouteAwsV0-${{ github.run_id }}
           aws-region: eu-west-2
           allowed-account-ids: "801132668416"
-      - name: Confirm AWS caller
+      - name: Confirm AWS deploy caller
         run: aws sts get-caller-identity
+      - name: Configure CDK lookup credentials for Aurora preflight
+        uses: aws-actions/configure-aws-credentials@v6.2.3
+        with:
+          role-to-assume: ${{ env.AWS_V0_CDK_LOOKUP_ROLE_ARN }}
+          role-session-name: MarketRouteAwsV0-Preflight-${{ github.run_id }}
+          aws-region: eu-west-2
+          allowed-account-ids: "801132668416"
+          role-chaining: true
+          role-skip-session-tagging: true
       - name: Confirm Aurora PostgreSQL serverless engine availability
         run: |
           set -euo pipefail
-          read -r LOOKUP_ACCESS_KEY LOOKUP_SECRET_KEY LOOKUP_SESSION_TOKEN <<< "$(
-            aws sts assume-role \
-              --role-arn "$AWS_V0_CDK_LOOKUP_ROLE_ARN" \
-              --role-session-name "MarketRouteAwsV0-Preflight-${{ github.run_id }}" \
-              --query 'Credentials.[AccessKeyId,SecretAccessKey,SessionToken]' \
-              --output text
-          )"
-          AWS_ACCESS_KEY_ID="$LOOKUP_ACCESS_KEY" \
-          AWS_SECRET_ACCESS_KEY="$LOOKUP_SECRET_KEY" \
-          AWS_SESSION_TOKEN="$LOOKUP_SESSION_TOKEN" \
-          AWS_PAGER="" \
-          aws rds describe-orderable-db-instance-options \
+          AWS_PAGER="" aws rds describe-orderable-db-instance-options \
             --engine aurora-postgresql \
             --db-instance-class db.serverless \
             --region eu-west-2 \
             --query "OrderableDBInstanceOptions[?EngineVersion=='${AWS_V0_AURORA_ENGINE_VERSION}'].EngineVersion" \
             --output text | tr '\t' '\n' | grep -Fxq "$AWS_V0_AURORA_ENGINE_VERSION"
+      - name: Restore short-lived AWS deploy credentials
+        uses: aws-actions/configure-aws-credentials@v6.2.3
+        with:
+          role-to-assume: ${{ vars.AWS_V0_DEPLOY_ROLE_ARN }}
+          role-session-name: MarketRouteAwsV0-Deploy-${{ github.run_id }}
+          aws-region: eu-west-2
+          allowed-account-ids: "801132668416"
+      - name: Confirm deployment AWS caller
+        run: aws sts get-caller-identity
       - name: Deploy Build 2 database stack only
         working-directory: infrastructure/aws-v0
         run: npm run deploy:database -- -c githubSubject="$AWS_V0_GITHUB_SUBJECT"
