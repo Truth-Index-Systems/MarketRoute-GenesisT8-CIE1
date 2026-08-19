@@ -1,0 +1,56 @@
+name: AWS V0 Repository Identity
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  identity:
+    if: github.ref == 'refs/heads/aws-v0'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print repository identity
+        shell: bash
+        run: |
+          echo "Repository: ${{ github.repository }}"
+          echo "Repository ID: ${{ github.repository_id }}"
+          echo "Repository owner: ${{ github.repository_owner }}"
+          echo "Repository owner ID: ${{ github.repository_owner_id }}"
+
+      - name: Read exact GitHub OIDC subject
+        id: oidc
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const token = await core.getIDToken('sts.amazonaws.com');
+            const [, encodedPayload] = token.split('.');
+            if (!encodedPayload) {
+              core.setFailed('GitHub returned an invalid OIDC JWT');
+              return;
+            }
+            const payload = JSON.parse(Buffer.from(encodedPayload, 'base64url').toString('utf8'));
+            if (!payload.sub) {
+              core.setFailed('GitHub OIDC token did not contain a sub claim');
+              return;
+            }
+            core.info(`Exact AWS OIDC subject: ${payload.sub}`);
+            core.info(`OIDC audience: ${Array.isArray(payload.aud) ? payload.aud.join(',') : payload.aud}`);
+            core.setOutput('subject', payload.sub);
+
+      - name: Confirm branch pin
+        shell: bash
+        env:
+          OIDC_SUBJECT: ${{ steps.oidc.outputs.subject }}
+        run: |
+          case "$OIDC_SUBJECT" in
+            *":ref:refs/heads/aws-v0")
+              echo "PASS: OIDC subject is pinned to refs/heads/aws-v0"
+              ;;
+            *)
+              echo "FAIL: unexpected OIDC subject for aws-v0: $OIDC_SUBJECT"
+              exit 1
+              ;;
+          esac
