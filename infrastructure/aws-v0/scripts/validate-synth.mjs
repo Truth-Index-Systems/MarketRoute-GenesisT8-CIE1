@@ -12,19 +12,22 @@ const stackNames = [
   "MrAwsV0ObservabilityStack",
 ];
 
+const SYNTH_METADATA_TYPES = new Set(["AWS::CDK::Metadata"]);
+
 for (const name of stackNames) {
   const file = path.join(out, `${name}.template.json`);
   if (!fs.existsSync(file)) throw new Error(`Synth output missing: ${name}`);
   const template = JSON.parse(fs.readFileSync(file, "utf8"));
   const resources = Object.values(template.Resources ?? {});
+  const productResources = resources.filter((resource) => !SYNTH_METADATA_TYPES.has(resource.Type));
 
-  if (name !== "MrAwsV0IdentityStack" && resources.length !== 0) {
+  if (name !== "MrAwsV0IdentityStack" && productResources.length !== 0) {
     throw new Error(`${name} created runtime resources during Build 1`);
   }
 
   if (name === "MrAwsV0IdentityStack") {
     const allowed = new Set(["AWS::IAM::OIDCProvider", "AWS::IAM::Role", "AWS::IAM::Policy"]);
-    for (const resource of resources) {
+    for (const resource of productResources) {
       if (!allowed.has(resource.Type)) {
         throw new Error(`Build 1 identity stack contains forbidden resource type: ${resource.Type}`);
       }
