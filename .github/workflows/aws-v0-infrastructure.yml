@@ -37,9 +37,15 @@ jobs:
       - name: Install AWS V0 IaC dependencies
         working-directory: infrastructure/aws-v0
         run: npm install --no-audit --no-fund
-      - name: Validate and synthesize
+      - name: Validate placeholder synthesis
         working-directory: infrastructure/aws-v0
         run: npm run check
+      - name: Validate live OIDC identity synthesis
+        working-directory: infrastructure/aws-v0
+        run: |
+          npm run build
+          npx cdk synth --quiet -c githubSubject="$AWS_V0_GITHUB_SUBJECT"
+          npm run validate:synth
 
   deploy:
     if: github.ref == 'refs/heads/aws-v0' && vars.AWS_V0_DEPLOY_ROLE_ARN != ''
