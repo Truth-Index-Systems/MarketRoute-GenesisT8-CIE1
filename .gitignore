@@ -10,3 +10,7 @@ out
 coverage
 
 *.tsbuildinfo
+
+# AWS V0 CDK generated output
+infrastructure/aws-v0/dist/
+infrastructure/aws-v0/cdk.out/
