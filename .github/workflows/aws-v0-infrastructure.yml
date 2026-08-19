@@ -40,7 +40,7 @@ jobs:
           package-manager-cache: false
       - name: Install AWS V0 IaC dependencies
         working-directory: infrastructure/aws-v0
-        run: npm install --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
       - name: Validate Build 2 source and types
         working-directory: infrastructure/aws-v0
         run: npm run validate:source && npm run typecheck
@@ -98,7 +98,7 @@ jobs:
           package-manager-cache: false
       - name: Install AWS V0 IaC dependencies
         working-directory: infrastructure/aws-v0
-        run: npm install --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
       - name: Configure short-lived AWS credentials
         uses: aws-actions/configure-aws-credentials@v6.2.3
         with:
