@@ -1,0 +1,5 @@
+MarketRoute AWS V0 Build 1 final certification trigger.
+
+Purpose: trigger the hardened GitHub Actions OIDC deployment path after AWS-side OIDC provider and trust verification.
+
+No runtime infrastructure is defined in this file.
