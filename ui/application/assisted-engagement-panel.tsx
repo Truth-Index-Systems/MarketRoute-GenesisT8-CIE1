@@ -42,7 +42,7 @@ export function AssistedEngagementPanel({engagement,opportunityId,pathFingerprin
 
   return <Panel className="mr-assisted-engagement-panel">
     <div className="mr-assisted-engagement-heading">
-      <SectionHeading eyebrow="MESSAGE & CONTACT" title={contacted?"Contact recorded":"Prepare the next move"} description="MarketRoute can prepare the message and put the contact route in front of you. You stay in control of what gets sent."/>
+      <SectionHeading eyebrow="MESSAGE & CONTACT" title={contacted?"Contact recorded":"Prepare the next move"} description="MarketRoute can prepare a tailored message around this opportunity and put the contact route in front of you. You decide what gets sent."/>
       <StatusBadge label="You send" tone="blue"/>
     </div>
 
@@ -50,7 +50,7 @@ export function AssistedEngagementPanel({engagement,opportunityId,pathFingerprin
 
     {!messageId&&!contacted&&<>
       {canGenerate&&paidAccess&&canMutate?<form className="mr-message-actions" action={`/api/engagement/opportunities/${opportunityId}/generate`} method="post"><input type="hidden" name="pathFingerprint" value={pathFingerprint??""}/><input type="hidden" name="returnTo" value={returnHref}/><button className="mr-button mr-button--primary" type="submit">Prepare message</button></form>:
-      canGenerate&&!paidAccess?<div className="mr-assisted-engagement-note"><Icon name="shield" size={16}/><div><strong>Message preparation is available on paid plans.</strong><span>Your free contact routes remain yours to use. Upgrade when you want MarketRoute to prepare outreach too.</span></div></div>:
+      canGenerate&&!paidAccess?<div className="mr-assisted-engagement-note"><Icon name="shield" size={16}/><div><strong>Want MarketRoute to prepare the message too?</strong><span>Your free contact routes remain yours to use. Upgrade whenever you want MarketRoute to prepare tailored outreach for you.</span></div></div>:
       <EmptyState icon="engagement" title="No message prepared yet" body="MarketRoute can prepare outreach as soon as this opportunity has a usable contact route and is ready."/>}
     </>}
 
