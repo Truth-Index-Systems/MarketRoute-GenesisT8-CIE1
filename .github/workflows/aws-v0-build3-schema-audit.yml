@@ -1,0 +1,87 @@
+name: AWS V0 Build 3 Schema Audit
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - aws-v0
+    paths:
+      - 'database/aws/**'
+      - 'supabase/migrations/**'
+      - '.github/workflows/aws-v0-build3-schema-audit.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: aws-v0-build3-schema-audit
+  cancel-in-progress: false
+
+jobs:
+  schema-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout canonical aws-v0 branch
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Syntax-check compiler
+        run: node --check database/aws/compile-canonical-baseline.mjs
+
+      - name: Run Build 3 audit
+        run: node database/aws/compile-canonical-baseline.mjs
+
+      - name: Validate generated audit and manifest
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const audit = JSON.parse(fs.readFileSync('database/aws/build3_schema_audit.json', 'utf8'));
+          const manifest = JSON.parse(fs.readFileSync('database/aws/0001_marketroute_aws_schema_manifest.json', 'utf8'));
+          if (audit.build !== 'AWS-V0-BUILD-3') throw new Error('unexpected audit build');
+          if (!Number.isInteger(audit.migration_count) || audit.migration_count < 1) throw new Error('no migrations inventoried');
+          if (manifest.build !== 'AWS-V0-BUILD-3') throw new Error('unexpected manifest build');
+          if (manifest.prohibited_historical_data_import !== true) throw new Error('historical data prohibition missing');
+          if (!manifest.excluded_migrations.includes('0019_v1_evidence_migration.sql')) throw new Error('V1 ETL exclusion missing');
+          console.log(JSON.stringify({
+            migration_count: audit.migration_count,
+            migration_range: audit.migration_range,
+            statement_counts: audit.statement_counts,
+            blockers: audit.blockers.length,
+            review_items: audit.review_items.length,
+            object_candidates: audit.final_object_candidates.length,
+            manifest_status: manifest.status,
+          }, null, 2));
+          NODE
+
+      - name: Prove baseline emission fails closed while audit is unresolved
+        shell: bash
+        run: |
+          rm -f database/aws/0001_marketroute_aws_canonical_baseline.sql
+          set +e
+          node database/aws/compile-canonical-baseline.mjs --emit-baseline
+          status=$?
+          set -e
+          if [ "$status" -ne 2 ]; then
+            echo "Expected fail-closed exit 2, received $status" >&2
+            exit 1
+          fi
+          if [ -e database/aws/0001_marketroute_aws_canonical_baseline.sql ]; then
+            echo "Compiler emitted baseline despite unresolved audit" >&2
+            exit 1
+          fi
+          echo "Fail-closed baseline gate verified."
+
+      - name: Upload Build 3 audit artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: aws-v0-build3-schema-audit
+          path: |
+            database/aws/build3_schema_audit.json
+            database/aws/0001_marketroute_aws_schema_manifest.json
+          if-no-files-found: error
+          retention-days: 14
