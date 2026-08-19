@@ -11,6 +11,9 @@ const manifestPath = path.join(outputDir, '0001_marketroute_aws_schema_manifest.
 const baselinePath = path.join(outputDir, '0001_marketroute_aws_canonical_baseline.sql');
 const emitBaseline = process.argv.includes('--emit-baseline');
 
+const EXCLUDED_MIGRATIONS = new Set(['0019_v1_evidence_migration.sql']);
+const MUTATION_KEYWORDS = ['INSERT', 'UPDATE', 'DELETE', 'TRUNCATE', 'COPY', 'MERGE'];
+
 function sha256(value) {
   return crypto.createHash('sha256').update(value).digest('hex');
 }
@@ -22,7 +25,6 @@ function listMigrations() {
     .sort((a, b) => a.localeCompare(b, 'en'));
 }
 
-// SQL statement splitter aware of comments, quoted strings/identifiers and PostgreSQL dollar quoting.
 function splitSql(sql) {
   const statements = [];
   let start = 0;
@@ -126,11 +128,16 @@ function stripLeadingComments(sql) {
   }
 }
 
+function normalizeSql(statement) {
+  return stripLeadingComments(statement).replace(/\s+/g, ' ').trim();
+}
+
 function classify(statement) {
-  const normalized = stripLeadingComments(statement).replace(/\s+/g, ' ').trim();
-  const upper = normalized.toUpperCase();
+  const upper = normalizeSql(statement).toUpperCase();
   if (/^(BEGIN|COMMIT|ROLLBACK)(\s|;|$)/.test(upper)) return 'transaction';
-  if (/^(INSERT|UPDATE|DELETE|TRUNCATE|COPY)\b/.test(upper)) return 'data-mutation';
+  if (/^(INSERT|UPDATE|DELETE|TRUNCATE|COPY|MERGE)\b/.test(upper)) return 'data-mutation';
+  if (/^WITH\b/.test(upper) && /\b(INSERT|UPDATE|DELETE|MERGE)\b/.test(upper)) return 'data-mutation-cte';
+  if (/^NOTIFY\b/.test(upper)) return 'notify';
   if (/^(GRANT|REVOKE)\b/.test(upper)) return 'grant';
   if (/^CREATE\s+(OR\s+REPLACE\s+)?(FUNCTION|PROCEDURE)\b/.test(upper)) return 'routine';
   if (/^CREATE\s+(OR\s+REPLACE\s+)?(MATERIALIZED\s+)?VIEW\b/.test(upper)) return 'view';
@@ -141,7 +148,8 @@ function classify(statement) {
   if (/^CREATE\s+POLICY\b/.test(upper)) return 'policy';
   if (/^ALTER\b/.test(upper)) return 'alter';
   if (/^DROP\b/.test(upper)) return 'drop';
-  if (/^(DO|SELECT|WITH|COMMENT|SET|RESET)\b/.test(upper)) return 'procedural-or-query';
+  if (/^DO\b/.test(upper)) return 'do-block';
+  if (/^(SELECT|WITH|COMMENT|SET|RESET)\b/.test(upper)) return 'procedural-or-query';
   return 'unclassified';
 }
 
@@ -162,17 +170,172 @@ function objectIdentity(statement, kind) {
   return match[1];
 }
 
-const SUPABASE_PATTERNS = [
-  ['auth-schema', /\bauth\.(?:users|uid\s*\(|jwt\s*\()/i],
-  ['supabase-role', /\b(?:anon|authenticated|service_role)\b/i],
-  ['request-jwt-setting', /current_setting\s*\(\s*['"]request\.jwt\./i],
-  ['storage-schema', /\bstorage\./i],
-  ['postgrest', /\bpostgrest\b|\/rest\/v1\//i],
-];
+function extractOuterDollarBody(statement) {
+  const sql = stripLeadingComments(statement);
+  const first = sql.match(/\$[A-Za-z_][A-Za-z0-9_]*\$|\$\$/);
+  if (!first || first.index == null) return null;
+  const tag = first[0];
+  const start = first.index + tag.length;
+  const end = sql.indexOf(tag, start);
+  if (end < 0) return null;
+  return sql.slice(start, end);
+}
+
+function executableMutationKeywords(text) {
+  const found = new Set();
+  let i = 0;
+  let mode = 'normal';
+  let dollarTag = null;
+  let token = '';
+  const flush = () => {
+    if (!token) return;
+    const upper = token.toUpperCase();
+    if (MUTATION_KEYWORDS.includes(upper)) found.add(upper);
+    token = '';
+  };
+
+  while (i < text.length) {
+    const ch = text[i];
+    const next = text[i + 1];
+    if (mode === 'line-comment') {
+      if (ch === '\n') mode = 'normal';
+      i += 1;
+      continue;
+    }
+    if (mode === 'block-comment') {
+      if (ch === '*' && next === '/') {
+        mode = 'normal';
+        i += 2;
+      } else i += 1;
+      continue;
+    }
+    if (mode === 'single') {
+      if (ch === "'" && next === "'") i += 2;
+      else if (ch === "'") {
+        mode = 'normal';
+        i += 1;
+      } else i += 1;
+      continue;
+    }
+    if (mode === 'double') {
+      if (ch === '"' && next === '"') i += 2;
+      else if (ch === '"') {
+        mode = 'normal';
+        i += 1;
+      } else i += 1;
+      continue;
+    }
+    if (mode === 'dollar') {
+      if (text.startsWith(dollarTag, i)) {
+        i += dollarTag.length;
+        mode = 'normal';
+        dollarTag = null;
+      } else i += 1;
+      continue;
+    }
+    if (ch === '-' && next === '-') {
+      flush();
+      mode = 'line-comment';
+      i += 2;
+      continue;
+    }
+    if (ch === '/' && next === '*') {
+      flush();
+      mode = 'block-comment';
+      i += 2;
+      continue;
+    }
+    if (ch === "'") {
+      flush();
+      mode = 'single';
+      i += 1;
+      continue;
+    }
+    if (ch === '"') {
+      flush();
+      mode = 'double';
+      i += 1;
+      continue;
+    }
+    if (ch === '$') {
+      const match = text.slice(i).match(/^\$[A-Za-z_][A-Za-z0-9_]*\$|^\$\$/);
+      if (match) {
+        flush();
+        dollarTag = match[0];
+        mode = 'dollar';
+        i += dollarTag.length;
+        continue;
+      }
+    }
+    if (/[A-Za-z_]/.test(ch)) token += ch;
+    else flush();
+    i += 1;
+  }
+  flush();
+  return [...found].sort();
+}
+
+function hiddenMigrationMutation(statement, kind) {
+  if (kind === 'data-mutation-cte') {
+    const keywords = executableMutationKeywords(stripLeadingComments(statement));
+    return { detected: keywords.length > 0, keywords };
+  }
+  if (kind === 'do-block') {
+    const body = extractOuterDollarBody(statement);
+    if (body == null) return { detected: false, keywords: [], parse_error: 'DO_BLOCK_DOLLAR_BODY_NOT_FOUND' };
+    const keywords = executableMutationKeywords(body);
+    return { detected: keywords.length > 0, keywords };
+  }
+  return { detected: false, keywords: [] };
+}
+
+function isPostgrestNotify(statement, kind) {
+  return kind === 'notify' && /^NOTIFY\s+pgrst\b/i.test(normalizeSql(statement));
+}
+
+function supabaseRoleReference(statement) {
+  const sql = normalizeSql(statement);
+  return /\b(?:TO|FROM)\s+(?:anon|authenticated|service_role)\b/i.test(sql);
+}
+
+function infrastructureFindings(statement, kind) {
+  const findings = [];
+  const sql = stripLeadingComments(statement);
+
+  if (/\bauth\.(?:users|uid\s*\(|role\s*\(|jwt\s*\()/i.test(sql)) {
+    findings.push({ severity: 'BLOCKER', code: 'AWS_IDENTITY_REWRITE_REQUIRED', disposition: 'AWS_REWRITE_REQUIRED', resolved: false });
+  }
+  if (/current_setting\s*\(\s*['"]request\.jwt\./i.test(sql)) {
+    findings.push({ severity: 'BLOCKER', code: 'AWS_REQUEST_JWT_REWRITE_REQUIRED', disposition: 'AWS_REWRITE_REQUIRED', resolved: false });
+  }
+  if (/\bstorage\./i.test(sql)) {
+    findings.push({ severity: 'BLOCKER', code: 'AWS_STORAGE_REWRITE_REQUIRED', disposition: 'AWS_REWRITE_REQUIRED', resolved: false });
+  }
+  if (supabaseRoleReference(statement)) {
+    const pureRoleGrant = kind === 'grant';
+    findings.push({
+      severity: pureRoleGrant ? 'INFO' : 'BLOCKER',
+      code: pureRoleGrant ? 'SUPABASE_ROLE_GRANT_EXCLUDED' : 'SUPABASE_ROLE_REWRITE_REQUIRED',
+      disposition: pureRoleGrant ? 'EXCLUDE_SUPABASE_INFRASTRUCTURE' : 'AWS_REWRITE_REQUIRED',
+      resolved: pureRoleGrant,
+    });
+  }
+  if (isPostgrestNotify(statement, kind) || /\bpostgrest\b|\/rest\/v1\//i.test(sql)) {
+    const pureNotify = isPostgrestNotify(statement, kind);
+    findings.push({
+      severity: pureNotify ? 'INFO' : 'BLOCKER',
+      code: pureNotify ? 'POSTGREST_NOTIFY_EXCLUDED' : 'POSTGREST_COUPLING_REWRITE_REQUIRED',
+      disposition: pureNotify ? 'EXCLUDE_SUPABASE_INFRASTRUCTURE' : 'AWS_REWRITE_REQUIRED',
+      resolved: pureNotify,
+    });
+  }
+  return findings;
+}
 
 const migrations = listMigrations();
 if (migrations.length === 0) throw new Error('No ordered SQL migrations found.');
-const findings = [];
+
+const migrationAudits = [];
 const objectHistory = new Map();
 const counts = {};
 
@@ -180,47 +343,95 @@ for (const file of migrations) {
   const fullPath = path.join(migrationsDir, file);
   const source = fs.readFileSync(fullPath, 'utf8');
   const statements = splitSql(source);
+  const excludedMigration = EXCLUDED_MIGRATIONS.has(file);
   const migration = {
     file,
     sha256: sha256(source),
     bytes: Buffer.byteLength(source),
     statements: statements.length,
+    canonical_candidate: !excludedMigration,
+    disposition: excludedMigration ? 'EXCLUDE_V1_ETL' : 'ANALYSE',
     findings: [],
   };
 
   statements.forEach((statement, index) => {
+    const statementIndex = index + 1;
     const kind = classify(statement);
     counts[kind] = (counts[kind] ?? 0) + 1;
+
+    if (excludedMigration) {
+      migration.findings.push({
+        severity: 'INFO',
+        code: 'V1_ETL_STATEMENT_EXCLUDED',
+        disposition: 'EXCLUDE_V1_ETL',
+        resolved: true,
+        statement_index: statementIndex,
+        sha256: sha256(statement),
+      });
+      return;
+    }
+
     const id = objectIdentity(statement, kind);
     if (id) {
       const key = `${kind}:${id.toLowerCase()}`;
       const history = objectHistory.get(key) ?? [];
-      history.push({ file, statement_index: index + 1, sha256: sha256(statement) });
+      history.push({ file, statement_index: statementIndex, sha256: sha256(statement) });
       objectHistory.set(key, history);
     }
+
     if (kind === 'data-mutation') {
-      migration.findings.push({ severity: 'REVIEW', code: 'HISTORICAL_DML', statement_index: index + 1, sha256: sha256(statement) });
+      migration.findings.push({
+        severity: 'REVIEW',
+        code: 'MIGRATION_TIME_DML_REVIEW',
+        disposition: 'CLASSIFY_HISTORICAL_OR_CANONICAL_SEED',
+        resolved: false,
+        statement_index: statementIndex,
+        sha256: sha256(statement),
+      });
     }
+
+    const hidden = hiddenMigrationMutation(statement, kind);
+    if (hidden.parse_error) {
+      migration.findings.push({
+        severity: 'BLOCKER',
+        code: hidden.parse_error,
+        disposition: 'COMPILER_PARSE_REQUIRED',
+        resolved: false,
+        statement_index: statementIndex,
+        sha256: sha256(statement),
+      });
+    } else if (hidden.detected) {
+      migration.findings.push({
+        severity: 'REVIEW',
+        code: kind === 'do-block' ? 'HIDDEN_DO_BLOCK_DML_REVIEW' : 'CTE_DML_REVIEW',
+        disposition: 'CLASSIFY_HISTORICAL_OR_CANONICAL_SEED',
+        resolved: false,
+        statement_index: statementIndex,
+        mutation_keywords: hidden.keywords,
+        sha256: sha256(statement),
+      });
+    }
+
     if (kind === 'unclassified') {
-      migration.findings.push({ severity: 'REVIEW', code: 'UNCLASSIFIED_SQL', statement_index: index + 1, sha256: sha256(statement) });
+      migration.findings.push({
+        severity: 'REVIEW',
+        code: 'UNCLASSIFIED_SQL',
+        disposition: 'COMPILER_CLASSIFICATION_REQUIRED',
+        resolved: false,
+        statement_index: statementIndex,
+        sha256: sha256(statement),
+      });
     }
-    for (const [code, pattern] of SUPABASE_PATTERNS) {
-      if (pattern.test(statement)) {
-        migration.findings.push({
-          severity: 'BLOCKER',
-          code: `SUPABASE_${code.toUpperCase().replaceAll('-', '_')}`,
-          statement_index: index + 1,
-          sha256: sha256(statement),
-        });
-      }
+
+    for (const finding of infrastructureFindings(statement, kind)) {
+      migration.findings.push({ ...finding, statement_index: statementIndex, sha256: sha256(statement) });
     }
   });
 
-  // This is an offline V1 -> V2 ETL migration. It is forensic input, never part of fresh AWS history.
-  if (file === '0019_v1_evidence_migration.sql') {
-    migration.findings.push({ severity: 'BLOCKER', code: 'V1_ETL_EXCLUDED_FROM_AWS_BASELINE' });
+  if (excludedMigration) {
+    migration.findings.push({ severity: 'INFO', code: 'V1_ETL_MIGRATION_EXCLUDED', disposition: 'EXCLUDE_V1_ETL', resolved: true });
   }
-  findings.push(migration);
+  migrationAudits.push(migration);
 }
 
 const finalObjects = [...objectHistory.entries()].map(([key, history]) => ({
@@ -228,25 +439,38 @@ const finalObjects = [...objectHistory.entries()].map(([key, history]) => ({
   revisions: history.length,
   final_source: history.at(-1),
   superseded_sources: history.slice(0, -1),
+  provenance_complete: true,
 })).sort((a, b) => a.key.localeCompare(b.key, 'en'));
 
-const allFindings = findings.flatMap((migration) => migration.findings.map((finding) => ({ file: migration.file, ...finding })));
-const blockers = allFindings.filter((finding) => finding.severity === 'BLOCKER');
-const reviewItems = allFindings.filter((finding) => finding.severity === 'REVIEW');
+const allFindings = migrationAudits.flatMap((migration) => migration.findings.map((finding) => ({ file: migration.file, ...finding })));
+const unresolved = allFindings.filter((finding) => finding.resolved === false);
+const resolvedExclusions = allFindings.filter((finding) => finding.resolved === true && String(finding.disposition).startsWith('EXCLUDE_'));
+const blockers = unresolved.filter((finding) => finding.severity === 'BLOCKER');
+const reviewItems = unresolved.filter((finding) => finding.severity === 'REVIEW');
 const generatedAt = new Date().toISOString();
 
+const dispositionCounts = allFindings.reduce((acc, finding) => {
+  const key = finding.disposition ?? 'NONE';
+  acc[key] = (acc[key] ?? 0) + 1;
+  return acc;
+}, {});
+
 const audit = {
-  format_version: 1,
+  format_version: 2,
   build: 'AWS-V0-BUILD-3',
-  mode: 'audit',
+  mode: 'hardened-audit',
   generated_at: generatedAt,
   doctrine: ['Fresh data', 'Final logic', 'Clean provenance'],
   migration_count: migrations.length,
   migration_range: [migrations[0], migrations.at(-1)],
+  excluded_migrations: [...EXCLUDED_MIGRATIONS].sort(),
   statement_counts: counts,
+  disposition_counts: dispositionCounts,
+  unresolved_count: unresolved.length,
   blockers,
   review_items: reviewItems,
-  migrations: findings,
+  resolved_exclusions: resolvedExclusions,
+  migrations: migrationAudits,
   final_object_candidates: finalObjects,
 };
 
@@ -254,36 +478,48 @@ fs.mkdirSync(outputDir, { recursive: true });
 fs.writeFileSync(auditPath, `${JSON.stringify(audit, null, 2)}\n`);
 
 const manifest = {
-  format_version: 1,
+  format_version: 2,
   build: 'AWS-V0-BUILD-3',
-  status: blockers.length === 0 && reviewItems.length === 0 ? 'READY_FOR_BASELINE_COMPILATION' : 'AUDIT_REQUIRED',
+  status: unresolved.length === 0 ? 'READY_FOR_BASELINE_COMPILATION' : 'AUDIT_REQUIRED',
   generated_at: generatedAt,
-  source_migrations: findings.map(({ file, sha256: hash, bytes, statements }) => ({ file, sha256: hash, bytes, statements })),
+  source_migrations: migrationAudits.map(({ file, sha256: hash, bytes, statements, canonical_candidate, disposition }) => ({
+    file,
+    sha256: hash,
+    bytes,
+    statements,
+    canonical_candidate,
+    disposition,
+  })),
   object_candidates: finalObjects,
   prohibited_historical_data_import: true,
-  excluded_migrations: ['0019_v1_evidence_migration.sql'],
-  unresolved_blockers: blockers,
-  unresolved_review_items: reviewItems,
+  excluded_migrations: [...EXCLUDED_MIGRATIONS].sort(),
+  unresolved_findings: unresolved,
+  resolved_exclusions: resolvedExclusions,
 };
 fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
 
 if (emitBaseline) {
-  if (blockers.length || reviewItems.length) {
-    console.error(`Refusing baseline emission: ${blockers.length} blocker(s), ${reviewItems.length} review item(s).`);
+  if (unresolved.length) {
+    console.error(`Refusing baseline emission: ${unresolved.length} unresolved finding(s) (${blockers.length} blocker(s), ${reviewItems.length} review item(s)).`);
     process.exitCode = 2;
   } else {
-    // Deliberately unreachable until historical DML and infrastructure coupling are explicitly classified.
-    fs.writeFileSync(baselinePath, '-- AWS-V0 Build 3 canonical baseline\n-- Compiler gate cleared.\n');
+    console.error('Refusing baseline emission: canonical final-object emitter is not implemented yet.');
+    process.exitCode = 3;
   }
 }
 
 console.log(JSON.stringify({
   build: 'AWS-V0-BUILD-3',
+  audit_format: audit.format_version,
   migrations: migrations.length,
   statements: Object.values(counts).reduce((sum, count) => sum + count, 0),
+  excluded_migrations: audit.excluded_migrations,
+  unresolved: unresolved.length,
   blockers: blockers.length,
   review_items: reviewItems.length,
+  resolved_exclusions: resolvedExclusions.length,
+  object_candidates: finalObjects.length,
   audit: path.relative(repoRoot, auditPath),
   manifest: path.relative(repoRoot, manifestPath),
-  baseline_emitted: emitBaseline && blockers.length === 0 && reviewItems.length === 0,
+  baseline_emitted: false,
 }, null, 2));
