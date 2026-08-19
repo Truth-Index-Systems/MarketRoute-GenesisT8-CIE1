@@ -59,6 +59,7 @@ export class MrAwsV0DatabaseStack extends Stack {
       clusterIdentifier: "marketroute-aws-v0",
       engine: rds.DatabaseClusterEngine.auroraPostgres({ version: ENGINE_VERSION }),
       writer: rds.ClusterInstance.serverlessV2("writer", {
+        availabilityZone: DATABASE_AZS[0],
         publiclyAccessible: false,
       }),
       credentials: rds.Credentials.fromSecret(adminSecret),
