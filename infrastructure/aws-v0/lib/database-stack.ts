@@ -9,6 +9,7 @@ const ENGINE_VERSION = rds.AuroraPostgresEngineVersion.VER_16_8;
 const MIN_ACU = 0;
 const MAX_ACU = 2;
 const AUTO_PAUSE = Duration.minutes(5);
+const DATABASE_AZS = ["eu-west-2a", "eu-west-2b"];
 
 /**
  * Build 2: fresh Aurora PostgreSQL foundation only.
@@ -23,7 +24,9 @@ export class MrAwsV0DatabaseStack extends Stack {
 
     const vpc = new ec2.Vpc(this, "DatabaseVpc", {
       ipAddresses: ec2.IpAddresses.cidr("10.42.0.0/20"),
-      maxAzs: 2,
+      // Pin the two London AZ aliases used by this fixed account/region so CDK
+      // synthesis remains fully offline and never requires AWS credentials.
+      availabilityZones: DATABASE_AZS,
       natGateways: 0,
       subnetConfiguration: [
         {
