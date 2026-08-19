@@ -1,0 +1,28 @@
+{
+  "name": "@marketroute/aws-v0",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": "22.x"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "synth": "npm run build && cdk synth --quiet",
+    "validate:source": "node scripts/validate-source.mjs",
+    "validate:synth": "node scripts/validate-synth.mjs",
+    "check": "npm run validate:source && npm run typecheck && npm run synth && npm run validate:synth",
+    "deploy:identity": "npm run build && cdk deploy MrAwsV0IdentityStack --require-approval never",
+    "deploy:all": "npm run build && cdk deploy --all --require-approval never",
+    "destroy:all": "npm run build && cdk destroy --all --force"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "2.265.0",
+    "constructs": "10.8.1"
+  },
+  "devDependencies": {
+    "@types/node": "22.13.10",
+    "aws-cdk": "2.1137.0",
+    "typescript": "5.8.2"
+  }
+}
