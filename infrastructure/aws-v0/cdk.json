@@ -1,0 +1,13 @@
+{
+  "app": "node dist/bin/aws-v0.js",
+  "context": {
+    "marketRouteAwsV0": {
+      "account": "801132668416",
+      "region": "eu-west-2",
+      "project": "MarketRoute",
+      "environment": "aws-v0",
+      "owner": "TruthIndexSystems",
+      "costCentre": "MarketRoute"
+    }
+  }
+}
