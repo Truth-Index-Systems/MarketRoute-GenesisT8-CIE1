@@ -18,6 +18,9 @@ on:
 permissions:
   contents: read
 
+env:
+  AWS_V0_GITHUB_SUBJECT: "repo:Truth-Index-Systems@254102504/MarketRoute-GenesisT8-CIE1@1333375217:ref:refs/heads/aws-v0"
+
 jobs:
   validate:
     runs-on: ubuntu-latest
@@ -69,4 +72,4 @@ jobs:
         run: aws sts get-caller-identity
       - name: Deploy AWS V0 stacks
         working-directory: infrastructure/aws-v0
-        run: npm run deploy:all
+        run: npm run deploy:all -- -c githubSubject="$AWS_V0_GITHUB_SUBJECT"
