@@ -14,7 +14,7 @@ async function resolveWorkspaceSession():Promise<WorkspaceSession>{
   let session:MarketRouteSession|null=null;
   try{session=await sessionServiceFromEnvironment().authenticate(access);}catch{if(refresh)redirect("/api/session/refresh?next=/app");redirect("/login?next=/app");}
   if(!session)redirect("/login?next=/app");
-  if(session.memberships.length===0)redirect("/onboarding");
+  if(session.memberships.length===0)redirect("/discover");
   const service=sessionServiceFromEnvironment();
   const workspace=service.selectWorkspace(session,jar.get(ORG_COOKIE)?.value);
   const activation=await service.activationStatus(access,workspace.organisationId);

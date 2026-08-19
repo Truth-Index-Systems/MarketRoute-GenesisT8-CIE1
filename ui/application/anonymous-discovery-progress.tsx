@@ -29,7 +29,7 @@ export function AnonymousDiscoveryProgress({initial}:{initial:AnonymousDiscovery
   const active=state.pipeline.find((stage:AnonymousPipelineStage)=>stage.status==="ACTIVE"||stage.status==="ATTENTION")??state.pipeline[state.pipeline.length-1];const complete=state.pipeline.filter((stage:AnonymousPipelineStage)=>stage.status==="COMPLETE").length;
   return <div className="mr-discovery-progress" aria-live="polite">
     <section className="mr-discovery-progress__hero"><div><span>YOUR MARKETROUTE</span><h1>Finding opportunities for <em>{state.companyName}</em></h1><p>{state.currentMessage}</p></div><div className="mr-discovery-progress__pulse"><i className={active?.status==="ATTENTION"?"is-attention":""}/><strong>{active?.label??"Discovery saved"}</strong><small>{complete} of {state.pipeline.length} stages complete</small></div></section>
-    <MarketRouteNarrativeCard narrative={state.narrative} eyebrow="WHAT I’VE FOUND"/>
+    <MarketRouteNarrativeCard narrative={state.narrative} eyebrow="LIVE DISCOVERY"/>
     <section className="mr-discovery-pipeline">{state.pipeline.map((stage:AnonymousPipelineStage,index:number)=><article className={`mr-discovery-stage is-${stage.status.toLowerCase()}`} key={stage.key}><div className="mr-discovery-stage__rail"><span>{stage.status==="COMPLETE"?<Icon name="check" size={14}/>:String(index+1).padStart(2,"0")}</span>{index<state.pipeline.length-1&&<i/>}</div><div className="mr-discovery-stage__body"><header><div><small>{stateLabel(stage.status)}</small><h2>{stage.label}</h2></div>{stage.count&&<strong>{stage.count}</strong>}</header><p>{stage.detail}</p></div></article>)}</section>
 
     <section className="mr-discovery-free-eight">

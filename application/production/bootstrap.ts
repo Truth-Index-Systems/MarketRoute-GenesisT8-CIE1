@@ -48,18 +48,19 @@ export async function runWorkspaceActivationOnce(workerId=`ACTIVATION:${randomUU
       for(const company of discovery.companies){if(candidates.some(existing=>existing.domain===company.domain))continue;candidates.push(company);webCandidateCount++;if(candidates.length>=desiredCount)break;}
     }
     if(candidates.length===0)throw new Error("MARKETROUTE_TARGET_DISCOVERY_EMPTY");
-    const companyIds:string[]=[];
+    const companyIds:string[]=[];let bankMembershipsAdded=0;let bankRegistrationFailures=0;
     const bankCandidateCount=candidates.length-webCandidateCount;
     const strategy=webCandidateCount>0?(bankCandidateCount>0?"GENESIS_BANK_PLUS_WEB":"WEB_FALLBACK"):"GENESIS_BANK_ONLY";
     await repo.stage(job.job_id,workerId,"LINKING_COMPANIES",72,{strategy,totalCount:candidates.length,linkedCount:0,bankCandidateCount,webCandidateCount});
     for(const [index,company] of candidates.entries()){
-      companyIds.push(await repo.ensureCompany(job.organisation_id,campaignId,company));
+      const companyId=await repo.ensureCompany(job.organisation_id,campaignId,company);companyIds.push(companyId);
+      try{bankMembershipsAdded+=Number(await repo.registerBankCompany(companyId,industryKeys,`DEMAND_FED_${activationOrigin}`))||0;}catch{bankRegistrationFailures++;}
       if((index+1)%3===0||index===candidates.length-1){
-        await repo.stage(job.job_id,workerId,"LINKING_COMPANIES",72+Math.round(18*(index+1)/candidates.length),{strategy,totalCount:candidates.length,linkedCount:index+1,bankCandidateCount,webCandidateCount});
+        await repo.stage(job.job_id,workerId,"LINKING_COMPANIES",72+Math.round(18*(index+1)/candidates.length),{strategy,totalCount:candidates.length,linkedCount:index+1,bankCandidateCount,webCandidateCount,bankMembershipsAdded,bankRegistrationFailures});
       }
     }
-    await repo.stage(job.job_id,workerId,"FINALISING",94,{campaignId,targetCompanyCount:companyIds.length,strategy});
-    const result={campaignId,genomeSnapshotId:persisted.genomeSnapshotId,semanticCompleteness:persisted.semanticCompleteness,targetCompanyCount:companyIds.length,targetCompanyIds:companyIds,discovery:{strategy,desiredCount,minimumBankTargets,industryKeys,countryCodes,bankCandidateCount,webCandidateCount,web:webMetadata}};
+    await repo.stage(job.job_id,workerId,"FINALISING",94,{campaignId,targetCompanyCount:companyIds.length,strategy,bankMembershipsAdded,bankRegistrationFailures});
+    const result={campaignId,genomeSnapshotId:persisted.genomeSnapshotId,semanticCompleteness:persisted.semanticCompleteness,targetCompanyCount:companyIds.length,targetCompanyIds:companyIds,discovery:{strategy,desiredCount,minimumBankTargets,industryKeys,countryCodes,bankCandidateCount,webCandidateCount,bankMembershipsAdded,bankRegistrationFailures,web:webMetadata}};
     await repo.complete(job.job_id,workerId,result,new Date().toISOString());
     return{status:"SUCCEEDED" as const,jobId:job.job_id,...result};
   }catch(error){
@@ -93,14 +94,15 @@ export async function runAnonymousDiscoveryExtensionOnce(workerId=`ANON_EXTENSIO
       webMetadata=discovery.metadata;
       for(const company of discovery.companies){const d=canonicalDomain(company.domain);if(!d||d===sellerDomain||existing.has(d)||candidates.some(c=>c.domain===d))continue;candidates.push({...company,domain:d});webCandidateCount++;if(candidates.length>=desired)break;}
     }
-    let linkedCount=0;let finalScoped=job.scoped_count;
+    let linkedCount=0;let finalScoped=job.scoped_count;let bankMembershipsAdded=0;let bankRegistrationFailures=0;
     for(const company of candidates){
       const linked=await repo.linkAnonymousExtensionCompany(job.job_id,workerId,company,new Date().toISOString());
       if(!linked)break;
       finalScoped=linked.scoped_count;
+      try{bankMembershipsAdded+=Number(await repo.registerBankCompany(linked.company_id,industryKeys,"DEMAND_FED_ANONYMOUS_REFILL"))||0;}catch{bankRegistrationFailures++;}
       if(linked.inserted_scope){linkedCount++;existing.add(canonicalDomain(company.domain));}
     }
-    const completed=await repo.completeAnonymousExtension(job.job_id,workerId,{linkedCount,bankCandidateCount:Math.max(0,candidates.length-webCandidateCount),webCandidateCount,provider:webMetadata,scopedCount:finalScoped,readyDeficitBefore:job.remaining_count,readyTarget:job.target_count},new Date().toISOString());
+    const completed=await repo.completeAnonymousExtension(job.job_id,workerId,{linkedCount,bankCandidateCount:Math.max(0,candidates.length-webCandidateCount),webCandidateCount,bankMembershipsAdded,bankRegistrationFailures,provider:webMetadata,scopedCount:finalScoped,readyDeficitBefore:job.remaining_count,readyTarget:job.target_count},new Date().toISOString());
     return{status:"SUCCEEDED" as const,jobId:job.job_id,linkedCount,completion:completed};
   }catch(error){
     const code=marketrouteErrorCode(error,"MARKETROUTE_ANONYMOUS_EXTENSION_FAILED");
@@ -133,9 +135,9 @@ export async function runPaidCampaignRefillOnce(workerId=`PAID_REFILL:${randomUU
       webMetadata=discovery.metadata;
       for(const company of discovery.companies){const d=canonicalDomain(company.domain);if(!d||d===sellerDomain||existing.has(d)||candidates.some(c=>c.domain===d))continue;candidates.push({...company,domain:d});webCandidateCount++;if(candidates.length>=desired)break;}
     }
-    let linkedCount=0;let finalScoped=job.scoped_count;
-    for(const company of candidates){const linked=await repo.linkPaidRefillCompany(job.job_id,workerId,company,new Date().toISOString());if(!linked)break;finalScoped=linked.scoped_count;if(linked.inserted_scope){linkedCount++;existing.add(canonicalDomain(company.domain));}}
-    const completed=await repo.completePaidRefill(job.job_id,workerId,{linkedCount,bankCandidateCount:Math.max(0,candidates.length-webCandidateCount),webCandidateCount,provider:webMetadata,scopedCount:finalScoped,readyDeficitBefore:job.remaining_count,readyTarget:job.target_count},new Date().toISOString());
+    let linkedCount=0;let finalScoped=job.scoped_count;let bankMembershipsAdded=0;let bankRegistrationFailures=0;
+    for(const company of candidates){const linked=await repo.linkPaidRefillCompany(job.job_id,workerId,company,new Date().toISOString());if(!linked)break;finalScoped=linked.scoped_count;try{bankMembershipsAdded+=Number(await repo.registerBankCompany(linked.company_id,industryKeys,"DEMAND_FED_PAID_REFILL"))||0;}catch{bankRegistrationFailures++;}if(linked.inserted_scope){linkedCount++;existing.add(canonicalDomain(company.domain));}}
+    const completed=await repo.completePaidRefill(job.job_id,workerId,{linkedCount,bankCandidateCount:Math.max(0,candidates.length-webCandidateCount),webCandidateCount,bankMembershipsAdded,bankRegistrationFailures,provider:webMetadata,scopedCount:finalScoped,readyDeficitBefore:job.remaining_count,readyTarget:job.target_count},new Date().toISOString());
     return{status:"SUCCEEDED" as const,jobId:job.job_id,linkedCount,completion:completed};
   }catch(error){const code=marketrouteErrorCode(error,"MARKETROUTE_PAID_REFILL_FAILED");if(job)await repo.failPaidRefill(job.job_id,workerId,code,retryable(code),new Date().toISOString()).catch(()=>undefined);return{status:"FAILED" as const,jobId:job?.job_id??null,error:code};}
 }
@@ -155,5 +157,7 @@ export async function runWorkspaceActivationCron(max=2){
   const totalFailed=failed+extensionFailed+paidRefillFailed;
   const status=totalProcessed===0?"IDLE":totalFailed===0?"SUCCEEDED":totalFailed===totalProcessed?"FAILED":"PARTIAL";
   const errorCode=results.find(result=>result.status==="FAILED")?.error??extensionResults.find(result=>result.status==="FAILED")?.error??paidRefillResults.find(result=>result.status==="FAILED")?.error??null;
-  return{status,processed:results.length,succeeded,failed,errorCode,results,extensionProcessed:extensionResults.length,extensionFailed,extensionResults,paidRefillProcessed:paidRefillResults.length,paidRefillFailed,paidRefillResults};
+  let genesisBankRepair:{inserted:number;error:string|null}={inserted:0,error:null};
+  try{genesisBankRepair={inserted:Number(await productionActivationRepositoryFromEnvironment().backfillDemandFedBank(250))||0,error:null};}catch(error){genesisBankRepair={inserted:0,error:marketrouteErrorCode(error,"MARKETROUTE_GENESIS_BANK_REPAIR_FAILED")};}
+  return{status,processed:results.length,succeeded,failed,errorCode,results,extensionProcessed:extensionResults.length,extensionFailed,extensionResults,paidRefillProcessed:paidRefillResults.length,paidRefillFailed,paidRefillResults,genesisBankRepair};
 }

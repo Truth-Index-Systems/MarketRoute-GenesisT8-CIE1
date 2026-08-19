@@ -1,5 +1,5 @@
 {
-  "version": "MRV2-RELEASE-CERTIFICATION-1.3.0",
+  "version": "MRV2-RELEASE-CERTIFICATION-1.4.0",
   "build": 18,
   "candidate": "MarketRoute V2 / Genesis T8",
   "sourceBuild": 17,
@@ -23,10 +23,10 @@
     "A canonical application read proves current authority lineage",
     "A current claim provenance read reaches source and evidence",
     "Queued engagement is blocked if current execution authority is lost",
-    "Operational migrations through 0064 are applied in order",
+    "Operational migrations through 0065 are applied in order",
     "Production environment passes the Build 18 preflight"
   ],
-  "latestOperationalMigration": 64,
+  "latestOperationalMigration": 65,
   "operationalMigrations": [
     {
       "migration": 60,
@@ -57,6 +57,12 @@
       "file": "0064_paid_campaign_refill_claim_ambiguity_hotfix.sql",
       "authorityWriter": false,
       "purpose": "Paid refill claim output-parameter ambiguity removal"
+    },
+    {
+      "migration": 65,
+      "file": "0065_human_discovery_demand_fed_genesis_bank.sql",
+      "authorityWriter": false,
+      "purpose": "Human discovery narration, demand-fed Genesis identity bank reuse, activation-lineage backfill and legacy onboarding removal"
     }
   ]
 }

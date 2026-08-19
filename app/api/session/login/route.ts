@@ -6,5 +6,30 @@ import { sameOriginOrThrow,safeReturnPath } from "@/app/app/_lib/security";
 import { ACCESS_COOKIE,REFRESH_COOKIE,ORG_COOKIE } from "@/app/app/_lib/session";
 
 export async function POST(request:Request){
-  try{sameOriginOrThrow(request);const form=await request.formData();const email=String(form.get("email")??"");const password=String(form.get("password")??"");const next=safeReturnPath(form.get("next"),"/app");const claim=String(form.get("claim")??"")==="discovery";const result=await sessionServiceFromEnvironment().signIn(email,password);const jar=await cookies();const discoverySecret=claim?jar.get(ANONYMOUS_DISCOVERY_COOKIE)?.value:null;let claimedOrg:string|null=null;if(claim&&discoverySecret)claimedOrg=(await anonymousDiscoveryServiceFromEnvironment().claim(result.auth.accessToken,discoverySecret)).organisationId;const target=claimedOrg?next:result.session.memberships.length===0?"/onboarding":next;const response=NextResponse.redirect(new URL(target,request.url),303);const secure=new URL(request.url).protocol==="https:";response.cookies.set(ACCESS_COOKIE,result.auth.accessToken,{httpOnly:true,sameSite:"lax",secure,path:"/",maxAge:result.auth.expiresIn});response.cookies.set(REFRESH_COOKIE,result.auth.refreshToken,{httpOnly:true,sameSite:"lax",secure,path:"/",maxAge:60*60*24*30});const organisationId=claimedOrg??result.session.memberships[0]?.organisationId;if(organisationId)response.cookies.set(ORG_COOKIE,organisationId,{httpOnly:true,sameSite:"lax",secure,path:"/",maxAge:60*60*24*365});return response;}catch(error){const message=encodeURIComponent(error instanceof Error?error.message:"MARKETROUTE_LOGIN_FAILED");return NextResponse.redirect(new URL(`/login?error=${message}`,request.url),303);}
+  let claim=false;let next="/app";
+  try{
+    sameOriginOrThrow(request);
+    const form=await request.formData();
+    const email=String(form.get("email")??"");
+    const password=String(form.get("password")??"");
+    next=safeReturnPath(form.get("next"),"/app");
+    claim=String(form.get("claim")??"")==="discovery";
+    const result=await sessionServiceFromEnvironment().signIn(email,password);
+    const jar=await cookies();
+    const discoverySecret=claim?jar.get(ANONYMOUS_DISCOVERY_COOKIE)?.value:null;
+    if(claim&&!discoverySecret)throw new Error("MARKETROUTE_DISCOVERY_SESSION_NOT_FOUND");
+    let claimedOrg:string|null=null;
+    if(claim&&discoverySecret)claimedOrg=(await anonymousDiscoveryServiceFromEnvironment().claim(result.auth.accessToken,discoverySecret)).organisationId;
+    const target=claimedOrg?next:result.session.memberships.length===0?"/discover":next;
+    const response=NextResponse.redirect(new URL(target,request.url),303);
+    const secure=new URL(request.url).protocol==="https:";
+    response.cookies.set(ACCESS_COOKIE,result.auth.accessToken,{httpOnly:true,sameSite:"lax",secure,path:"/",maxAge:result.auth.expiresIn});
+    response.cookies.set(REFRESH_COOKIE,result.auth.refreshToken,{httpOnly:true,sameSite:"lax",secure,path:"/",maxAge:60*60*24*30});
+    const organisationId=claimedOrg??result.session.memberships[0]?.organisationId;
+    if(organisationId)response.cookies.set(ORG_COOKIE,organisationId,{httpOnly:true,sameSite:"lax",secure,path:"/",maxAge:60*60*24*365});
+    return response;
+  }catch(error){
+    const message=encodeURIComponent(error instanceof Error?error.message:"MARKETROUTE_LOGIN_FAILED");
+    return NextResponse.redirect(new URL(`/login?error=${message}${claim?`&claim=discovery&next=${encodeURIComponent(next)}`:""}`,request.url),303);
+  }
 }
