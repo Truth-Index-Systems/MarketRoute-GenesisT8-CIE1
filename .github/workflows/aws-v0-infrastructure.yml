@@ -48,7 +48,9 @@ jobs:
           npm run validate:synth
 
   deploy:
-    if: github.ref == 'refs/heads/aws-v0' && vars.AWS_V0_DEPLOY_ROLE_ARN != ''
+    # Explicit safety latch: validation always runs, but AWS deployment is disabled
+    # until both repository variables are intentionally present.
+    if: github.ref == 'refs/heads/aws-v0' && vars.AWS_V0_DEPLOY_ROLE_ARN != '' && vars.AWS_V0_AUTODEPLOY_ENABLED == 'true'
     needs: validate
     runs-on: ubuntu-latest
     permissions:
