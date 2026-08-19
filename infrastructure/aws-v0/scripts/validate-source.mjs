@@ -12,6 +12,7 @@ function read(relative) {
 
 const required = [
   "infrastructure/aws-v0/cdk.json",
+  "infrastructure/aws-v0/cdk.context.json",
   "infrastructure/aws-v0/bin/aws-v0.ts",
   "infrastructure/aws-v0/lib/config.ts",
   "infrastructure/aws-v0/lib/identity-stack.ts",
@@ -39,6 +40,14 @@ if (!app.includes("new MrAwsV0DatabaseStack")) throw new Error("Build 2 database
 const tags = read("infrastructure/aws-v0/lib/tags.ts");
 for (const key of ["Project", "Environment", "Owner", "ManagedBy", "CostCentre"]) {
   if (!tags.includes(key)) throw new Error(`Mandatory tag missing from CDK source: ${key}`);
+}
+
+const contextPath = path.join(repo, "infrastructure/aws-v0/cdk.context.json");
+const context = JSON.parse(fs.readFileSync(contextPath, "utf8"));
+const azKey = "availability-zones:account=801132668416:region=eu-west-2";
+const expectedAzs = ["eu-west-2a", "eu-west-2b", "eu-west-2c", "eu-west-2d"];
+if (JSON.stringify(context[azKey]) !== JSON.stringify(expectedAzs)) {
+  throw new Error(`Build 2 CDK availability-zone context mismatch for ${azKey}`);
 }
 
 const database = read("infrastructure/aws-v0/lib/database-stack.ts");
