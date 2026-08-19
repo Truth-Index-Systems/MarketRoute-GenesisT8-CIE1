@@ -1,0 +1,72 @@
+name: AWS V0 Infrastructure
+
+on:
+  pull_request:
+    paths:
+      - "infrastructure/aws-v0/**"
+      - "database/aws/**"
+      - ".github/workflows/aws-v0-infrastructure.yml"
+  push:
+    branches:
+      - aws-v0
+    paths:
+      - "infrastructure/aws-v0/**"
+      - "database/aws/**"
+      - ".github/workflows/aws-v0-infrastructure.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          package-manager-cache: false
+      - name: Install AWS V0 IaC dependencies
+        working-directory: infrastructure/aws-v0
+        run: npm install --no-audit --no-fund
+      - name: Validate and synthesize
+        working-directory: infrastructure/aws-v0
+        run: npm run check
+
+  deploy:
+    if: github.ref == 'refs/heads/aws-v0' && vars.AWS_V0_DEPLOY_ROLE_ARN != ''
+    needs: validate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          package-manager-cache: false
+      - name: Install AWS V0 IaC dependencies
+        working-directory: infrastructure/aws-v0
+        run: npm install --no-audit --no-fund
+      - name: Configure short-lived AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6.2.3
+        with:
+          role-to-assume: ${{ vars.AWS_V0_DEPLOY_ROLE_ARN }}
+          role-session-name: MarketRouteAwsV0-${{ github.run_id }}
+          aws-region: eu-west-2
+          allowed-account-ids: "801132668416"
+      - name: Confirm AWS caller
+        run: aws sts get-caller-identity
+      - name: Deploy AWS V0 stacks
+        working-directory: infrastructure/aws-v0
+        run: npm run deploy:all
