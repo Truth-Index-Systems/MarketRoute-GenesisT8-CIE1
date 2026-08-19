@@ -1,6 +1,11 @@
 name: AWS V0 Repository Identity
 
 on:
+  push:
+    branches:
+      - aws-v0
+    paths:
+      - ".github/workflows/aws-v0-repository-identity.yml"
   workflow_dispatch:
 
 permissions:
