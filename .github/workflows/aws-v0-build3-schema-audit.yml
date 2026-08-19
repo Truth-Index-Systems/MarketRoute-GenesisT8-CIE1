@@ -30,10 +30,15 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Syntax-check compiler
-        run: node --check database/aws/compile-canonical-baseline.mjs
+      - name: Syntax-check Build 3 compiler and regression test
+        run: |
+          node --check database/aws/compile-canonical-baseline.mjs
+          node --check database/aws/test-compiler-hardening.mjs
 
-      - name: Run Build 3 audit
+      - name: Prove compiler hardening invariants
+        run: node database/aws/test-compiler-hardening.mjs
+
+      - name: Run Build 3 hardened audit
         run: node database/aws/compile-canonical-baseline.mjs
 
       - name: Validate generated audit and manifest
@@ -42,23 +47,40 @@ jobs:
           const fs = require('node:fs');
           const audit = JSON.parse(fs.readFileSync('database/aws/build3_schema_audit.json', 'utf8'));
           const manifest = JSON.parse(fs.readFileSync('database/aws/0001_marketroute_aws_schema_manifest.json', 'utf8'));
+
           if (audit.build !== 'AWS-V0-BUILD-3') throw new Error('unexpected audit build');
+          if (audit.format_version !== 2 || audit.mode !== 'hardened-audit') throw new Error('hardened audit v2 required');
           if (!Number.isInteger(audit.migration_count) || audit.migration_count < 1) throw new Error('no migrations inventoried');
-          if (manifest.build !== 'AWS-V0-BUILD-3') throw new Error('unexpected manifest build');
+          if (manifest.build !== 'AWS-V0-BUILD-3' || manifest.format_version !== 2) throw new Error('unexpected manifest format');
           if (manifest.prohibited_historical_data_import !== true) throw new Error('historical data prohibition missing');
           if (!manifest.excluded_migrations.includes('0019_v1_evidence_migration.sql')) throw new Error('V1 ETL exclusion missing');
+
+          const v1 = manifest.source_migrations.find((m) => m.file === '0019_v1_evidence_migration.sql');
+          if (!v1 || v1.canonical_candidate !== false || v1.disposition !== 'EXCLUDE_V1_ETL') {
+            throw new Error('V1 ETL is not structurally excluded from canonical candidates');
+          }
+          if (audit.final_object_candidates.some((o) => o.final_source?.file === '0019_v1_evidence_migration.sql')) {
+            throw new Error('V1 ETL object leaked into canonical candidate set');
+          }
+
           console.log(JSON.stringify({
             migration_count: audit.migration_count,
             migration_range: audit.migration_range,
             statement_counts: audit.statement_counts,
+            disposition_counts: audit.disposition_counts,
+            unresolved: audit.unresolved_count,
             blockers: audit.blockers.length,
             review_items: audit.review_items.length,
+            resolved_exclusions: audit.resolved_exclusions.length,
             object_candidates: audit.final_object_candidates.length,
+            unclassified_sql: audit.review_items.filter((f) => f.code === 'UNCLASSIFIED_SQL').length,
+            hidden_do_dml: audit.review_items.filter((f) => f.code === 'HIDDEN_DO_BLOCK_DML_REVIEW').length,
+            cte_dml: audit.review_items.filter((f) => f.code === 'CTE_DML_REVIEW').length,
             manifest_status: manifest.status,
           }, null, 2));
           NODE
 
-      - name: Prove baseline emission fails closed while audit is unresolved
+      - name: Prove baseline emission remains fail closed
         shell: bash
         run: |
           rm -f database/aws/0001_marketroute_aws_canonical_baseline.sql
@@ -66,15 +88,15 @@ jobs:
           node database/aws/compile-canonical-baseline.mjs --emit-baseline
           status=$?
           set -e
-          if [ "$status" -ne 2 ]; then
-            echo "Expected fail-closed exit 2, received $status" >&2
+          if [ "$status" -ne 2 ] && [ "$status" -ne 3 ]; then
+            echo "Expected fail-closed exit 2 or 3, received $status" >&2
             exit 1
           fi
           if [ -e database/aws/0001_marketroute_aws_canonical_baseline.sql ]; then
-            echo "Compiler emitted baseline despite unresolved audit" >&2
+            echo "Compiler emitted baseline before the Build 3 gate cleared" >&2
             exit 1
           fi
-          echo "Fail-closed baseline gate verified."
+          echo "Fail-closed baseline gate verified with exit $status."
 
       - name: Upload Build 3 audit artifacts
         uses: actions/upload-artifact@v4
