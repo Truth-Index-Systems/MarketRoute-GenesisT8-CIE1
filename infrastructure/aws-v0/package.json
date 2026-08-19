@@ -1,6 +1,6 @@
 {
   "name": "@marketroute/aws-v0",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "engines": {
     "node": "22.x"
@@ -13,7 +13,9 @@
     "validate:synth": "node scripts/validate-synth.mjs",
     "check": "npm run validate:source && npm run typecheck && npm run synth && npm run validate:synth",
     "deploy:identity": "npm run build && cdk deploy MrAwsV0IdentityStack --require-approval never",
+    "deploy:database": "npm run build && cdk deploy MrAwsV0DatabaseStack --require-approval never",
     "deploy:all": "npm run build && cdk deploy --all --require-approval never",
+    "destroy:database": "npm run build && cdk destroy MrAwsV0DatabaseStack --force",
     "destroy:all": "npm run build && cdk destroy --all --force"
   },
   "dependencies": {
