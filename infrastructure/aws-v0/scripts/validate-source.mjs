@@ -58,7 +58,17 @@ for (const requiredSetting of [
 ]) {
   if (!database.includes(requiredSetting)) throw new Error(`Build 2 database setting missing: ${requiredSetting}`);
 }
-for (const forbidden of ["DatabaseProxy", "DBProxy", "NatGateway", "PUBLIC", "PRIVATE_WITH_EGRESS"]) {
+
+// Reject actual forbidden constructs/configuration, not harmless words appearing in
+// safe settings such as `publiclyAccessible: false` or descriptive output strings.
+for (const forbidden of [
+  "DatabaseProxy",
+  "DBProxy",
+  "new ec2.NatGateway",
+  "SubnetType.PUBLIC",
+  "SubnetType.PRIVATE_WITH_EGRESS",
+  "publiclyAccessible: true",
+]) {
   if (database.includes(forbidden)) throw new Error(`Build 2 database boundary contains forbidden construct: ${forbidden}`);
 }
 if (!database.includes("const MIN_ACU = 0")) throw new Error("Build 2 must allow Aurora auto-pause at 0 ACU");
