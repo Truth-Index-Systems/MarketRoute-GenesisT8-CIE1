@@ -55,6 +55,8 @@ for (const requiredSetting of [
   "PRIVATE_ISOLATED",
   "natGateways: 0",
   "publiclyAccessible: false",
+  "availabilityZones: DATABASE_AZS",
+  'const DATABASE_AZS = ["eu-west-2a", "eu-west-2b"]',
 ]) {
   if (!database.includes(requiredSetting)) throw new Error(`Build 2 database setting missing: ${requiredSetting}`);
 }
