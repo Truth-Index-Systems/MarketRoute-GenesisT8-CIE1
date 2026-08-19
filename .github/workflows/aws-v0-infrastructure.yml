@@ -20,6 +20,7 @@ permissions:
 
 env:
   AWS_V0_GITHUB_SUBJECT: "repo:Truth-Index-Systems@254102504/MarketRoute-GenesisT8-CIE1@1333375217:ref:refs/heads/aws-v0"
+  AWS_V0_AURORA_ENGINE_VERSION: "16.8"
 
 jobs:
   validate:
@@ -37,7 +38,7 @@ jobs:
       - name: Install AWS V0 IaC dependencies
         working-directory: infrastructure/aws-v0
         run: npm install --no-audit --no-fund
-      - name: Validate placeholder synthesis
+      - name: Validate Build 2 synthesis
         working-directory: infrastructure/aws-v0
         run: npm run check
       - name: Validate live OIDC identity synthesis
@@ -78,6 +79,15 @@ jobs:
           allowed-account-ids: "801132668416"
       - name: Confirm AWS caller
         run: aws sts get-caller-identity
-      - name: Deploy AWS V0 stacks
+      - name: Confirm Aurora PostgreSQL serverless engine availability
+        run: |
+          set -euo pipefail
+          aws rds describe-orderable-db-instance-options \
+            --engine aurora-postgresql \
+            --db-instance-class db.serverless \
+            --region eu-west-2 \
+            --query "OrderableDBInstanceOptions[?EngineVersion=='${AWS_V0_AURORA_ENGINE_VERSION}'].EngineVersion" \
+            --output text | tr '\t' '\n' | grep -Fxq "$AWS_V0_AURORA_ENGINE_VERSION"
+      - name: Deploy Build 2 database stack only
         working-directory: infrastructure/aws-v0
-        run: npm run deploy:all -- -c githubSubject="$AWS_V0_GITHUB_SUBJECT"
+        run: npm run deploy:database -- -c githubSubject="$AWS_V0_GITHUB_SUBJECT"
