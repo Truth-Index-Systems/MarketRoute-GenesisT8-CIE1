@@ -1,0 +1,212 @@
+{
+  "format_version": 1,
+  "build": "AWS-V0-BUILD-3",
+  "purpose": "Exact reviewed disposition ledger for canonical configuration and historical migration-only data. Entries are scoped by source migration, finding code, target relation when available, and a unique SQL marker.",
+  "entries": [
+    {
+      "id": "truth-core-policy-registry-0007",
+      "file": "0007_truth_engine_v2.sql",
+      "finding_code": "MIGRATION_TIME_DML_REVIEW",
+      "relation": "public.truth_claim_policy_registry",
+      "marker": "GENERAL_FACT_V1",
+      "disposition": "KEEP_CANONICAL_CONFIGURATION",
+      "rationale": "Core Truth policy definitions are constitutional runtime configuration required by Truth policy resolution."
+    },
+    {
+      "id": "truth-core-policy-bindings-0007",
+      "file": "0007_truth_engine_v2.sql",
+      "finding_code": "MIGRATION_TIME_DML_REVIEW",
+      "relation": "public.truth_claim_policy_bindings",
+      "marker": "identity.canonical_name",
+      "disposition": "KEEP_CANONICAL_CONFIGURATION",
+      "rationale": "Core Truth claim-to-policy bindings are canonical semantic configuration."
+    },
+    {
+      "id": "truth-core-profile-registry-0007",
+      "file": "0007_truth_engine_v2.sql",
+      "finding_code": "MIGRATION_TIME_DML_REVIEW",
+      "relation": "public.truth_entity_profile_registry",
+      "marker": "COMPANY_CORE_V1",
+      "disposition": "KEEP_CANONICAL_CONFIGURATION",
+      "rationale": "Truth entity profiles define canonical Truth Index coverage requirements."
+    },
+    {
+      "id": "r4-authority-writer-0009",
+      "file": "0009_commercial_reality_r4.sql",
+      "finding_code": "MIGRATION_TIME_DML_REVIEW",
+      "relation": "public.authority_writer_registry",
+      "marker": "marketroute.r4.commercial-reality",
+      "disposition": "KEEP_CANONICAL_CONFIGURATION",
+      "rationale": "R4 authority writer registration is required constitutional authority metadata."
+    },
+    {
+      "id": "r4-boundary-constitution-0009",
+      "file": "0009_commercial_reality_r4.sql",
+      "finding_code": "MIGRATION_TIME_DML_REVIEW",
+      "relation": "public.commercial_reality_boundary_constitutions",
+      "marker": "SELLER_TO_TARGET_V1",
+      "disposition": "KEEP_CANONICAL_CONFIGURATION",
+      "rationale": "R4 boundary constitution is required deterministic commercial-reality configuration."
+    },
+    {
+      "id": "r5-relationship-truth-policy-0010",
+      "file": "0010_relationship_truth_and_route_authority_r5.sql",
+      "finding_code": "MIGRATION_TIME_DML_REVIEW",
+      "relation": "public.truth_claim_policy_registry",
+      "marker": "RELATIONSHIP_CURRENT_V1",
+      "disposition": "KEEP_CANONICAL_CONFIGURATION",
+      "rationale": "Relationship currentness policy is required for canonical relationship Truth."
+    },
+    {
+      "id": "r5-relationship-truth-binding-0010",
+      "file": "0010_relationship_truth_and_route_authority_r5.sql",
+      "finding_code": "MIGRATION_TIME_DML_REVIEW",
+      "relation": "public.truth_claim_policy_bindings",
+      "marker": "relationship.exists",
+      "disposition": "KEEP_CANONICAL_CONFIGURATION",
+      "rationale": "Relationship existence policy binding is canonical Truth configuration."
+    },
+    {
+      "id": "r5-relationship-ontology-0010",
+      "file": "0010_relationship_truth_and_route_authority_r5.sql",
+      "finding_code": "MIGRATION_TIME_DML_REVIEW",
+      "relation": "public.commercial_relationship_type_registry",
+      "marker": "MRV2-RELATIONSHIP-ONTOLOGY-1.0.0",
+      "disposition": "KEEP_CANONICAL_CONFIGURATION",
+      "rationale": "Commercial relationship types are the canonical graph ontology used by R5."
+    },
+    {
+      "id": "r5-authority-writer-0010",
+      "file": "0010_relationship_truth_and_route_authority_r5.sql",
+      "finding_code": "MIGRATION_TIME_DML_REVIEW",
+      "relation": "public.authority_writer_registry",
+      "marker": "marketroute.r5.relationship-graph",
+      "disposition": "KEEP_CANONICAL_CONFIGURATION",
+      "rationale": "R5 authority writer registration is required constitutional authority metadata."
+    },
+    {
+      "id": "r6-authority-writer-0011",
+      "file": "0011_contact_truth_and_authority_r6.sql",
+      "finding_code": "MIGRATION_TIME_DML_REVIEW",
+      "relation": "public.authority_writer_registry",
+      "marker": "marketroute.r6.contact-truth",
+      "disposition": "KEEP_CANONICAL_CONFIGURATION",
+      "rationale": "R6 authority writer registration is required constitutional authority metadata."
+    },
+    {
+      "id": "r6-contact-policy-registry-0011",
+      "file": "0011_contact_truth_and_authority_r6.sql",
+      "finding_code": "MIGRATION_TIME_DML_REVIEW",
+      "relation": "public.truth_claim_policy_registry",
+      "marker": "PERSON_CURRENT_EMPLOYMENT_V1",
+      "disposition": "KEEP_CANONICAL_CONFIGURATION",
+      "rationale": "R6 person/channel currentness policies are required canonical Truth configuration."
+    },
+    {
+      "id": "r6-employment-binding-update-0011",
+      "file": "0011_contact_truth_and_authority_r6.sql",
+      "finding_code": "MIGRATION_TIME_DML_REVIEW",
+      "relation": "public.truth_claim_policy_bindings",
+      "marker": "SET policy_key='PERSON_CURRENT_EMPLOYMENT_V1'",
+      "disposition": "KEEP_CANONICAL_CONFIGURATION",
+      "rationale": "This UPDATE changes the final canonical employment-currentness policy binding and must survive flattening."
+    },
+    {
+      "id": "r6-role-binding-update-0011",
+      "file": "0011_contact_truth_and_authority_r6.sql",
+      "finding_code": "MIGRATION_TIME_DML_REVIEW",
+      "relation": "public.truth_claim_policy_bindings",
+      "marker": "SET policy_key='PERSON_CURRENT_ROLE_V1'",
+      "disposition": "KEEP_CANONICAL_CONFIGURATION",
+      "rationale": "This UPDATE changes the final canonical role-currentness policy binding and must survive flattening."
+    },
+    {
+      "id": "r6-channel-binding-update-0011",
+      "file": "0011_contact_truth_and_authority_r6.sql",
+      "finding_code": "MIGRATION_TIME_DML_REVIEW",
+      "relation": "public.truth_claim_policy_bindings",
+      "marker": "SET policy_key='CHANNEL_OWNERSHIP_CURRENT_V1'",
+      "disposition": "KEEP_CANONICAL_CONFIGURATION",
+      "rationale": "This UPDATE changes the final canonical channel-ownership policy binding and must survive flattening."
+    },
+    {
+      "id": "genesis-industry-catalog-0022",
+      "file": "0022_genesis_database_growth.sql",
+      "finding_code": "MIGRATION_TIME_DML_REVIEW",
+      "relation": "public.genesis_growth_industries",
+      "marker": "Software & SaaS",
+      "disposition": "KEEP_CANONICAL_CONFIGURATION",
+      "rationale": "Genesis industry catalogue is system configuration, not accumulated company research."
+    },
+    {
+      "id": "genesis-growth-settings-0022",
+      "file": "0022_genesis_database_growth.sql",
+      "finding_code": "MIGRATION_TIME_DML_REVIEW",
+      "relation": "public.genesis_growth_settings",
+      "marker": "INSERT INTO public.genesis_growth_settings(singleton) VALUES(true)",
+      "disposition": "KEEP_CANONICAL_CONFIGURATION",
+      "rationale": "Genesis singleton settings row is required runtime configuration."
+    },
+    {
+      "id": "genesis-demand-driven-disable-0039",
+      "file": "0039_product_demand_driven_genesis.sql",
+      "finding_code": "MIGRATION_TIME_DML_REVIEW",
+      "relation": "public.genesis_growth_settings",
+      "marker": "SET enabled = false",
+      "disposition": "KEEP_CANONICAL_CONFIGURATION",
+      "rationale": "Demand-driven Genesis deliberately changes the final configuration to paused speculative growth; dropping it would restore superseded behaviour."
+    },
+    {
+      "id": "plan-catalog-0044",
+      "file": "0044_product_locked_opportunities_commercial_boundary.sql",
+      "finding_code": "MIGRATION_TIME_DML_REVIEW",
+      "relation": "public.marketroute_plan_catalog",
+      "marker": "MarketRoute Discovery",
+      "disposition": "KEEP_CANONICAL_CONFIGURATION",
+      "rationale": "Commercial plan catalogue is product configuration required by entitlement and billing logic."
+    },
+    {
+      "id": "legacy-entitlement-grandfathering-0044",
+      "file": "0044_product_locked_opportunities_commercial_boundary.sql",
+      "finding_code": "MIGRATION_TIME_DML_REVIEW",
+      "relation": "public.organisation_commercial_entitlements",
+      "marker": "grandfatheredBy",
+      "disposition": "EXCLUDE_HISTORICAL_BACKFILL_OR_REPAIR",
+      "rationale": "This statement grants LEGACY_FULL to organisations that already existed at migration time; fresh AWS has no historical organisations to grandfather."
+    },
+    {
+      "id": "plan-active-market-governance-0053",
+      "file": "0053_multi_campaign_plan_governance.sql",
+      "finding_code": "MIGRATION_TIME_DML_REVIEW",
+      "relation": "public.marketroute_plan_catalog",
+      "marker": "WHEN 'GROWTH' THEN 3",
+      "disposition": "KEEP_CANONICAL_CONFIGURATION",
+      "rationale": "This UPDATE is the final active-market allowance policy and must be reflected in the flattened plan catalogue."
+    },
+    {
+      "id": "activation-lineage-repair-0056",
+      "file": "0056_campaign_activation_lineage_modernisation.sql",
+      "finding_code": "HIDDEN_DO_BLOCK_DML_REVIEW",
+      "marker": "FOR rec IN SELECT r.* FROM public.anonymous_discovery_runs",
+      "disposition": "EXCLUDE_HISTORICAL_BACKFILL_OR_REPAIR",
+      "rationale": "The DO block repairs activation lineage for pre-existing claimed anonymous workspaces; fresh AWS has no rows to repair."
+    },
+    {
+      "id": "demand-fed-cte-backfill-0065",
+      "file": "0065_human_discovery_demand_fed_genesis_bank.sql",
+      "finding_code": "CTE_DML_REVIEW",
+      "marker": "DEMAND_FED_BACKFILL",
+      "disposition": "EXCLUDE_HISTORICAL_BACKFILL_OR_REPAIR",
+      "rationale": "The top-level CTE backfills Genesis memberships for companies already discovered before the migration; fresh AWS starts without those rows."
+    },
+    {
+      "id": "genesis-progress-backfill-0065",
+      "file": "0065_human_discovery_demand_fed_genesis_bank.sql",
+      "finding_code": "MIGRATION_TIME_DML_REVIEW",
+      "relation": "public.genesis_growth_company_progress",
+      "marker": "SELECT DISTINCT m.company_id FROM public.genesis_growth_company_memberships m",
+      "disposition": "EXCLUDE_HISTORICAL_BACKFILL_OR_REPAIR",
+      "rationale": "This creates progress rows for pre-existing bank companies and is runtime state, not canonical seed configuration."
+    }
+  ]
+}
