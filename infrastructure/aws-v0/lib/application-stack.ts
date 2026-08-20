@@ -159,7 +159,6 @@ export class MrAwsV0ApplicationStack extends Stack {
       stage: "BETA",
       framework: "Next.js - SSR",
       enableAutoBuild: false,
-      enableBasicAuth: true,
       enablePullRequestPreview: false,
       enablePerformanceMode: false,
       computeRoleArn: computeRole.roleArn,

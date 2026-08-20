@@ -142,7 +142,6 @@ const amplifyBranch = applicationOf("AWS::Amplify::Branch")[0].Properties ?? {};
 if (amplifyBranch.BranchName !== "aws-v0") throw new Error(`Build 6 branch must be aws-v0, got ${amplifyBranch.BranchName}`);
 if (amplifyBranch.Stage !== "BETA") throw new Error(`Build 6 branch stage must be BETA, got ${amplifyBranch.Stage}`);
 if (amplifyBranch.EnableAutoBuild !== false) throw new Error("Build 6 Amplify branch auto-build must remain disabled");
-if (amplifyBranch.EnableBasicAuth !== true) throw new Error("Build 6 Amplify shadow must be basic-auth protected");
 if (amplifyBranch.EnablePullRequestPreview !== false) throw new Error("Build 6 pull-request previews must remain disabled");
 if (!amplifyBranch.ComputeRoleArn) throw new Error("Build 6 SSR compute role must be attached at branch scope");
 const basicAuth = amplifyBranch.BasicAuthConfig ?? {};
