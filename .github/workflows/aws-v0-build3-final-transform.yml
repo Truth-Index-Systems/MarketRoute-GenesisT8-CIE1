@@ -2,13 +2,6 @@ name: AWS V0 Build 3 Final Transform
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - aws-v0
-    paths:
-      - 'database/aws/**'
-      - 'supabase/migrations/**'
-      - '.github/workflows/aws-v0-build3-final-transform.yml'
 
 permissions:
   contents: read
@@ -267,13 +260,30 @@ jobs:
           }, null, 2));
           NODE
 
-      - name: Prove production baseline name remains unopened
+      - name: Prove frozen canonical baseline remains immutable
         run: |
-          if [ -e database/aws/0001_marketroute_aws_canonical_baseline.sql ]; then
-            echo "Production baseline path exists before final promotion gate" >&2
+          BASELINE="database/aws/0001_marketroute_aws_canonical_baseline.sql"
+          EXPECTED_SHA="46d9c3aee85d1021d7f514c0384aef036b7f53073a7aa78be4bfabd3266d5e5a"
+
+          test -s "$BASELINE"
+
+          ACTUAL_SHA="$(sha256sum "$BASELINE" | awk '{print $1}')"
+
+          if [ "$ACTUAL_SHA" != "$EXPECTED_SHA" ]; then
+            echo "Frozen AWS V0 canonical baseline SHA drifted." >&2
+            echo "Expected: $EXPECTED_SHA" >&2
+            echo "Actual:   $ACTUAL_SHA" >&2
             exit 1
           fi
-          echo "Canonical candidate validated; production baseline path remains unopened."
+
+          cmp --silent \
+            database/aws/0001_marketroute_aws_canonical_baseline_candidate.sql \
+            "$BASELINE" || {
+              echo "Regenerated Build 3 candidate no longer matches frozen canonical baseline." >&2
+              exit 1
+            }
+
+          echo "Frozen AWS V0 canonical baseline verified byte-for-byte."
 
       - name: Upload Build 3 AWS final-transform artifacts
         uses: actions/upload-artifact@v4
