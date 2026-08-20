@@ -13,6 +13,9 @@ jobs:
         with:
           node-version: 22
       - run: npm install --no-audit --no-fund
+      - run: node scripts/validate-aws-v0-build7-ai-boundary.mjs
+      - run: node tests/adversarial/aws-v0-build7-ai-boundary.mjs
+      - run: node scripts/validate-aws-v0-build7-bedrock-runtime.mjs
       - run: npm run constitution:check
       - run: npm run typecheck
       - run: npm run build
