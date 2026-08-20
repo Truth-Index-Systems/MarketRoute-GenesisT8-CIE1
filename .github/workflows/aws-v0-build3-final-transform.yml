@@ -1,0 +1,289 @@
+name: AWS V0 Build 3 Final Transform
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - aws-v0
+    paths:
+      - 'database/aws/**'
+      - 'supabase/migrations/**'
+      - '.github/workflows/aws-v0-build3-final-transform.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: aws-v0-build3-final-transform
+  cancel-in-progress: false
+
+jobs:
+  final-transform:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: marketroute_build3_source
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d marketroute_build3_source"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: '5432'
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: marketroute_build3_source
+
+    steps:
+      - name: Checkout canonical aws-v0 branch
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Syntax-check Build 3 final-transform tooling
+        run: |
+          node --check database/aws/compile-canonical-baseline.mjs
+          node --check database/aws/apply-build3-dispositions.mjs
+          node --check database/aws/apply-build3-final-disposition-closure.mjs
+          node --check database/aws/build3-final-object-replay.mjs
+          node --check database/aws/verify-build3-final-object-dump.mjs
+          node --check database/aws/build3-apply-aws-final-transforms.mjs
+          node --check database/aws/verify-build3-aws-transformed-schema.mjs
+          node --check database/aws/test-build3-aws-final-transforms.mjs
+
+      - name: Prove AWS final-transform invariants
+        run: node database/aws/test-build3-aws-final-transforms.mjs
+
+      - name: Rebuild certified source resolution inputs
+        run: |
+          node database/aws/compile-canonical-baseline.mjs
+          node database/aws/apply-build3-dispositions.mjs
+          node database/aws/apply-build3-final-disposition-closure.mjs
+          node database/aws/build3-final-object-replay.mjs
+
+      - name: Resolve source objects in first disposable PostgreSQL 16 database
+        run: psql --set=ON_ERROR_STOP=1 --file=database/aws/build3_final_object_replay.sql
+
+      - name: Dump source resolved schema only
+        run: |
+          pg_dump \
+            --schema-only \
+            --no-owner \
+            --no-privileges \
+            --exclude-schema=auth \
+            --file=database/aws/build3_final_object_reference_schema.sql \
+            "$PGDATABASE"
+
+      - name: Certify source final-object blocker inventory
+        run: node database/aws/verify-build3-final-object-dump.mjs
+
+      - name: Apply AWS final transformations to resolved objects
+        run: node database/aws/build3-apply-aws-final-transforms.mjs
+
+      - name: Create second fresh PostgreSQL 16 validation database
+        run: createdb marketroute_build3_aws
+
+      - name: Apply AWS canonical baseline candidate to second database
+        env:
+          PGDATABASE: marketroute_build3_aws
+        run: psql --set=ON_ERROR_STOP=1 --file=database/aws/0001_marketroute_aws_canonical_baseline_candidate.sql
+
+      - name: Prove AWS fresh-data, identity, truth, and security invariants
+        env:
+          PGDATABASE: marketroute_build3_aws
+        run: |
+          psql --set=ON_ERROR_STOP=1 <<'SQL'
+          DO $gate$
+          DECLARE
+            v_growth_enabled boolean;
+            v_growth_limit integer;
+            v_scale_limit integer;
+            v_employment_policy text;
+            v_role_policy text;
+            v_channel_policy text;
+            v_user_fk_count integer;
+          BEGIN
+            IF to_regclass('public.marketroute_users') IS NULL THEN
+              RAISE EXCEPTION 'BUILD3_AWS_INTERNAL_USER_ANCHOR_MISSING';
+            END IF;
+            IF to_regclass('auth.users') IS NOT NULL THEN
+              RAISE EXCEPTION 'BUILD3_AWS_SUPABASE_AUTH_TABLE_PRESENT';
+            END IF;
+            IF EXISTS (
+              SELECT 1
+              FROM pg_class c
+              JOIN pg_namespace n ON n.oid=c.relnamespace
+              WHERE n.nspname='public' AND c.relkind='r' AND c.relrowsecurity
+            ) THEN
+              RAISE EXCEPTION 'BUILD3_AWS_RLS_REMAINS_ENABLED';
+            END IF;
+
+            IF EXISTS (SELECT 1 FROM public.marketroute_users)
+               OR EXISTS (SELECT 1 FROM public.organisations)
+               OR EXISTS (SELECT 1 FROM public.companies)
+               OR EXISTS (SELECT 1 FROM public.claims)
+               OR EXISTS (SELECT 1 FROM public.opportunities) THEN
+              RAISE EXCEPTION 'BUILD3_AWS_HISTORICAL_RUNTIME_DATA_PRESENT';
+            END IF;
+
+            IF to_regclass('public.marketroute_v1_migration_batches') IS NOT NULL
+               OR to_regclass('public.marketroute_v1_migration_id_map') IS NOT NULL
+               OR to_regclass('public.marketroute_v1_migration_rejections') IS NOT NULL
+               OR to_regclass('public.marketroute_v1_migration_audit_events') IS NOT NULL THEN
+              RAISE EXCEPTION 'BUILD3_AWS_V1_ETL_OBJECT_PRESENT';
+            END IF;
+
+            SELECT count(*)::int INTO v_user_fk_count
+            FROM pg_constraint
+            WHERE contype='f'
+              AND confrelid='public.marketroute_users'::regclass;
+            IF v_user_fk_count <> 13 THEN
+              RAISE EXCEPTION 'BUILD3_AWS_INTERNAL_USER_FK_COUNT_DRIFT:%', v_user_fk_count;
+            END IF;
+
+            IF to_regprocedure('public.marketroute_is_org_admin(uuid,uuid)') IS NULL
+               OR to_regprocedure('public.marketroute_is_org_member(uuid,uuid)') IS NULL
+               OR to_regprocedure('public.marketroute_workspace_activation_status_v2(uuid,uuid)') IS NULL THEN
+              RAISE EXCEPTION 'BUILD3_AWS_EXPLICIT_ACTOR_SIGNATURE_MISSING';
+            END IF;
+            IF to_regprocedure('public.marketroute_is_org_admin(uuid)') IS NOT NULL
+               OR to_regprocedure('public.marketroute_is_org_member(uuid)') IS NOT NULL
+               OR to_regprocedure('public.marketroute_workspace_activation_status_v2(uuid)') IS NOT NULL THEN
+              RAISE EXCEPTION 'BUILD3_AWS_LEGACY_IMPLICIT_ACTOR_SIGNATURE_PRESENT';
+            END IF;
+
+            IF EXISTS (
+              SELECT 1
+              FROM pg_proc p
+              JOIN pg_namespace n ON n.oid=p.pronamespace
+              WHERE n.nspname='public'
+                AND p.prokind='f'
+                AND (
+                  pg_get_functiondef(p.oid) ~* 'auth[.]uid[[:space:]]*[(]'
+                  OR pg_get_functiondef(p.oid) ~* 'auth[.](role|jwt)[[:space:]]*[(]'
+                  OR pg_get_functiondef(p.oid) ~* 'request[.]jwt[.]'
+                  OR pg_get_functiondef(p.oid) ~* 'marketroute_v1_migration_(batches|id_map|rejections|audit_events)'
+                )
+            ) THEN
+              RAISE EXCEPTION 'BUILD3_AWS_LEGACY_FUNCTION_DEPENDENCY_PRESENT';
+            END IF;
+
+            SELECT enabled INTO v_growth_enabled
+            FROM public.genesis_growth_settings
+            WHERE singleton=true;
+            IF v_growth_enabled IS DISTINCT FROM false THEN
+              RAISE EXCEPTION 'BUILD3_AWS_DEMAND_DRIVEN_GENESIS_CONFIGURATION_DRIFT';
+            END IF;
+
+            SELECT active_market_limit INTO v_growth_limit
+            FROM public.marketroute_plan_catalog WHERE plan_code='GROWTH';
+            SELECT active_market_limit INTO v_scale_limit
+            FROM public.marketroute_plan_catalog WHERE plan_code='SCALE';
+            IF v_growth_limit IS DISTINCT FROM 3 OR v_scale_limit IS DISTINCT FROM 10 THEN
+              RAISE EXCEPTION 'BUILD3_AWS_PLAN_ACTIVE_MARKET_CONFIGURATION_DRIFT';
+            END IF;
+
+            SELECT policy_key INTO v_employment_policy
+            FROM public.truth_claim_policy_bindings
+            WHERE subject_type='PERSON' AND claim_key='employment.current';
+            SELECT policy_key INTO v_role_policy
+            FROM public.truth_claim_policy_bindings
+            WHERE subject_type='PERSON' AND claim_key='role.current';
+            SELECT policy_key INTO v_channel_policy
+            FROM public.truth_claim_policy_bindings
+            WHERE subject_type='CHANNEL' AND claim_key='ownership.current';
+            IF v_employment_policy IS DISTINCT FROM 'PERSON_CURRENT_EMPLOYMENT_V1'
+               OR v_role_policy IS DISTINCT FROM 'PERSON_CURRENT_ROLE_V1'
+               OR v_channel_policy IS DISTINCT FROM 'CHANNEL_OWNERSHIP_CURRENT_V1' THEN
+              RAISE EXCEPTION 'BUILD3_AWS_TRUTH_POLICY_BINDING_CONFIGURATION_DRIFT';
+            END IF;
+          END;
+          $gate$;
+          SQL
+
+      - name: Dump AWS transformed schema only
+        env:
+          PGDATABASE: marketroute_build3_aws
+        run: |
+          pg_dump \
+            --schema-only \
+            --no-owner \
+            --no-privileges \
+            --file=database/aws/build3_aws_transformed_reference_schema.sql \
+            "$PGDATABASE"
+
+      - name: Verify zero AWS final-object blockers
+        run: node database/aws/verify-build3-aws-transformed-schema.mjs
+
+      - name: Validate AWS final-transform manifests
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const source = JSON.parse(fs.readFileSync('database/aws/build3_final_object_resolution_manifest.json', 'utf8'));
+          const transformed = JSON.parse(fs.readFileSync('database/aws/build3_aws_final_transform_manifest.json', 'utf8'));
+          const validated = JSON.parse(fs.readFileSync('database/aws/build3_aws_transformed_schema_manifest.json', 'utf8'));
+
+          if (source.status !== 'FINAL_OBJECTS_RESOLVED_AWS_TRANSFORMS_PENDING') throw new Error('source resolver status drifted');
+          if (source.required_aws_transform_count !== 35 || source.blocker_count !== 6) throw new Error('source AWS blocker inventory drifted');
+          if (transformed.status !== 'READY_FOR_SECOND_EPHEMERAL_POSTGRES_VALIDATION') throw new Error('AWS transform candidate status invalid');
+          if (transformed.transformations.auth_users_fk_rewrites !== 13) throw new Error('auth.users transform count drifted');
+          if (transformed.transformations.auth_uid_final_function_rewrites !== 10) throw new Error('auth.uid final function count drifted');
+          if (transformed.transformations.actor_wrapper_rewrites !== 3) throw new Error('actor wrapper count drifted');
+          if (transformed.transformations.rls_enable_statements_removed !== 74) throw new Error('RLS removal count drifted');
+          if (transformed.transformations.v1_observability_references_zeroed !== 3) throw new Error('V1 observability transform count drifted');
+          if (transformed.transformations.canonical_configuration_statements_appended !== 19) throw new Error('canonical configuration count drifted');
+          if (transformed.output.reviewed_top_level_data_mutation_count !== 19) throw new Error('unexpected baseline data mutation count');
+          if (transformed.aurora_execution_allowed !== false || transformed.baseline_emission_allowed !== false) throw new Error('candidate opened deployment prematurely');
+
+          if (validated.status !== 'AWS_FINAL_OBJECTS_TRANSFORMED') throw new Error('AWS transformed schema did not validate');
+          if (validated.blocker_count !== 0) throw new Error('AWS transformed schema blockers remain');
+          if (validated.identity.internal_user_fk_count !== 13 || validated.identity.explicit_actor_function_count !== 13) throw new Error('AWS identity boundary validation drifted');
+          if (validated.object_counts.tables !== 77 || validated.object_counts.routines !== 206 || validated.object_counts.views !== 5) throw new Error('AWS final object count drifted');
+          if (validated.aurora_execution_allowed !== false || validated.baseline_emission_allowed !== false) throw new Error('validated schema opened deployment prematurely');
+
+          console.log(JSON.stringify({
+            source_status: source.status,
+            source_blocker_categories: source.blocker_count,
+            source_transform_decisions: source.required_aws_transform_count,
+            transformed_status: transformed.status,
+            transformed_operations: transformed.transformations,
+            validated_status: validated.status,
+            validated_blockers: validated.blocker_count,
+            object_counts: validated.object_counts,
+            internal_user_fks: validated.identity.internal_user_fk_count,
+            explicit_actor_functions: validated.identity.explicit_actor_function_count,
+            aurora_execution_allowed: validated.aurora_execution_allowed,
+          }, null, 2));
+          NODE
+
+      - name: Prove production baseline name remains unopened
+        run: |
+          if [ -e database/aws/0001_marketroute_aws_canonical_baseline.sql ]; then
+            echo "Production baseline path exists before final promotion gate" >&2
+            exit 1
+          fi
+          echo "Canonical candidate validated; production baseline path remains unopened."
+
+      - name: Upload Build 3 AWS final-transform artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: aws-v0-build3-final-transform
+          path: |
+            database/aws/build3_final_object_resolution_manifest.json
+            database/aws/0001_marketroute_aws_canonical_baseline_candidate.sql
+            database/aws/build3_aws_final_transform_manifest.json
+            database/aws/build3_aws_transformed_reference_schema.sql
+            database/aws/build3_aws_transformed_schema_manifest.json
+          if-no-files-found: error
+          retention-days: 14
