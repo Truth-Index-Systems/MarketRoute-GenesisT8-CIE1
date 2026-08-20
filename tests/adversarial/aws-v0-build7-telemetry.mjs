@@ -13,8 +13,10 @@ for (const forbidden of ["rawPrompt", "rawResponse", "promptText", "responseText
   }
 }
 
-if (/telemetry\??:\s*SemanticTelemetrySink/.test(executor)) throw new Error("Build 7.3 telemetry sink became optional");
-if (/telemetryContext\??:\s*SemanticTelemetryContext/.test(executor)) throw new Error("Build 7.3 telemetry context became optional");
+if (/telemetry\s*\?\s*:/.test(executor)) throw new Error("Build 7.3 telemetry sink became optional");
+if (/telemetryContext\s*\?\s*:/.test(executor)) throw new Error("Build 7.3 telemetry context became optional");
+if (!executor.includes("telemetry: SemanticTelemetrySink;")) throw new Error("Build 7.3 mandatory telemetry sink contract drifted");
+if (!executor.includes("telemetryContext: SemanticTelemetryContext;")) throw new Error("Build 7.3 mandatory telemetry context contract drifted");
 if (!executor.includes("retryCount: Math.max(0, args.attemptCount - 1)")) throw new Error("Build 7.3 retry economics are not represented");
 if (!executor.includes("mergeProviderTelemetry(providerTelemetry, execution.telemetry)")) throw new Error("Build 7.3 successful provider usage is not aggregated");
 if (!executor.includes("mergeProviderTelemetry(providerTelemetry, error.telemetry)")) throw new Error("Build 7.3 failed/retried provider usage is not aggregated");
