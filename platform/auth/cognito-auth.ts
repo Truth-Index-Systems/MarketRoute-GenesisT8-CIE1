@@ -154,7 +154,7 @@ export async function verifyCognitoJwt(token: string, expectedUse: CognitoTokenU
   if (header.alg !== "RS256" || typeof header.kid !== "string") throw new Error("MARKETROUTE_COGNITO_TOKEN_ALGORITHM_INVALID");
   const key = (await loadJwks(config)).get(header.kid);
   if (!key || key.kty !== "RSA" || (key.alg && key.alg !== "RS256")) throw new Error("MARKETROUTE_COGNITO_TOKEN_KEY_INVALID");
-  const publicKey = createPublicKey({ key: key as JsonWebKey, format: "jwk" });
+  const publicKey = createPublicKey({ key: key as unknown as JsonWebKey, format: "jwk" });
   const validSignature = verifySignature(
     "RSA-SHA256",
     Buffer.from(`${encodedHeader}.${encodedPayload}`),
