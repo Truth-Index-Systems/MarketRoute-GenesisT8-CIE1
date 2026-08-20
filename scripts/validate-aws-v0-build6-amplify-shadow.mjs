@@ -9,7 +9,9 @@ const bin = read("infrastructure/aws-v0/bin/aws-v0.ts");
 const infraPackage = JSON.parse(read("infrastructure/aws-v0/package.json"));
 const packageLock = JSON.parse(read("package-lock.json"));
 const shadowHealth = read("app/api/aws-v0/shadow/health/route.ts");
+const shadowRuntime = read("application/aws-v0/shadow-runtime.ts");
 const dataApiProbe = read("app/api/aws-v0/shadow/data-api/route.ts");
+const dataApiProbeApplication = read("application/aws-v0/shadow-data-api-health.ts");
 const dataApiBundleAnchor = read("platform/database/aws-data-api-bundle-anchor.ts");
 const dataApiAdapter = read("platform/database/aws-data-api.ts");
 const workflow = read(".github/workflows/aws-v0-infrastructure.yml");
@@ -65,15 +67,33 @@ for (const forbidden of [
   if (application.includes(forbidden)) throw new Error(`Build 6 application foundation contains forbidden token: ${forbidden}`);
 }
 
-if (!shadowHealth.includes('process.env.MARKETROUTE_AWS_SHADOW_MODE !== "true"')) throw new Error("Build 6 health route is not fail-closed outside AWS shadow mode");
-if (!shadowHealth.includes('hosting: "amplify-shadow"')) throw new Error("Build 6 health route does not identify the Amplify shadow");
-if (!shadowHealth.includes("productionCutover: false")) throw new Error("Build 6 health route does not preserve the no-cutover invariant");
-if (!shadowHealth.includes("genesisEnabled: false")) throw new Error("Build 6 health route does not preserve Genesis-disabled state");
+for (const token of [
+  'isAwsV0ShadowModeEnabled()',
+  'getAwsV0ShadowRuntimeStatus()',
+  'hosting: "amplify-shadow"',
+  'databaseConfigured',
+  'cognitoConfigured',
+  'productionCutover: false',
+  'genesisEnabled: false',
+]) {
+  if (!shadowHealth.includes(token)) throw new Error(`Build 6 health route missing: ${token}`);
+}
+if (shadowHealth.includes("process.env")) throw new Error("Build 6 health route must remain environment-blind");
+for (const token of [
+  'process.env.MARKETROUTE_AWS_SHADOW_MODE === "true"',
+  'Boolean(process.env.AWS_REGION)',
+  'process.env.MARKETROUTE_AWS_RDS_CLUSTER_ARN',
+  'process.env.MARKETROUTE_AWS_RDS_SECRET_ARN',
+  'process.env.MARKETROUTE_AWS_RDS_DATABASE',
+  'process.env.MARKETROUTE_COGNITO_USER_POOL_ID',
+  'process.env.MARKETROUTE_COGNITO_USER_POOL_CLIENT_ID',
+]) {
+  if (!shadowRuntime.includes(token)) throw new Error(`Build 6 application shadow runtime missing: ${token}`);
+}
 
 for (const token of [
-  'process.env.MARKETROUTE_AWS_SHADOW_MODE !== "true"',
-  'awsDataApiFromEnvironment',
-  'executeOperation("system.health", {})',
+  'isAwsV0ShadowModeEnabled()',
+  'runAwsV0ShadowDataApiHealthProbe',
   'transport: "rds-data-api"',
   'operation: "system.health"',
   'databaseReachable: true',
@@ -81,8 +101,19 @@ for (const token of [
   'productionCutover: false',
   'genesisEnabled: false',
 ]) {
-  if (!dataApiProbe.includes(token)) throw new Error(`Build 6 live Data API probe missing: ${token}`);
+  if (!dataApiProbe.includes(token)) throw new Error(`Build 6 live Data API route missing: ${token}`);
 }
+if (dataApiProbe.includes("@/platform/")) throw new Error("Build 6 live Data API route must not bypass the application layer");
+if (dataApiProbe.includes("process.env")) throw new Error("Build 6 live Data API route must remain environment-blind");
+for (const token of [
+  'assertAwsRdsDataSdkBundled',
+  'awsDataApiFromEnvironment',
+  'executeOperation("system.health", {})',
+  'result.rows.length === 1 && result.rows[0]?.ok === 1',
+]) {
+  if (!dataApiProbeApplication.includes(token)) throw new Error(`Build 6 application health bridge missing: ${token}`);
+}
+if (dataApiProbeApplication.includes("process.env")) throw new Error("Build 6 Data API application bridge must not own environment configuration");
 if (!dataApiBundleAnchor.includes('RDSDataClient') || !dataApiBundleAnchor.includes('@aws-sdk/client-rds-data')) {
   throw new Error("Build 6 live Data API SDK bundle anchor is missing");
 }
