@@ -184,6 +184,18 @@ for (const decision of finalDispositionAudit.decisions) {
   decisionsByStatement.set(k, list);
 }
 
+const transformDecisions = finalDispositionAudit.decisions.filter(
+  (decision) => decision.transform_required === true || String(decision.disposition).startsWith('REWRITE_'),
+);
+const expectedUniqueTransformSourceStatements = new Set(
+  transformDecisions.map((decision) => key(decision.file, decision.statement_index)),
+).size;
+if (transformDecisions.length !== finalDispositionAudit.required_transforms) {
+  throw new Error(
+    `Transform decision accounting mismatch: expected ${finalDispositionAudit.required_transforms}, got ${transformDecisions.length}.`,
+  );
+}
+
 const resolvedSchemaExclusions = new Set(
   (schemaAudit.resolved_exclusions ?? [])
     .filter((finding) => Number.isInteger(finding.statement_index))
@@ -243,6 +255,7 @@ const counters = {
   excluded_statements: 0,
   canonical_configuration_statements: 0,
   transform_source_statements: 0,
+  unique_transform_source_statements: 0,
   passthrough_statements: 0,
   transaction_controls_removed: 0,
   schema_infrastructure_exclusions: 0,
@@ -291,7 +304,10 @@ for (const file of migrations) {
       counters.transaction_controls_removed += 1;
     } else if (decisions.length) {
       const hasCanonical = decisions.some((d) => d.disposition === 'KEEP_CANONICAL_CONFIGURATION');
-      const hasTransform = decisions.some((d) => d.transform_required === true || String(d.disposition).startsWith('REWRITE_'));
+      const transformDecisionsForStatement = decisions.filter(
+        (d) => d.transform_required === true || String(d.disposition).startsWith('REWRITE_'),
+      );
+      const hasTransform = transformDecisionsForStatement.length > 0;
       const allExcluded = decisions.every((d) => String(d.disposition).startsWith('EXCLUDE_'));
 
       if (hasCanonical && (hasTransform || allExcluded)) {
@@ -307,7 +323,10 @@ for (const file of migrations) {
         include = true;
         action = 'INCLUDE_LEGACY_TRANSFORM_SOURCE';
         rationale = 'Legacy SQL is retained only in the disposable reference replay so PostgreSQL can resolve final DDL before AWS rewrites are applied.';
-        counters.transform_source_statements += 1;
+        // Backward-compatible counter: one unit per transform decision. A single
+        // SQL statement may carry more than one required AWS transform.
+        counters.transform_source_statements += transformDecisionsForStatement.length;
+        counters.unique_transform_source_statements += 1;
       } else if (allExcluded) {
         include = false;
         action = 'EXCLUDE_FINAL_DISPOSITION';
@@ -340,6 +359,9 @@ for (const file of migrations) {
       kind,
       action,
       included: include,
+      transform_decision_count: decisions.filter(
+        (d) => d.transform_required === true || String(d.disposition).startsWith('REWRITE_'),
+      ).length,
       decision_dispositions: decisions.map((d) => d.disposition),
       rationale,
     });
@@ -352,7 +374,12 @@ if (counters.canonical_configuration_statements !== 19) {
   throw new Error(`Expected 19 canonical configuration statements, got ${counters.canonical_configuration_statements}.`);
 }
 if (counters.transform_source_statements !== 35) {
-  throw new Error(`Expected 35 AWS transform source statements, got ${counters.transform_source_statements}.`);
+  throw new Error(`Expected 35 AWS transform decisions, got ${counters.transform_source_statements}.`);
+}
+if (counters.unique_transform_source_statements !== expectedUniqueTransformSourceStatements) {
+  throw new Error(
+    `Expected ${expectedUniqueTransformSourceStatements} unique AWS transform source statements, got ${counters.unique_transform_source_statements}.`,
+  );
 }
 
 const replaySql = `${output.join('\n').trim()}\n`;
@@ -377,6 +404,11 @@ const manifest = {
   },
   excluded_migrations: [...EXCLUDED_MIGRATIONS],
   expected_aws_transforms: 35,
+  expected_unique_transform_source_statements: expectedUniqueTransformSourceStatements,
+  counter_semantics: {
+    transform_source_statements: 'transform decision occurrences (backward-compatible field name)',
+    unique_transform_source_statements: 'unique SQL statements containing one or more required AWS transforms',
+  },
   expected_canonical_configuration_statements: 19,
   counters,
   replay_sql: {
@@ -398,7 +430,8 @@ console.log(JSON.stringify({
   included_statements: counters.included_statements,
   excluded_statements: counters.excluded_statements,
   canonical_configuration_statements: counters.canonical_configuration_statements,
-  transform_source_statements: counters.transform_source_statements,
+  transform_decisions: counters.transform_source_statements,
+  unique_transform_source_statements: counters.unique_transform_source_statements,
   excluded_migration_statements: counters.excluded_migration_statements,
   replay: manifest.replay_sql.path,
   manifest: path.relative(repoRoot, replayManifestPath),
