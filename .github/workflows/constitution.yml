@@ -20,6 +20,8 @@ jobs:
       - run: node tests/adversarial/aws-v0-build7-telemetry.mjs
       - run: node scripts/validate-aws-v0-build7-bedrock-iam.mjs
       - run: node tests/adversarial/aws-v0-build7-bedrock-iam.mjs
+      - run: node scripts/validate-aws-v0-build7-shadow-ai.mjs
+      - run: node tests/adversarial/aws-v0-build7-shadow-ai.mjs
       - run: npm run constitution:check
       - run: npm run typecheck
       - run: npm run build
