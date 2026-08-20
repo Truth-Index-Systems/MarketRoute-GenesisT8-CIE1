@@ -2,6 +2,11 @@ import fs from "node:fs";
 
 const application = fs.readFileSync("infrastructure/aws-v0/lib/application-stack.ts", "utf8");
 const health = fs.readFileSync("app/api/aws-v0/shadow/health/route.ts", "utf8");
+const dataApiProbe = fs.readFileSync("app/api/aws-v0/shadow/data-api/route.ts", "utf8");
+const dataApiBundleAnchor = fs.readFileSync("platform/database/aws-data-api-bundle-anchor.ts", "utf8");
+const dataApiAdapter = fs.readFileSync("platform/database/aws-data-api.ts", "utf8");
+const operations = fs.readFileSync("platform/database/aws-data-api-operations.ts", "utf8");
+const packageLock = JSON.parse(fs.readFileSync("package-lock.json", "utf8"));
 const workflow = fs.readFileSync(".github/workflows/aws-v0-infrastructure.yml", "utf8");
 
 function forbid(source, token, label) {
@@ -61,10 +66,40 @@ if (!health.includes("databaseConfigured")) throw new Error("Build 6 health endp
 if (!health.includes("cognitoConfigured")) throw new Error("Build 6 health endpoint must prove Cognito configuration presence without exposing values");
 if (!health.includes("productionCutover: false")) throw new Error("Build 6 health endpoint must deny production cutover");
 
+for (const token of [
+  "SELECT ",
+  "INSERT ",
+  "UPDATE ",
+  "DELETE ",
+  "sql:",
+  "ExecuteStatementCommand",
+  "RDSDataClient",
+  "MARKETROUTE_AWS_RDS_CLUSTER_ARN",
+  "MARKETROUTE_AWS_RDS_SECRET_ARN",
+  "MARKETROUTE_AWS_RDS_DATABASE",
+  "AWS_ACCESS_KEY_ID",
+  "AWS_SECRET_ACCESS_KEY",
+  "providerCode",
+  "secretArn",
+  "resourceArn",
+]) forbid(dataApiProbe, token, "Build 6 live Data API probe");
+
+if (!dataApiProbe.includes('awsDataApiFromEnvironment')) throw new Error("Build 6 live Data API probe must use the frozen application adapter");
+if (!dataApiProbe.includes('executeOperation("system.health", {})')) throw new Error("Build 6 live Data API probe must use the frozen named system.health operation");
+if (!dataApiProbe.includes('return NextResponse.json({ error: "not_found" }, { status: 404 })')) throw new Error("Build 6 live Data API probe must disappear outside AWS shadow mode");
+if (!dataApiProbe.includes('productionCutover: false')) throw new Error("Build 6 live Data API probe must deny production cutover");
+if (!dataApiProbe.includes('genesisEnabled: false')) throw new Error("Build 6 live Data API probe must keep Genesis disabled");
+if (!dataApiBundleAnchor.includes('@aws-sdk/client-rds-data') || !dataApiBundleAnchor.includes('RDSDataClient')) throw new Error("Build 6 must statically anchor the RDS Data SDK into the SSR bundle");
+if (packageLock.packages?.[""]?.dependencies?.["@aws-sdk/client-rds-data"] !== "3.1114.0") throw new Error("Build 6 root RDS Data SDK dependency must remain exact-pinned");
+if (packageLock.packages?.["node_modules/@aws-sdk/client-rds-data"]?.version !== "3.1114.0") throw new Error("Build 6 RDS Data SDK lock resolution must remain exact-pinned");
+if (!dataApiAdapter.includes('executeOperation<TName extends AwsDataApiOperationName>')) throw new Error("Build 4 named-operation API must remain intact");
+if (!operations.includes('"system.health": Object.freeze({')) throw new Error("Build 6 live probe must reuse the frozen system.health operation");
+if (!operations.includes('sql: "SELECT 1::bigint AS ok"')) throw new Error("Frozen system.health SQL drifted");
+
 for (const token of ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "aws-access-key-id", "aws-secret-access-key"]) {
   forbid(workflow, token, "Build 6 CI");
 }
 if (!workflow.includes("AWS_V0_AUTODEPLOY_ENABLED == 'true'")) throw new Error("Build 6 CI must preserve the explicit AWS deployment latch");
 if (workflow.includes("deploy:application")) throw new Error("Build 6 CI must not automatically deploy the Amplify application stack");
 
-console.log("PASS AWS V0 Build 6 adversarial Amplify shadow boundary checks");
+console.log("PASS AWS V0 Build 6 adversarial Amplify shadow + live Data API boundary checks");
