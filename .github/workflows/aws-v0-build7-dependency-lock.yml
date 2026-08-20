@@ -1,0 +1,45 @@
+name: AWS V0 Build 7 Dependency Lock
+
+on:
+  push:
+    branches:
+      - aws-v0-build7-12-staging
+
+permissions:
+  contents: write
+
+jobs:
+  lock-bedrock-runtime:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: aws-v0-build7-12-staging
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Pin Bedrock runtime SDK
+        run: npm pkg set 'dependencies.@aws-sdk/client-bedrock-runtime=3.1111.0'
+      - name: Generate exact npm lock
+        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+      - name: Verify direct dependency pin
+        run: |
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+          const lock = JSON.parse(fs.readFileSync('package-lock.json', 'utf8'));
+          if (pkg.dependencies?.['@aws-sdk/client-bedrock-runtime'] !== '3.1111.0') process.exit(1);
+          if (lock.packages?.['']?.dependencies?.['@aws-sdk/client-bedrock-runtime'] !== '3.1111.0') process.exit(1);
+          if (lock.packages?.['node_modules/@aws-sdk/client-bedrock-runtime']?.version !== '3.1111.0') process.exit(1);
+          NODE
+      - name: Commit deterministic dependency lock
+        run: |
+          if git diff --quiet -- package.json package-lock.json; then
+            echo 'Bedrock dependency lock already exact.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add package.json package-lock.json
+          git commit -m 'build7: pin Bedrock runtime SDK exactly'
+          git push origin HEAD:aws-v0-build7-12-staging
