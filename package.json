@@ -141,6 +141,7 @@
     "validate:rc068": "node scripts/validate-rc068-human-discovery-demand-fed-bank.mjs && node tests/adversarial/rc068-human-discovery-demand-fed-bank.mjs"
   },
   "dependencies": {
+    "@aws-sdk/client-rds-data": "3.1114.0",
     "next": "15.5.23",
     "react": "19.0.4",
     "react-dom": "19.0.4"
