@@ -1,0 +1,71 @@
+{
+  "receipt_type": "MARKETROUTE_AWS_V0_BUILD6_CERTIFICATION",
+  "status": "CLOSED_CERTIFIED_FROZEN",
+  "region": "eu-west-2",
+  "account_id": "801132668416",
+  "build": "AWS-V0-BUILD-6",
+  "frozen_build5_parent_sha": "f01f2ced55cbc9079f6d0c12cfe9d9a7547e833f",
+  "certified_source_parent_sha": "c2bb34a4b9d1b13261e3209ff3c9ae85e4788618",
+  "hosting": {
+    "provider": "AWS Amplify Hosting",
+    "platform": "WEB_COMPUTE",
+    "app_id": "d21r3wzl6jmvfy",
+    "branch": "aws-v0",
+    "stage": "BETA",
+    "framework": "Next.js - SSR",
+    "shadow_url": "https://aws-v0.d21r3wzl6jmvfy.amplifyapp.com",
+    "auto_build": false,
+    "basic_auth": true,
+    "pull_request_preview": false,
+    "production_cutover": false
+  },
+  "runtime": {
+    "next_version": "15.5.23",
+    "node_engine": "22.x",
+    "rds_data_sdk": "@aws-sdk/client-rds-data@3.1114.0",
+    "transport": "rds-data-api",
+    "named_operation": "system.health"
+  },
+  "live_proof": {
+    "amplify_release_job_id": "2",
+    "amplify_release_commit_id": "HEAD",
+    "source_continuity_sha": "c2bb34a4b9d1b13261e3209ff3c9ae85e4788618",
+    "build_step": "SUCCEED",
+    "deploy_step": "SUCCEED",
+    "verify_step": "SUCCEED",
+    "unauthenticated_http_status": 401,
+    "authenticated_first_http_status": 503,
+    "authenticated_success_http_status": 200,
+    "database_reachable": true,
+    "result_ok": true,
+    "response_contract": {
+      "status": "ok",
+      "build": "AWS-V0-BUILD-6",
+      "hosting": "amplify-shadow",
+      "transport": "rds-data-api",
+      "operation": "system.health",
+      "databaseReachable": true,
+      "resultOk": true,
+      "productionCutover": false,
+      "genesisEnabled": false
+    }
+  },
+  "security_invariants": {
+    "server_side_only": true,
+    "named_operation_only": true,
+    "raw_sql_public_api": false,
+    "browser_aws_credentials": false,
+    "custom_production_domain": false,
+    "genesis_enabled": false,
+    "production_cutover": false,
+    "automatic_application_deploy": false
+  },
+  "basic_auth_rotation": {
+    "performed": true,
+    "method": "CloudFormation parameter update",
+    "parameter": "AmplifyShadowBasicAuthPassword",
+    "other_stack_parameters_reused": true,
+    "source_redeploy_required": false
+  },
+  "certification_statement": "AWS V0 Build 6 is closed, certified and frozen. The deployed Amplify Next.js SSR runtime successfully executed the frozen Build 4 named-operation TypeScript Data API adapter through @aws-sdk/client-rds-data and RDS Data API into Aurora PostgreSQL while production cutover and Genesis remained disabled."
+}
