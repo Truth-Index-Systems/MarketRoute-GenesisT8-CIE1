@@ -36,6 +36,8 @@ jobs:
           node --check database/aws/test-compiler-hardening.mjs
           node --check database/aws/apply-build3-dispositions.mjs
           node --check database/aws/test-build3-dispositions.mjs
+          node --check database/aws/apply-build3-final-disposition-closure.mjs
+          node --check database/aws/test-build3-final-disposition-closure.mjs
 
       - name: Prove compiler hardening invariants
         run: node database/aws/test-compiler-hardening.mjs
@@ -43,11 +45,17 @@ jobs:
       - name: Prove disposition invariants
         run: node database/aws/test-build3-dispositions.mjs
 
+      - name: Prove final disposition closure invariants
+        run: node database/aws/test-build3-final-disposition-closure.mjs
+
       - name: Run Build 3 hardened audit
         run: node database/aws/compile-canonical-baseline.mjs
 
       - name: Apply Build 3 canonical dispositions
         run: node database/aws/apply-build3-dispositions.mjs
+
+      - name: Apply reviewed final disposition closure
+        run: node database/aws/apply-build3-final-disposition-closure.mjs
 
       - name: Validate generated audit and manifests
         run: |
@@ -57,6 +65,9 @@ jobs:
           const schemaManifest = JSON.parse(fs.readFileSync('database/aws/0001_marketroute_aws_schema_manifest.json', 'utf8'));
           const disposition = JSON.parse(fs.readFileSync('database/aws/build3_disposition_audit.json', 'utf8'));
           const dispositionManifest = JSON.parse(fs.readFileSync('database/aws/0001_marketroute_aws_disposition_manifest.json', 'utf8'));
+          const finalDisposition = JSON.parse(fs.readFileSync('database/aws/build3_final_disposition_audit.json', 'utf8'));
+          const finalManifest = JSON.parse(fs.readFileSync('database/aws/0001_marketroute_aws_final_disposition_manifest.json', 'utf8'));
+          const reviewedLedger = JSON.parse(fs.readFileSync('database/aws/BUILD3-REVIEWED-DISPOSITIONS.json', 'utf8'));
 
           if (audit.build !== 'AWS-V0-BUILD-3') throw new Error('unexpected audit build');
           if (audit.format_version !== 2 || audit.mode !== 'hardened-audit') throw new Error('hardened audit v2 required');
@@ -87,24 +98,50 @@ jobs:
             throw new Error('Supabase/browser identity dependency leaked into AWS boundary');
           }
 
-          const expectedStatus = disposition.unresolved_count === 0 ? 'READY_FOR_FINAL_OBJECT_RESOLUTION' : 'DISPOSITION_REVIEW_REQUIRED';
-          if (dispositionManifest.status !== expectedStatus) throw new Error('disposition manifest status mismatch');
+          if (reviewedLedger.build !== 'AWS-V0-BUILD-3' || reviewedLedger.format_version !== 1 || reviewedLedger.entries.length !== 23) {
+            throw new Error('expected exactly 23 reviewed final disposition entries');
+          }
+          if (finalDisposition.build !== 'AWS-V0-BUILD-3' || finalDisposition.mode !== 'final-disposition-closure') {
+            throw new Error('unexpected final disposition audit');
+          }
+          if (finalDisposition.raw_unresolved_count !== 146) throw new Error(`expected frozen raw disposition set of 146, got ${finalDisposition.raw_unresolved_count}`);
+          if (finalDisposition.resolved_decisions !== 146 || finalDisposition.unresolved_count !== 0) {
+            throw new Error('final disposition closure must resolve all 146 findings');
+          }
+          if (finalDisposition.reviewed_ledger.entry_count !== 23 || finalDisposition.reviewed_ledger.matched_count !== 23) {
+            throw new Error('reviewed disposition ledger did not match 23/23 source statements');
+          }
+          if (finalDisposition.canonical_configuration_statements !== 19) {
+            throw new Error(`expected 19 canonical configuration statements, got ${finalDisposition.canonical_configuration_statements}`);
+          }
+          if (finalDisposition.required_transforms !== 35) {
+            throw new Error(`expected 35 AWS transforms, got ${finalDisposition.required_transforms}`);
+          }
+          if (finalDisposition.resolved_exclusions !== 92) {
+            throw new Error(`expected 92 exclusions after configuration-evolution correction, got ${finalDisposition.resolved_exclusions}`);
+          }
+          if (finalDisposition.disposition_counts.KEEP_CANONICAL_CONFIGURATION !== 19) throw new Error('canonical configuration count mismatch');
+          if (finalDisposition.disposition_counts.EXCLUDE_HISTORICAL_SCHEMA_RELEASE_ROW !== 56) throw new Error('historical schema-release exclusion count mismatch');
+          if (finalDisposition.disposition_counts.EXCLUDE_HISTORICAL_BACKFILL_OR_REPAIR !== 26) throw new Error('historical backfill exclusion count mismatch');
+          if (finalManifest.status !== 'READY_FOR_FINAL_OBJECT_RESOLUTION') throw new Error('final disposition manifest is not ready for final-object resolution');
+          if (finalManifest.prohibited_historical_data_import !== true) throw new Error('final historical-data prohibition missing');
+          if (finalManifest.identity_boundary?.version !== identity.version) throw new Error('identity boundary drifted during closure');
 
           console.log(JSON.stringify({
             migration_count: audit.migration_count,
             migration_range: audit.migration_range,
             hardened_unresolved: audit.unresolved_count,
-            hardened_blockers: audit.blockers.length,
-            hardened_review_items: audit.review_items.length,
-            hardened_resolved_exclusions: audit.resolved_exclusions.length,
-            object_candidates: audit.final_object_candidates.length,
-            disposition_resolved: disposition.resolved_decisions,
-            disposition_unresolved: disposition.unresolved_count,
-            required_transforms: disposition.required_transforms,
-            disposition_exclusions: disposition.resolved_exclusions,
-            disposition_counts: disposition.disposition_counts,
+            base_disposition_resolved: disposition.resolved_decisions,
+            base_disposition_unresolved: disposition.unresolved_count,
+            final_disposition_resolved: finalDisposition.resolved_decisions,
+            final_disposition_unresolved: finalDisposition.unresolved_count,
+            reviewed_ledger_matches: `${finalDisposition.reviewed_ledger.matched_count}/${finalDisposition.reviewed_ledger.entry_count}`,
+            canonical_configuration_statements: finalDisposition.canonical_configuration_statements,
+            required_transforms: finalDisposition.required_transforms,
+            final_exclusions: finalDisposition.resolved_exclusions,
+            disposition_counts: finalDisposition.disposition_counts,
             identity_boundary: identity.version,
-            manifest_status: dispositionManifest.status,
+            manifest_status: finalManifest.status,
           }, null, 2));
           NODE
 
@@ -121,7 +158,7 @@ jobs:
             exit 1
           fi
           if [ -e database/aws/0001_marketroute_aws_canonical_baseline.sql ]; then
-            echo "Compiler emitted baseline before the Build 3 gate cleared" >&2
+            echo "Compiler emitted baseline before final-object resolution" >&2
             exit 1
           fi
           echo "Fail-closed baseline gate verified with exit $status."
@@ -135,5 +172,8 @@ jobs:
             database/aws/0001_marketroute_aws_schema_manifest.json
             database/aws/build3_disposition_audit.json
             database/aws/0001_marketroute_aws_disposition_manifest.json
+            database/aws/build3_final_disposition_audit.json
+            database/aws/0001_marketroute_aws_final_disposition_manifest.json
+            database/aws/BUILD3-REVIEWED-DISPOSITIONS.json
           if-no-files-found: error
           retention-days: 14
