@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
-import {
-  isAwsV0ShadowModeEnabled,
-  runAwsV0ShadowDataApiHealthProbe,
-} from "@/application/aws-v0/shadow-data-api-health";
+import { runAwsV0ShadowDataApiHealthProbe } from "@/application/aws-v0/shadow-data-api-health";
+import { isAwsV0ShadowModeEnabled } from "@/application/aws-v0/shadow-runtime";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
