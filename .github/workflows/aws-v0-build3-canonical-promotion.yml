@@ -1,0 +1,236 @@
+name: AWS V0 Build 3 Canonical Promotion
+
+on:
+  push:
+    branches:
+      - aws-v0
+    paths:
+      - '.github/workflows/aws-v0-build3-canonical-promotion.yml'
+      - 'database/aws/build3-canonical-baseline-lib.mjs'
+      - 'database/aws/promote-build3-canonical-baseline.mjs'
+      - 'database/aws/verify-build3-canonical-baseline-promotion.mjs'
+      - 'database/aws/test-build3-canonical-baseline-promotion.mjs'
+      - 'database/aws/apply-build3-canonical-baseline-data-api.mjs'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: aws-v0-build3-canonical-promotion
+  cancel-in-progress: false
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: marketroute_build3_promotion
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d marketroute_build3_promotion"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: '5432'
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: marketroute_build3_promotion
+      SOURCE_RUN_ID: '32321349965'
+      SOURCE_ARTIFACT_NAME: aws-v0-build3-final-transform
+
+    steps:
+      - name: Checkout canonical aws-v0 branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Syntax-check canonical promotion tooling
+        run: |
+          node --check database/aws/build3-canonical-baseline-lib.mjs
+          node --check database/aws/promote-build3-canonical-baseline.mjs
+          node --check database/aws/verify-build3-canonical-baseline-promotion.mjs
+          node --check database/aws/test-build3-canonical-baseline-promotion.mjs
+          node --check database/aws/apply-build3-canonical-baseline-data-api.mjs
+
+      - name: Refuse overwrite of existing canonical baseline
+        run: |
+          if [ -e database/aws/0001_marketroute_aws_canonical_baseline.sql ] || [ -e database/aws/0001_marketroute_aws_canonical_baseline_manifest.json ]; then
+            echo "Canonical baseline already exists; immutable promotion refuses overwrite." >&2
+            exit 1
+          fi
+
+      - name: Download exact certified final-transform artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          SOURCE_DIR="$RUNNER_TEMP/build3-promotion-source"
+          mkdir -p "$SOURCE_DIR"
+          gh run download "$SOURCE_RUN_ID" \
+            --repo "$GITHUB_REPOSITORY" \
+            --name "$SOURCE_ARTIFACT_NAME" \
+            --dir "$SOURCE_DIR"
+          test -s "$SOURCE_DIR/0001_marketroute_aws_canonical_baseline_candidate.sql"
+          test -s "$SOURCE_DIR/build3_aws_final_transform_manifest.json"
+          test -s "$SOURCE_DIR/build3_aws_transformed_schema_manifest.json"
+          test -s "$SOURCE_DIR/build3_aws_transformed_reference_schema.sql"
+          echo "MARKETROUTE_PROMOTION_SOURCE_DIR=$SOURCE_DIR" >> "$GITHUB_ENV"
+
+      - name: Promote certified candidate byte-for-byte
+        run: node database/aws/promote-build3-canonical-baseline.mjs
+
+      - name: Verify immutable canonical baseline promotion
+        run: node database/aws/verify-build3-canonical-baseline-promotion.mjs
+
+      - name: Prove Data API application plan is within AWS request envelope
+        run: node database/aws/apply-build3-canonical-baseline-data-api.mjs --json
+
+      - name: Apply official canonical baseline to fresh PostgreSQL 16
+        run: psql --set=ON_ERROR_STOP=1 --file=database/aws/0001_marketroute_aws_canonical_baseline.sql
+
+      - name: Prove canonical baseline database invariants
+        run: |
+          psql --set=ON_ERROR_STOP=1 <<'SQL'
+          DO $gate$
+          DECLARE
+            v_user_fk_count integer;
+            v_growth_enabled boolean;
+            v_growth_limit integer;
+            v_scale_limit integer;
+            v_employment_policy text;
+            v_role_policy text;
+            v_channel_policy text;
+          BEGIN
+            IF to_regclass('public.marketroute_users') IS NULL THEN
+              RAISE EXCEPTION 'BUILD3_PROMOTED_INTERNAL_USER_ANCHOR_MISSING';
+            END IF;
+            IF to_regclass('auth.users') IS NOT NULL THEN
+              RAISE EXCEPTION 'BUILD3_PROMOTED_AUTH_USERS_PRESENT';
+            END IF;
+            IF EXISTS (
+              SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+              WHERE n.nspname='public' AND c.relkind='r' AND c.relrowsecurity
+            ) THEN
+              RAISE EXCEPTION 'BUILD3_PROMOTED_RLS_ENABLED';
+            END IF;
+            IF EXISTS (SELECT 1 FROM public.marketroute_users)
+               OR EXISTS (SELECT 1 FROM public.organisations)
+               OR EXISTS (SELECT 1 FROM public.companies)
+               OR EXISTS (SELECT 1 FROM public.claims)
+               OR EXISTS (SELECT 1 FROM public.opportunities) THEN
+              RAISE EXCEPTION 'BUILD3_PROMOTED_HISTORICAL_RUNTIME_DATA_PRESENT';
+            END IF;
+            IF EXISTS (SELECT 1 FROM public.marketroute_schema_releases) THEN
+              RAISE EXCEPTION 'BUILD3_PROMOTED_HISTORICAL_SCHEMA_RELEASE_PRESENT';
+            END IF;
+            IF to_regclass('public.marketroute_v1_migration_batches') IS NOT NULL
+               OR to_regclass('public.marketroute_v1_migration_id_map') IS NOT NULL
+               OR to_regclass('public.marketroute_v1_migration_rejections') IS NOT NULL
+               OR to_regclass('public.marketroute_v1_migration_audit_events') IS NOT NULL THEN
+              RAISE EXCEPTION 'BUILD3_PROMOTED_V1_ETL_OBJECT_PRESENT';
+            END IF;
+
+            SELECT count(*)::int INTO v_user_fk_count
+            FROM pg_constraint
+            WHERE contype='f' AND confrelid='public.marketroute_users'::regclass;
+            IF v_user_fk_count <> 13 THEN
+              RAISE EXCEPTION 'BUILD3_PROMOTED_INTERNAL_USER_FK_COUNT_DRIFT:%', v_user_fk_count;
+            END IF;
+
+            IF to_regprocedure('public.marketroute_is_org_admin(uuid,uuid)') IS NULL
+               OR to_regprocedure('public.marketroute_is_org_member(uuid,uuid)') IS NULL
+               OR to_regprocedure('public.marketroute_workspace_activation_status_v2(uuid,uuid)') IS NULL THEN
+              RAISE EXCEPTION 'BUILD3_PROMOTED_EXPLICIT_ACTOR_SIGNATURE_MISSING';
+            END IF;
+            IF to_regprocedure('public.marketroute_is_org_admin(uuid)') IS NOT NULL
+               OR to_regprocedure('public.marketroute_is_org_member(uuid)') IS NOT NULL
+               OR to_regprocedure('public.marketroute_workspace_activation_status_v2(uuid)') IS NOT NULL THEN
+              RAISE EXCEPTION 'BUILD3_PROMOTED_IMPLICIT_ACTOR_SIGNATURE_PRESENT';
+            END IF;
+
+            IF EXISTS (
+              SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+              WHERE n.nspname='public' AND p.prokind='f' AND (
+                pg_get_functiondef(p.oid) ~* 'auth[.]uid[[:space:]]*[(]'
+                OR pg_get_functiondef(p.oid) ~* 'auth[.](role|jwt)[[:space:]]*[(]'
+                OR pg_get_functiondef(p.oid) ~* 'request[.]jwt[.]'
+                OR pg_get_functiondef(p.oid) ~* 'marketroute_v1_migration_(batches|id_map|rejections|audit_events)'
+              )
+            ) THEN
+              RAISE EXCEPTION 'BUILD3_PROMOTED_LEGACY_FUNCTION_DEPENDENCY_PRESENT';
+            END IF;
+
+            SELECT enabled INTO v_growth_enabled FROM public.genesis_growth_settings WHERE singleton=true;
+            IF v_growth_enabled IS DISTINCT FROM false THEN
+              RAISE EXCEPTION 'BUILD3_PROMOTED_DEMAND_DRIVEN_GENESIS_DRIFT';
+            END IF;
+            SELECT active_market_limit INTO v_growth_limit FROM public.marketroute_plan_catalog WHERE plan_code='GROWTH';
+            SELECT active_market_limit INTO v_scale_limit FROM public.marketroute_plan_catalog WHERE plan_code='SCALE';
+            IF v_growth_limit IS DISTINCT FROM 3 OR v_scale_limit IS DISTINCT FROM 10 THEN
+              RAISE EXCEPTION 'BUILD3_PROMOTED_PLAN_GOVERNANCE_DRIFT';
+            END IF;
+            SELECT policy_key INTO v_employment_policy FROM public.truth_claim_policy_bindings WHERE subject_type='PERSON' AND claim_key='employment.current';
+            SELECT policy_key INTO v_role_policy FROM public.truth_claim_policy_bindings WHERE subject_type='PERSON' AND claim_key='role.current';
+            SELECT policy_key INTO v_channel_policy FROM public.truth_claim_policy_bindings WHERE subject_type='CHANNEL' AND claim_key='ownership.current';
+            IF v_employment_policy IS DISTINCT FROM 'PERSON_CURRENT_EMPLOYMENT_V1'
+               OR v_role_policy IS DISTINCT FROM 'PERSON_CURRENT_ROLE_V1'
+               OR v_channel_policy IS DISTINCT FROM 'CHANNEL_OWNERSHIP_CURRENT_V1' THEN
+              RAISE EXCEPTION 'BUILD3_PROMOTED_TRUTH_POLICY_DRIFT';
+            END IF;
+          END;
+          $gate$;
+          SQL
+
+      - name: Prove exact promoted object counts
+        run: |
+          psql --set=ON_ERROR_STOP=1 --tuples-only --no-align <<'SQL' > "$RUNNER_TEMP/build3-promoted-counts.txt"
+          SELECT json_build_object(
+            'tables',(SELECT count(*) FROM pg_catalog.pg_tables WHERE schemaname='public'),
+            'routines',(SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.prokind='f'),
+            'views',(SELECT count(*) FROM pg_views WHERE schemaname='public'),
+            'triggers',(SELECT count(*) FROM pg_trigger t JOIN pg_class c ON c.oid=t.tgrelid JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' AND NOT t.tgisinternal),
+            'indexes',(SELECT count(*) FROM pg_indexes WHERE schemaname='public')
+          );
+          SQL
+          node - "$RUNNER_TEMP/build3-promoted-counts.txt" <<'NODE'
+          const fs = require('node:fs');
+          const counts = JSON.parse(fs.readFileSync(process.argv[2], 'utf8').trim());
+          const expected = { tables:77, routines:206, views:5, triggers:64, indexes:88 };
+          for (const [key,value] of Object.entries(expected)) {
+            if (Number(counts[key]) !== value) throw new Error(`${key} count drifted: ${counts[key]}`);
+          }
+          console.log(JSON.stringify(counts, null, 2));
+          NODE
+
+      - name: Prove canonical promotion regression and fail-closed integrity
+        run: node database/aws/test-build3-canonical-baseline-promotion.mjs
+
+      - name: Validate generated promotion scope
+        run: |
+          test "$(git status --short | wc -l)" -eq 2
+          git status --short | grep -F '?? database/aws/0001_marketroute_aws_canonical_baseline.sql'
+          git status --short | grep -F '?? database/aws/0001_marketroute_aws_canonical_baseline_manifest.json'
+          git diff --check -- database/aws/0001_marketroute_aws_canonical_baseline.sql database/aws/0001_marketroute_aws_canonical_baseline_manifest.json
+
+      - name: Commit immutable canonical baseline
+        run: |
+          git config user.name 'Truth Index Systems Build Bot'
+          git config user.email 'buildbot@truthindexsystems.co.uk'
+          git add -- database/aws/0001_marketroute_aws_canonical_baseline.sql database/aws/0001_marketroute_aws_canonical_baseline_manifest.json
+          git diff --cached --check
+          git commit -m 'build3: freeze canonical AWS V0 baseline'
+          git push origin HEAD:aws-v0
