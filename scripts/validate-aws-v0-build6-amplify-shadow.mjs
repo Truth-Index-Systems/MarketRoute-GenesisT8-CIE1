@@ -10,6 +10,7 @@ const infraPackage = JSON.parse(read("infrastructure/aws-v0/package.json"));
 const packageLock = JSON.parse(read("package-lock.json"));
 const shadowHealth = read("app/api/aws-v0/shadow/health/route.ts");
 const dataApiProbe = read("app/api/aws-v0/shadow/data-api/route.ts");
+const dataApiProbeApplication = read("application/aws-v0/shadow-data-api-health.ts");
 const dataApiBundleAnchor = read("platform/database/aws-data-api-bundle-anchor.ts");
 const dataApiAdapter = read("platform/database/aws-data-api.ts");
 const workflow = read(".github/workflows/aws-v0-infrastructure.yml");
@@ -72,8 +73,7 @@ if (!shadowHealth.includes("genesisEnabled: false")) throw new Error("Build 6 he
 
 for (const token of [
   'process.env.MARKETROUTE_AWS_SHADOW_MODE !== "true"',
-  'awsDataApiFromEnvironment',
-  'executeOperation("system.health", {})',
+  'runAwsV0ShadowDataApiHealthProbe',
   'transport: "rds-data-api"',
   'operation: "system.health"',
   'databaseReachable: true',
@@ -81,7 +81,16 @@ for (const token of [
   'productionCutover: false',
   'genesisEnabled: false',
 ]) {
-  if (!dataApiProbe.includes(token)) throw new Error(`Build 6 live Data API probe missing: ${token}`);
+  if (!dataApiProbe.includes(token)) throw new Error(`Build 6 live Data API route missing: ${token}`);
+}
+if (dataApiProbe.includes("@/platform/")) throw new Error("Build 6 live Data API route must not bypass the application layer");
+for (const token of [
+  'assertAwsRdsDataSdkBundled',
+  'awsDataApiFromEnvironment',
+  'executeOperation("system.health", {})',
+  'result.rows.length === 1 && result.rows[0]?.ok === 1',
+]) {
+  if (!dataApiProbeApplication.includes(token)) throw new Error(`Build 6 application health bridge missing: ${token}`);
 }
 if (!dataApiBundleAnchor.includes('RDSDataClient') || !dataApiBundleAnchor.includes('@aws-sdk/client-rds-data')) {
   throw new Error("Build 6 live Data API SDK bundle anchor is missing");
