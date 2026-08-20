@@ -61,9 +61,15 @@ for (const name of stackNames) {
   }
 
   if (name === "MrAwsV0ApplicationStack") {
-    const allowed = new Set(["AWS::IAM::Role", "AWS::IAM::Policy", "AWS::Amplify::App", "AWS::Amplify::Branch"]);
+    const allowed = new Set([
+      "AWS::IAM::Role",
+      "AWS::IAM::Policy",
+      "AWS::Amplify::App",
+      "AWS::Amplify::Branch",
+      "AWS::Bedrock::ApplicationInferenceProfile",
+    ]);
     for (const resource of productResources) {
-      if (!allowed.has(resource.Type)) throw new Error(`Build 6 application stack contains forbidden resource type: ${resource.Type}`);
+      if (!allowed.has(resource.Type)) throw new Error(`Build 7.4 application stack contains forbidden resource type: ${resource.Type}`);
     }
   }
 }
@@ -123,9 +129,10 @@ const applicationOf = (type) => applicationResources.filter(resource => resource
 if (applicationOf("AWS::Amplify::App").length !== 1) throw new Error("Build 6 must synthesize exactly one Amplify app");
 if (applicationOf("AWS::Amplify::Branch").length !== 1) throw new Error("Build 6 must synthesize exactly one Amplify branch");
 if (applicationOf("AWS::IAM::Role").length !== 2) throw new Error("Build 6 must synthesize exactly two IAM roles: service and SSR compute");
-if (applicationOf("AWS::IAM::Policy").length !== 2) throw new Error("Build 6 must synthesize exactly two least-privilege IAM policies");
+if (applicationOf("AWS::IAM::Policy").length !== 2) throw new Error("Build 7.4 must keep exactly two IAM policy resources");
+if (applicationOf("AWS::Bedrock::ApplicationInferenceProfile").length !== 1) throw new Error("Build 7.4 must synthesize exactly one Bedrock application inference profile");
 for (const forbiddenType of ["AWS::Amplify::Domain", "AWS::Lambda::Function", "AWS::SQS::Queue", "AWS::Cognito::UserPool", "AWS::RDS::DBCluster", "AWS::EC2::VPC"]) {
-  if (applicationOf(forbiddenType).length !== 0) throw new Error(`Build 6 synthesized forbidden resource type: ${forbiddenType}`);
+  if (applicationOf(forbiddenType).length !== 0) throw new Error(`Build 7.4 synthesized forbidden resource type: ${forbiddenType}`);
 }
 const amplifyApp = applicationOf("AWS::Amplify::App")[0].Properties ?? {};
 if (amplifyApp.Name !== "marketroute-aws-v0-shadow") throw new Error(`Build 6 Amplify app name drifted: ${amplifyApp.Name}`);
@@ -137,6 +144,9 @@ if (typeof amplifyApp.BuildSpec !== "string" || !amplifyApp.BuildSpec.includes("
 }
 for (const forbidden of ["SUPABASE_", "OPENAI_", "STRIPE_", "CRON_SECRET", "FOUNDER_DASHBOARD_PASSWORD"]) {
   if (JSON.stringify(amplifyApp).includes(forbidden)) throw new Error(`Build 6 Amplify app leaked legacy/runtime secret configuration: ${forbidden}`);
+}
+if (!JSON.stringify(amplifyApp.EnvironmentVariables ?? []).includes("MARKETROUTE_AWS_BEDROCK_INFERENCE_PROFILE_ARN")) {
+  throw new Error("Build 7.4 Amplify SSR environment is missing the server-side Bedrock application inference profile ARN");
 }
 const amplifyBranch = applicationOf("AWS::Amplify::Branch")[0].Properties ?? {};
 if (amplifyBranch.BranchName !== "aws-v0") throw new Error(`Build 6 branch must be aws-v0, got ${amplifyBranch.BranchName}`);
@@ -156,12 +166,39 @@ for (const name of ["AmplifyGitHubAccessToken", "AmplifyShadowBasicAuthPassword"
 if (parameters.AmplifyGitHubAccessToken.NoEcho !== true) throw new Error("Build 6 GitHub access token parameter must be NoEcho");
 if (parameters.AmplifyShadowBasicAuthPassword.NoEcho !== true) throw new Error("Build 6 basic-auth password parameter must be NoEcho");
 
+const inferenceProfile = applicationOf("AWS::Bedrock::ApplicationInferenceProfile")[0].Properties ?? {};
+if (inferenceProfile.InferenceProfileName !== "marketroute-aws-v0-sonnet45-semantic") throw new Error("Build 7.4 application inference profile name drifted");
+const modelSourceJson = JSON.stringify(inferenceProfile.ModelSource ?? {});
+if (!modelSourceJson.includes("eu.anthropic.claude-sonnet-4-5-20250929-v1:0")) throw new Error("Build 7.4 application inference profile source drifted from EU Sonnet 4.5");
+
 const policyJson = JSON.stringify(applicationOf("AWS::IAM::Policy"));
-for (const action of ["rds-data:ExecuteStatement", "rds-data:BeginTransaction", "rds-data:CommitTransaction", "rds-data:RollbackTransaction", "secretsmanager:GetSecretValue"]) {
-  if (!policyJson.includes(action)) throw new Error(`Build 6 SSR compute policy missing action: ${action}`);
+for (const action of ["rds-data:ExecuteStatement", "rds-data:BeginTransaction", "rds-data:CommitTransaction", "rds-data:RollbackTransaction", "secretsmanager:GetSecretValue", "bedrock:InvokeModel"]) {
+  if (!policyJson.includes(action)) throw new Error(`Build 7.4 SSR compute policy missing action: ${action}`);
 }
-for (const forbidden of ["rds-data:BatchExecuteStatement", "secretsmanager:*", "rds-data:*", "AdministratorAccess", "cognito-idp:AdminCreateUser", "bedrock:", "sqs:"]) {
-  if (policyJson.includes(forbidden)) throw new Error(`Build 6 application policy contains forbidden authority: ${forbidden}`);
+for (const region of ["eu-central-1", "eu-north-1", "eu-south-1", "eu-south-2", "eu-west-1", "eu-west-2", "eu-west-3"]) {
+  if (!policyJson.includes(`arn:aws:bedrock:${region}::foundation-model/anthropic.claude-sonnet-4-5-20250929-v1:0`)) {
+    throw new Error(`Build 7.4 synthesized policy missing exact EU foundation model ARN: ${region}`);
+  }
+}
+if (!policyJson.includes("bedrock:InferenceProfileArn")) throw new Error("Build 7.4 synthesized foundation-model policy lacks inference-profile condition");
+if (!policyJson.includes("application-inference-profile")) throw new Error("Build 7.4 synthesized policy does not scope invocation to application inference profile");
+for (const forbidden of [
+  "rds-data:BatchExecuteStatement",
+  "secretsmanager:*",
+  "rds-data:*",
+  "AdministratorAccess",
+  "cognito-idp:AdminCreateUser",
+  "bedrock:InvokeModelWithResponseStream",
+  "bedrock:CreateInferenceProfile",
+  "bedrock:DeleteInferenceProfile",
+  "bedrock:ListInferenceProfiles",
+  "bedrock:GetInferenceProfile",
+  "bedrock:*",
+  "aws-marketplace:Subscribe",
+  "iam:PassRole",
+  "sqs:",
+]) {
+  if (policyJson.includes(forbidden)) throw new Error(`Build 7.4 application policy contains forbidden authority: ${forbidden}`);
 }
 
-console.log("PASS AWS-V0 synthesized infrastructure boundary through Build 6");
+console.log("PASS AWS-V0 synthesized infrastructure boundary through Build 7.4");

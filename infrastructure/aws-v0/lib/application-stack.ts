@@ -1,11 +1,25 @@
 import { ArnFormat, CfnOutput, CfnParameter, Stack, StackProps } from "aws-cdk-lib";
 import * as amplify from "aws-cdk-lib/aws-amplify";
+import * as bedrock from "aws-cdk-lib/aws-bedrock";
 import * as iam from "aws-cdk-lib/aws-iam";
 import { Construct } from "constructs";
 
 const REPOSITORY_URL = "https://github.com/Truth-Index-Systems/MarketRoute-GenesisT8-CIE1";
 const BRANCH_NAME = "aws-v0";
 const DATABASE_NAME = "marketroute";
+
+const BEDROCK_MODEL_ID = "anthropic.claude-sonnet-4-5-20250929-v1:0";
+const BEDROCK_EU_INFERENCE_PROFILE_ID = "eu.anthropic.claude-sonnet-4-5-20250929-v1:0";
+const BEDROCK_APPLICATION_PROFILE_NAME = "marketroute-aws-v0-sonnet45-semantic";
+const BEDROCK_EU_DESTINATION_REGIONS = [
+  "eu-central-1",
+  "eu-north-1",
+  "eu-south-1",
+  "eu-south-2",
+  "eu-west-1",
+  "eu-west-2",
+  "eu-west-3",
+] as const;
 
 const AMPLIFY_BUILD_SPEC = `version: 1
 frontend:
@@ -30,12 +44,9 @@ frontend:
 `;
 
 /**
- * Build 6: private Amplify Hosting shadow for the existing Next.js application.
- *
- * This stack creates hosting only. It does not cut production traffic away from
- * Vercel, does not migrate Supabase runtime routes, and does not enable Genesis.
- * The aws-v0 branch remains manually built and basic-auth protected while the
- * AWS application boundary is proven.
+ * Build 6 private Amplify shadow, extended by Build 7.4 with a narrowly scoped
+ * Amazon Bedrock semantic invocation boundary. Production cutover and Genesis
+ * remain disabled; the aws-v0 branch stays manual, private and Basic-Auth gated.
  */
 export class MrAwsV0ApplicationStack extends Stack {
   public constructor(scope: Construct, id: string, props: StackProps) {
@@ -107,7 +118,7 @@ export class MrAwsV0ApplicationStack extends Stack {
     const computeRole = new iam.Role(this, "AmplifySsrComputeRole", {
       roleName: "MarketRouteAwsV0AmplifySsrComputeRole",
       assumedBy: amplifyPrincipal,
-      description: "Branch-scoped AWS V0 SSR compute role for the named RDS Data API boundary",
+      description: "Branch-scoped AWS V0 SSR compute role for named Data API and Bedrock semantic boundaries",
     });
 
     const clusterArn = this.formatArn({
@@ -133,6 +144,41 @@ export class MrAwsV0ApplicationStack extends Stack {
       resources: [auroraSecretArn.valueAsString],
     }));
 
+    const bedrockEuSystemInferenceProfileArn = this.formatArn({
+      service: "bedrock",
+      resource: "inference-profile",
+      resourceName: BEDROCK_EU_INFERENCE_PROFILE_ID,
+      arnFormat: ArnFormat.SLASH_RESOURCE_NAME,
+    });
+
+    const semanticInferenceProfile = new bedrock.CfnApplicationInferenceProfile(this, "SemanticInferenceProfile", {
+      inferenceProfileName: BEDROCK_APPLICATION_PROFILE_NAME,
+      description: "MarketRoute AWS V0 semantic intelligence cost and usage attribution profile",
+      modelSource: {
+        copyFrom: bedrockEuSystemInferenceProfileArn,
+      },
+    });
+
+    computeRole.addToPolicy(new iam.PolicyStatement({
+      sid: "MarketRouteBedrockSemanticProfileInvocation",
+      actions: ["bedrock:InvokeModel"],
+      resources: [semanticInferenceProfile.attrInferenceProfileArn],
+    }));
+
+    const bedrockFoundationModelArns = BEDROCK_EU_DESTINATION_REGIONS.map(
+      (region) => `arn:aws:bedrock:${region}::foundation-model/${BEDROCK_MODEL_ID}`,
+    );
+    computeRole.addToPolicy(new iam.PolicyStatement({
+      sid: "MarketRouteBedrockSemanticModelBoundary",
+      actions: ["bedrock:InvokeModel"],
+      resources: bedrockFoundationModelArns,
+      conditions: {
+        StringEquals: {
+          "bedrock:InferenceProfileArn": semanticInferenceProfile.attrInferenceProfileArn,
+        },
+      },
+    }));
+
     const app = new amplify.CfnApp(this, "AmplifyApp", {
       name: "marketroute-aws-v0-shadow",
       description: "MarketRoute AWS V0 private shadow hosting (Build 6)",
@@ -149,6 +195,7 @@ export class MrAwsV0ApplicationStack extends Stack {
         { name: "MARKETROUTE_AWS_RDS_DATABASE", value: DATABASE_NAME },
         { name: "MARKETROUTE_COGNITO_USER_POOL_ID", value: cognitoUserPoolId.valueAsString },
         { name: "MARKETROUTE_COGNITO_USER_POOL_CLIENT_ID", value: cognitoUserPoolClientId.valueAsString },
+        { name: "MARKETROUTE_AWS_BEDROCK_INFERENCE_PROFILE_ARN", value: semanticInferenceProfile.attrInferenceProfileArn },
       ],
     });
 
@@ -173,6 +220,14 @@ export class MrAwsV0ApplicationStack extends Stack {
     new CfnOutput(this, "BuildStatus", {
       value: "AWS-V0-BUILD-6-AMPLIFY-SHADOW",
       description: "Private Amplify Hosting SSR shadow; no production cutover",
+    });
+    new CfnOutput(this, "Build7BedrockIamStatus", {
+      value: "AWS-V0-BUILD-7.4-BEDROCK-IAM",
+      description: "Least-privilege non-streaming Bedrock semantic invocation boundary; no live invocation yet",
+    });
+    new CfnOutput(this, "BedrockSemanticInferenceProfileArn", {
+      value: semanticInferenceProfile.attrInferenceProfileArn,
+      description: "Application inference profile used for MarketRoute semantic cost attribution",
     });
     new CfnOutput(this, "AmplifyAppId", { value: app.attrAppId });
     new CfnOutput(this, "AmplifyDefaultDomain", { value: app.attrDefaultDomain });
