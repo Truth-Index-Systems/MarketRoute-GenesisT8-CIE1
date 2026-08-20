@@ -88,7 +88,7 @@ try {
   const replayManifest = JSON.parse(fs.readFileSync(path.join(outputDir, 'build3_final_object_replay_manifest.json'), 'utf8'));
 
   assert(replayManifest.counters.canonical_configuration_statements === 19, 'canonical configuration count mismatch');
-  assert(replayManifest.counters.transform_source_statements === 35, 'transform-source count mismatch');
+  assert(replayManifest.counters.transform_source_statements === 35, 'transform-source decision count mismatch');
   assert(replayManifest.status === 'READY_FOR_EPHEMERAL_POSTGRES_REPLAY', 'unexpected replay status');
   assert(replay.includes("INSERT INTO public.config_0(k) VALUES ('v0');"), 'canonical configuration missing from replay');
   assert(replay.includes('SELECT auth.uid()'), 'legacy transform source missing from replay');
@@ -109,15 +109,16 @@ try {
   for (const name of requiredTables) schema.push(`CREATE TABLE public.${name} (id uuid);`);
   for (let i = requiredTables.length; i < 50; i += 1) schema.push(`CREATE TABLE public.synthetic_table_${i} (id uuid);`);
 
-  const requiredFunctions = [
-    'marketroute_truth_policy_for_claim_v1',
-    'marketroute_authority_envelope_v1',
-    'marketroute_workspace_commercial_access_v1',
-  ];
-  for (const name of requiredFunctions) {
-    schema.push(`CREATE FUNCTION public.${name}() RETURNS void LANGUAGE plpgsql AS $$ BEGIN PERFORM auth.uid(); END $$;`);
-  }
-  for (let i = requiredFunctions.length; i < 150; i += 1) {
+  schema.push(`CREATE FUNCTION public.marketroute_truth_policy_for_claim_v1() RETURNS void LANGUAGE plpgsql AS $fn$
+BEGIN
+  INSERT INTO public.synthetic_table_8(id) VALUES (NULL);
+  PERFORM auth.uid();
+END;
+$fn$;`);
+  schema.push('CREATE FUNCTION public.marketroute_authority_envelope_v1() RETURNS void LANGUAGE plpgsql AS $$ BEGIN PERFORM auth.uid(); END $$;');
+  schema.push('CREATE FUNCTION public.marketroute_workspace_commercial_access_v1() RETURNS void LANGUAGE plpgsql AS $$ BEGIN PERFORM auth.uid(); END $$;');
+
+  for (let i = 3; i < 150; i += 1) {
     schema.push(`CREATE FUNCTION public.synthetic_function_${i}() RETURNS void LANGUAGE plpgsql AS $$ BEGIN NULL; END $$;`);
   }
   schema.push('ALTER TABLE public.organisations ENABLE ROW LEVEL SECURITY;');
@@ -126,12 +127,14 @@ try {
   const referenceSchemaPath = path.join(outputDir, 'build3_final_object_reference_schema.sql');
   fs.writeFileSync(referenceSchemaPath, `${schema.join('\n')}\n`);
 
+  const verifierEnv = {
+    ...env,
+    MARKETROUTE_FINAL_OBJECT_REFERENCE_SCHEMA: referenceSchemaPath,
+  };
+
   const verified = spawnSync(process.execPath, [verifier], {
     cwd: root,
-    env: {
-      ...env,
-      MARKETROUTE_FINAL_OBJECT_REFERENCE_SCHEMA: referenceSchemaPath,
-    },
+    env: verifierEnv,
     encoding: 'utf8',
   });
   assert(verified.status === 0, verified.stderr || verified.stdout);
@@ -143,6 +146,20 @@ try {
   assert(blockerCodes.has('AWS_RLS_EXECUTION_MODEL_REVIEW_REQUIRED'), 'RLS blocker missing');
   assert(blockerCodes.has('V1_ETL_REFERENCE_REWRITE_PENDING'), 'V1 observability blocker missing');
   assert(resolution.source_reference_schema.schema_only === true, 'schema-only proof missing');
+  assert(resolution.source_reference_schema.top_level_data_mutation_count === 0, 'top-level data mutation proof missing');
+  assert(resolution.source_reference_schema.routine_body_dml_allowed === true, 'routine-body DML boundary missing');
+
+  fs.appendFileSync(referenceSchemaPath, '\nINSERT INTO public.organisations(id) VALUES (NULL);\n');
+  const topLevelMutationRejected = spawnSync(process.execPath, [verifier], {
+    cwd: root,
+    env: verifierEnv,
+    encoding: 'utf8',
+  });
+  assert(topLevelMutationRejected.status !== 0, 'verifier must reject top-level INSERT in schema-only dump');
+  assert(
+    `${topLevelMutationRejected.stderr}\n${topLevelMutationRejected.stdout}`.includes('top-level data mutation: INSERT'),
+    'verifier rejected top-level INSERT for the wrong reason',
+  );
 
   const badAudit = JSON.parse(fs.readFileSync(path.join(outputDir, 'build3_final_disposition_audit.json'), 'utf8'));
   badAudit.required_transforms = 34;
@@ -155,8 +172,10 @@ try {
     test: 'final-object-resolver',
     status: 'PASS',
     canonical_configuration_statements: 19,
-    transform_source_statements: 35,
+    transform_source_decisions: 35,
     schema_only_reference_verified: true,
+    routine_body_dml_ignored_by_top_level_data_gate: true,
+    top_level_data_mutation_rejected: true,
     blocker_detection_verified: [...blockerCodes].sort(),
     fail_closed_transform_drift: true,
   }, null, 2));
