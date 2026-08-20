@@ -171,17 +171,47 @@ if (inferenceProfile.InferenceProfileName !== "marketroute-aws-v0-sonnet45-seman
 const modelSourceJson = JSON.stringify(inferenceProfile.ModelSource ?? {});
 if (!modelSourceJson.includes("eu.anthropic.claude-sonnet-4-5-20250929-v1:0")) throw new Error("Build 7.4 application inference profile source drifted from EU Sonnet 4.5");
 
-const policyJson = JSON.stringify(applicationOf("AWS::IAM::Policy"));
+const policies = applicationOf("AWS::IAM::Policy");
+const allStatements = policies.flatMap((policy) => {
+  const statements = policy.Properties?.PolicyDocument?.Statement ?? [];
+  return Array.isArray(statements) ? statements : [statements];
+});
+const normaliseActions = (statement) => Array.isArray(statement?.Action) ? statement.Action : [statement?.Action].filter(Boolean);
+const getAttTargetsInferenceProfile = (value) => {
+  const serialized = JSON.stringify(value);
+  return serialized.includes("SemanticInferenceProfile") && serialized.includes("InferenceProfileArn");
+};
+
+const profileInvocation = allStatements.find((statement) => statement.Sid === "MarketRouteBedrockSemanticProfileInvocation");
+if (!profileInvocation) throw new Error("Build 7.4 synthesized profile invocation statement missing");
+if (JSON.stringify(normaliseActions(profileInvocation)) !== JSON.stringify(["bedrock:InvokeModel"])) {
+  throw new Error("Build 7.4 profile invocation action drifted from non-streaming InvokeModel only");
+}
+if (!getAttTargetsInferenceProfile(profileInvocation.Resource)) {
+  throw new Error("Build 7.4 profile invocation resource is not the generated application inference profile ARN");
+}
+
+const modelBoundary = allStatements.find((statement) => statement.Sid === "MarketRouteBedrockSemanticModelBoundary");
+if (!modelBoundary) throw new Error("Build 7.4 synthesized model-boundary statement missing");
+if (JSON.stringify(normaliseActions(modelBoundary)) !== JSON.stringify(["bedrock:InvokeModel"])) {
+  throw new Error("Build 7.4 model-boundary action drifted from non-streaming InvokeModel only");
+}
+const expectedModelArns = ["eu-central-1", "eu-north-1", "eu-south-1", "eu-south-2", "eu-west-1", "eu-west-2", "eu-west-3"]
+  .map((region) => `arn:aws:bedrock:${region}::foundation-model/anthropic.claude-sonnet-4-5-20250929-v1:0`)
+  .sort();
+const actualModelArns = (Array.isArray(modelBoundary.Resource) ? modelBoundary.Resource : [modelBoundary.Resource]).slice().sort();
+if (JSON.stringify(actualModelArns) !== JSON.stringify(expectedModelArns)) {
+  throw new Error(`Build 7.4 synthesized model resources drifted: ${JSON.stringify(actualModelArns)}`);
+}
+const inferenceProfileCondition = modelBoundary.Condition?.StringEquals?.["bedrock:InferenceProfileArn"];
+if (!getAttTargetsInferenceProfile(inferenceProfileCondition)) {
+  throw new Error("Build 7.4 synthesized model boundary is not conditioned on the generated application inference profile ARN");
+}
+
+const policyJson = JSON.stringify(policies);
 for (const action of ["rds-data:ExecuteStatement", "rds-data:BeginTransaction", "rds-data:CommitTransaction", "rds-data:RollbackTransaction", "secretsmanager:GetSecretValue", "bedrock:InvokeModel"]) {
   if (!policyJson.includes(action)) throw new Error(`Build 7.4 SSR compute policy missing action: ${action}`);
 }
-for (const region of ["eu-central-1", "eu-north-1", "eu-south-1", "eu-south-2", "eu-west-1", "eu-west-2", "eu-west-3"]) {
-  if (!policyJson.includes(`arn:aws:bedrock:${region}::foundation-model/anthropic.claude-sonnet-4-5-20250929-v1:0`)) {
-    throw new Error(`Build 7.4 synthesized policy missing exact EU foundation model ARN: ${region}`);
-  }
-}
-if (!policyJson.includes("bedrock:InferenceProfileArn")) throw new Error("Build 7.4 synthesized foundation-model policy lacks inference-profile condition");
-if (!policyJson.includes("application-inference-profile")) throw new Error("Build 7.4 synthesized policy does not scope invocation to application inference profile");
 for (const forbidden of [
   "rds-data:BatchExecuteStatement",
   "secretsmanager:*",
