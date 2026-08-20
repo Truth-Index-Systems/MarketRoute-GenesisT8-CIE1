@@ -21,6 +21,117 @@ function countMatches(text, pattern) {
   return [...text.matchAll(pattern)].length;
 }
 
+function splitTopLevelSql(sql) {
+  const statements = [];
+  let start = 0;
+  let i = 0;
+  let mode = 'normal';
+  let dollarTag = null;
+
+  while (i < sql.length) {
+    const ch = sql[i];
+    const next = sql[i + 1];
+
+    if (mode === 'line-comment') {
+      if (ch === '\n') mode = 'normal';
+      i += 1;
+      continue;
+    }
+    if (mode === 'block-comment') {
+      if (ch === '*' && next === '/') {
+        mode = 'normal';
+        i += 2;
+      } else i += 1;
+      continue;
+    }
+    if (mode === 'single') {
+      if (ch === "'" && next === "'") i += 2;
+      else if (ch === "'") {
+        mode = 'normal';
+        i += 1;
+      } else i += 1;
+      continue;
+    }
+    if (mode === 'double') {
+      if (ch === '"' && next === '"') i += 2;
+      else if (ch === '"') {
+        mode = 'normal';
+        i += 1;
+      } else i += 1;
+      continue;
+    }
+    if (mode === 'dollar') {
+      if (sql.startsWith(dollarTag, i)) {
+        i += dollarTag.length;
+        mode = 'normal';
+        dollarTag = null;
+      } else i += 1;
+      continue;
+    }
+
+    if (ch === '-' && next === '-') {
+      mode = 'line-comment';
+      i += 2;
+      continue;
+    }
+    if (ch === '/' && next === '*') {
+      mode = 'block-comment';
+      i += 2;
+      continue;
+    }
+    if (ch === "'") {
+      mode = 'single';
+      i += 1;
+      continue;
+    }
+    if (ch === '"') {
+      mode = 'double';
+      i += 1;
+      continue;
+    }
+    if (ch === '$') {
+      const match = sql.slice(i).match(/^\$[A-Za-z_][A-Za-z0-9_]*\$|^\$\$/);
+      if (match) {
+        dollarTag = match[0];
+        mode = 'dollar';
+        i += dollarTag.length;
+        continue;
+      }
+    }
+
+    if (ch === ';') {
+      const text = sql.slice(start, i + 1).trim();
+      if (text) statements.push(text);
+      start = i + 1;
+    }
+    i += 1;
+  }
+
+  const tail = sql.slice(start).trim();
+  if (tail) statements.push(tail);
+  return statements;
+}
+
+function stripLeadingDumpNoise(sql) {
+  let value = sql.trimStart();
+  for (;;) {
+    const before = value;
+    value = value.replace(/^--[^\n]*(?:\n|$)/, '').trimStart();
+    value = value.replace(/^\/\*[\s\S]*?\*\//, '').trimStart();
+    value = value.replace(/^\\(?:restrict|unrestrict)\b[^\n]*(?:\n|$)/i, '').trimStart();
+    if (value === before) return value;
+  }
+}
+
+function topLevelDataMutation(statement) {
+  const sql = stripLeadingDumpNoise(statement);
+  if (/^INSERT\s+INTO\b/i.test(sql)) return 'INSERT';
+  if (/^UPDATE\b/i.test(sql)) return 'UPDATE';
+  if (/^DELETE\s+FROM\b/i.test(sql)) return 'DELETE';
+  if (/^COPY\b[\s\S]*\bFROM\s+stdin\b/i.test(sql)) return 'COPY_FROM_STDIN';
+  return null;
+}
+
 if (!fs.existsSync(replayManifestPath) || !fs.existsSync(finalDispositionManifestPath)) {
   throw new Error('Final-object replay manifest and final disposition manifest are required.');
 }
@@ -48,14 +159,12 @@ if (replayManifest.expected_canonical_configuration_statements !== 19) {
   throw new Error('Canonical configuration statement count drifted.');
 }
 
-const forbiddenDataPatterns = [
-  /^\s*COPY\s+.+\s+FROM\s+stdin\s*;/gim,
-  /^\s*INSERT\s+INTO\b/gim,
-  /^\s*UPDATE\s+.+\s+SET\b/gim,
-  /^\s*DELETE\s+FROM\b/gim,
-];
-for (const pattern of forbiddenDataPatterns) {
-  if (pattern.test(schema)) throw new Error(`Schema-only dump contains data mutation matching ${pattern}.`);
+const topLevelStatements = splitTopLevelSql(schema);
+for (const statement of topLevelStatements) {
+  const mutation = topLevelDataMutation(statement);
+  if (mutation) {
+    throw new Error(`Schema-only dump contains top-level data mutation: ${mutation}.`);
+  }
 }
 
 if (/^\s*CREATE\s+SCHEMA\s+auth\b/gim.test(schema)) {
@@ -174,6 +283,9 @@ const resolvedManifest = {
     sha256: sha256(schema),
     bytes: Buffer.byteLength(schema),
     schema_only: true,
+    top_level_statement_count: topLevelStatements.length,
+    top_level_data_mutation_count: 0,
+    routine_body_dml_allowed: true,
     ephemeral_compatibility_schema_excluded: true,
   },
   reference_object_counts: objectCounts,
@@ -192,6 +304,8 @@ console.log(JSON.stringify({
   mode: resolvedManifest.mode,
   status: resolvedManifest.status,
   object_counts: resolvedManifest.reference_object_counts,
+  top_level_statements: resolvedManifest.source_reference_schema.top_level_statement_count,
+  top_level_data_mutations: resolvedManifest.source_reference_schema.top_level_data_mutation_count,
   blocker_count: resolvedManifest.blocker_count,
   blocker_codes: blockers.map((b) => b.code),
   reference_schema: resolvedManifest.source_reference_schema.path,
