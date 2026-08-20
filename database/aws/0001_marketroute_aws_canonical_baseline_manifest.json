@@ -1,0 +1,68 @@
+{
+  "format_version": 1,
+  "build": "AWS-V0-BUILD-3",
+  "mode": "canonical-baseline-promotion",
+  "status": "CANONICAL_BASELINE_PROMOTED_PENDING_MANUAL_AURORA_APPLICATION",
+  "doctrine": [
+    "Fresh data",
+    "Final logic",
+    "Clean provenance"
+  ],
+  "source_certification": {
+    "commit_sha": "6b73e0e85c5f968a60e8090a5ab066d033324f53",
+    "workflow_run_id": 32321349965,
+    "artifact_id": 9389866413,
+    "artifact_name": "aws-v0-build3-final-transform",
+    "artifact_zip_sha256": "43d921780aa9db505733470c3f77d52269a824189f89ed8406f909e94c5b723c",
+    "candidate_sha256": "46d9c3aee85d1021d7f514c0384aef036b7f53073a7aa78be4bfabd3266d5e5a",
+    "transform_manifest_sha256": "d45aeb67ab062ec99f232ad30acf32cd1c36c371daad2d8bdaabfbba0871d21f",
+    "validated_manifest_sha256": "a358b3e18e0b27b73b276ad382745affca5fdb42282a7a93401d0d1c4dc4e1f1",
+    "transformed_schema_sha256": "651e9594d607b19f163f89c205a91ab8188e6e48265764c62befb250aee15d48"
+  },
+  "canonical_baseline": {
+    "path": "database/aws/0001_marketroute_aws_canonical_baseline.sql",
+    "sha256": "46d9c3aee85d1021d7f514c0384aef036b7f53073a7aa78be4bfabd3266d5e5a",
+    "bytes": 859730,
+    "immutable": true,
+    "byte_for_byte_certified_candidate": true,
+    "top_level_statement_count": 792,
+    "reviewed_top_level_data_mutation_count": 19,
+    "pg_dump_meta_commands_removed_by_data_api_executor": 2
+  },
+  "postgresql16_validation": {
+    "blocker_count": 0,
+    "object_counts": {
+      "tables": 77,
+      "routines": 206,
+      "procedures": 0,
+      "views": 5,
+      "triggers": 64,
+      "indexes": 88
+    },
+    "internal_user_fk_count": 13,
+    "explicit_actor_function_count": 13
+  },
+  "data_api_application_contract": {
+    "execute_statement_sql_max_bytes": 65536,
+    "canonical_statement_count": 792,
+    "canonical_max_statement_bytes": 19130,
+    "transaction_required": true,
+    "multi_statement_requests_allowed": false,
+    "target_account_id": "801132668416",
+    "target_region": "eu-west-2",
+    "target_cluster_arn": "arn:aws:rds:eu-west-2:801132668416:cluster:marketroute-aws-v0",
+    "target_secret_arn": "arn:aws:secretsmanager:eu-west-2:801132668416:secret:marketroute/aws-v0/database/admin-pXxyUD",
+    "target_database": "marketroute",
+    "requires_empty_public_schema": true,
+    "confirmation_phrase": "APPLY_AWS_V0_BUILD3_BASELINE"
+  },
+  "safety": {
+    "prohibited_historical_data_import": true,
+    "automatic_aurora_execution_allowed": false,
+    "manual_aurora_application_gate_ready": true,
+    "github_oidc_data_api_access_required": false,
+    "cloud_shell_manual_execution_only": true,
+    "rollback_on_statement_failure": true,
+    "production_domain_cutover_allowed": false
+  }
+}
