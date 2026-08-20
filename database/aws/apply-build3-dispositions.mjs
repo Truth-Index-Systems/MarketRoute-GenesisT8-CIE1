@@ -174,12 +174,12 @@ function identityDisposition(finding, statement) {
   const sql = stripLeadingComments(statement);
   const kind = classify(statement);
 
-  if (finding.code === 'SUPABASE_ROLE_REWRITE_REQUIRED' && kind === 'policy') {
+  if (kind === 'policy' && ['SUPABASE_ROLE_REWRITE_REQUIRED', 'AWS_IDENTITY_REWRITE_REQUIRED', 'AWS_REQUEST_JWT_REWRITE_REQUIRED'].includes(finding.code)) {
     return {
       decision_resolved: true,
       disposition: 'EXCLUDE_SUPABASE_RLS_POLICY',
       transform_required: false,
-      rationale: 'Supabase role-bound RLS policy is infrastructure-specific; AWS uses server-side Data API boundaries and explicit tenant/actor parameters.',
+      rationale: 'Supabase role/auth-dependent RLS policy is infrastructure-specific; AWS uses server-side Data API boundaries and explicit tenant/actor parameters.',
     };
   }
 
