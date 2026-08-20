@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
-import { runAwsV0ShadowDataApiHealthProbe } from "@/application/aws-v0/shadow-data-api-health";
+import {
+  isAwsV0ShadowModeEnabled,
+  runAwsV0ShadowDataApiHealthProbe,
+} from "@/application/aws-v0/shadow-data-api-health";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -7,7 +10,7 @@ export const dynamic = "force-dynamic";
 const noStoreHeaders = { "cache-control": "no-store" } as const;
 
 export async function GET() {
-  if (process.env.MARKETROUTE_AWS_SHADOW_MODE !== "true") {
+  if (!isAwsV0ShadowModeEnabled()) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
 

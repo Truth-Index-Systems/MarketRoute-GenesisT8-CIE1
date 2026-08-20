@@ -85,8 +85,10 @@ for (const token of [
   "resourceArn",
   "@/platform/",
   "awsDataApiFromEnvironment",
+  "process.env",
 ]) forbid(dataApiProbe, token, "Build 6 live Data API route");
 
+if (!dataApiProbe.includes('isAwsV0ShadowModeEnabled')) throw new Error("Build 6 live Data API route must use the application-owned shadow-mode latch");
 if (!dataApiProbe.includes('runAwsV0ShadowDataApiHealthProbe')) throw new Error("Build 6 live Data API route must use the application-layer health bridge");
 if (!dataApiProbe.includes('return NextResponse.json({ error: "not_found" }, { status: 404 })')) throw new Error("Build 6 live Data API probe must disappear outside AWS shadow mode");
 if (!dataApiProbe.includes('productionCutover: false')) throw new Error("Build 6 live Data API probe must deny production cutover");
@@ -103,6 +105,7 @@ for (const token of [
   "AWS_ACCESS_KEY_ID",
   "AWS_SECRET_ACCESS_KEY",
 ]) forbid(dataApiProbeApplication, token, "Build 6 application Data API health bridge");
+if (!dataApiProbeApplication.includes('process.env.MARKETROUTE_AWS_SHADOW_MODE === "true"')) throw new Error("Build 6 application bridge must own the exact fail-closed shadow-mode latch");
 if (!dataApiProbeApplication.includes('assertAwsRdsDataSdkBundled')) throw new Error("Build 6 application bridge must retain the frozen RDS Data SDK bundle anchor");
 if (!dataApiProbeApplication.includes('awsDataApiFromEnvironment')) throw new Error("Build 6 application bridge must use the frozen Data API adapter");
 if (!dataApiProbeApplication.includes('executeOperation("system.health", {})')) throw new Error("Build 6 application bridge must use the frozen named system.health operation");

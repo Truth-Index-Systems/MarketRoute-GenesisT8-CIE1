@@ -72,7 +72,7 @@ if (!shadowHealth.includes("productionCutover: false")) throw new Error("Build 6
 if (!shadowHealth.includes("genesisEnabled: false")) throw new Error("Build 6 health route does not preserve Genesis-disabled state");
 
 for (const token of [
-  'process.env.MARKETROUTE_AWS_SHADOW_MODE !== "true"',
+  'isAwsV0ShadowModeEnabled()',
   'runAwsV0ShadowDataApiHealthProbe',
   'transport: "rds-data-api"',
   'operation: "system.health"',
@@ -84,7 +84,10 @@ for (const token of [
   if (!dataApiProbe.includes(token)) throw new Error(`Build 6 live Data API route missing: ${token}`);
 }
 if (dataApiProbe.includes("@/platform/")) throw new Error("Build 6 live Data API route must not bypass the application layer");
+if (dataApiProbe.includes("process.env")) throw new Error("Build 6 live Data API route must remain environment-blind");
 for (const token of [
+  'isAwsV0ShadowModeEnabled',
+  'process.env.MARKETROUTE_AWS_SHADOW_MODE === "true"',
   'assertAwsRdsDataSdkBundled',
   'awsDataApiFromEnvironment',
   'executeOperation("system.health", {})',
