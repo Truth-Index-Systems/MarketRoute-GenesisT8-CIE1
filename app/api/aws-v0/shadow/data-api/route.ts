@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { assertAwsRdsDataSdkBundled } from "@/platform/database/aws-data-api-bundle-anchor";
-import { awsDataApiFromEnvironment } from "@/platform/database/aws-data-api";
+import { runAwsV0ShadowDataApiHealthProbe } from "@/application/aws-v0/shadow-data-api-health";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -13,10 +12,7 @@ export async function GET() {
   }
 
   try {
-    assertAwsRdsDataSdkBundled();
-    const database = await awsDataApiFromEnvironment();
-    const result = await database.executeOperation("system.health", {});
-    const resultOk = result.rows.length === 1 && result.rows[0]?.ok === 1;
+    const { resultOk } = await runAwsV0ShadowDataApiHealthProbe();
 
     if (!resultOk) {
       return NextResponse.json(
