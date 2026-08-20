@@ -20,6 +20,7 @@ const required = [
   "infrastructure/aws-v0/lib/database-stack.ts",
   "infrastructure/aws-v0/lib/application-stack.ts",
   "database/aws/README.md",
+  "application/aws-v0/shadow-runtime.ts",
   "app/api/aws-v0/shadow/health/route.ts",
   ".github/workflows/aws-v0-infrastructure.yml",
 ];
@@ -156,11 +157,17 @@ for (const forbidden of [
 }
 
 const shadowHealth = read("app/api/aws-v0/shadow/health/route.ts");
-if (!shadowHealth.includes('MARKETROUTE_AWS_SHADOW_MODE !== "true"')) throw new Error("Build 6 shadow health route is not fail-closed outside AWS shadow mode");
+const shadowRuntime = read("application/aws-v0/shadow-runtime.ts");
+if (!shadowHealth.includes("isAwsV0ShadowModeEnabled()")) throw new Error("Build 6 shadow health route does not use the application-owned fail-closed latch");
+if (!shadowHealth.includes("getAwsV0ShadowRuntimeStatus()")) throw new Error("Build 6 shadow health route does not use application-owned configuration status");
+if (shadowHealth.includes("process.env")) throw new Error("Build 6 shadow health route must remain environment-blind");
+if (!shadowRuntime.includes('process.env.MARKETROUTE_AWS_SHADOW_MODE === "true"')) throw new Error("Build 6 application shadow runtime does not preserve the exact fail-closed latch");
 if (!shadowHealth.includes('productionCutover: false')) throw new Error("Build 6 shadow health route does not explicitly deny production cutover");
 if (!shadowHealth.includes('genesisEnabled: false')) throw new Error("Build 6 shadow health route does not explicitly keep Genesis disabled");
 for (const forbidden of ["SUPABASE_", "OPENAI_", "STRIPE_", "secretArn:", "clientId:", "userPoolId:"]) {
-  if (shadowHealth.includes(forbidden)) throw new Error(`Build 6 shadow health route exposes forbidden detail: ${forbidden}`);
+  if (shadowHealth.includes(forbidden) || shadowRuntime.includes(forbidden)) {
+    throw new Error(`Build 6 shadow runtime exposes forbidden detail: ${forbidden}`);
+  }
 }
 
 const workflow = read(".github/workflows/aws-v0-infrastructure.yml");
