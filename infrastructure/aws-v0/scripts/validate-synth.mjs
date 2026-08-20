@@ -24,7 +24,7 @@ for (const name of stackNames) {
   const resources = Object.values(template.Resources ?? {});
   const productResources = resources.filter((resource) => !SYNTH_METADATA_TYPES.has(resource.Type));
 
-  if (["MrAwsV0ApplicationStack", "MrAwsV0ResearchStack", "MrAwsV0ObservabilityStack"].includes(name) && productResources.length !== 0) {
+  if (["MrAwsV0ResearchStack", "MrAwsV0ObservabilityStack"].includes(name) && productResources.length !== 0) {
     throw new Error(`${name} created runtime resources before its numbered build`);
   }
 
@@ -57,6 +57,13 @@ for (const name of stackNames) {
     ]);
     for (const resource of productResources) {
       if (!allowed.has(resource.Type)) throw new Error(`Build 2 database stack contains forbidden resource type: ${resource.Type}`);
+    }
+  }
+
+  if (name === "MrAwsV0ApplicationStack") {
+    const allowed = new Set(["AWS::IAM::Role", "AWS::IAM::Policy", "AWS::Amplify::App", "AWS::Amplify::Branch"]);
+    for (const resource of productResources) {
+      if (!allowed.has(resource.Type)) throw new Error(`Build 6 application stack contains forbidden resource type: ${resource.Type}`);
     }
   }
 }
@@ -110,4 +117,52 @@ for (const forbiddenType of ["AWS::EC2::NatGateway", "AWS::EC2::InternetGateway"
   if (resourcesOf(forbiddenType).length !== 0) throw new Error(`Build 2 synthesized forbidden resource type: ${forbiddenType}`);
 }
 
-console.log("PASS AWS-V0 synthesized infrastructure boundary through Build 5");
+const applicationTemplate = templates.get("MrAwsV0ApplicationStack");
+const applicationResources = Object.values(applicationTemplate.Resources ?? {}).filter(resource => !SYNTH_METADATA_TYPES.has(resource.Type));
+const applicationOf = (type) => applicationResources.filter(resource => resource.Type === type);
+if (applicationOf("AWS::Amplify::App").length !== 1) throw new Error("Build 6 must synthesize exactly one Amplify app");
+if (applicationOf("AWS::Amplify::Branch").length !== 1) throw new Error("Build 6 must synthesize exactly one Amplify branch");
+if (applicationOf("AWS::IAM::Role").length !== 2) throw new Error("Build 6 must synthesize exactly two IAM roles: service and SSR compute");
+if (applicationOf("AWS::IAM::Policy").length !== 2) throw new Error("Build 6 must synthesize exactly two least-privilege IAM policies");
+for (const forbiddenType of ["AWS::Amplify::Domain", "AWS::Lambda::Function", "AWS::SQS::Queue", "AWS::Cognito::UserPool", "AWS::RDS::DBCluster", "AWS::EC2::VPC"]) {
+  if (applicationOf(forbiddenType).length !== 0) throw new Error(`Build 6 synthesized forbidden resource type: ${forbiddenType}`);
+}
+const amplifyApp = applicationOf("AWS::Amplify::App")[0].Properties ?? {};
+if (amplifyApp.Name !== "marketroute-aws-v0-shadow") throw new Error(`Build 6 Amplify app name drifted: ${amplifyApp.Name}`);
+if (amplifyApp.Platform !== "WEB_COMPUTE") throw new Error(`Build 6 Amplify platform must be WEB_COMPUTE, got ${amplifyApp.Platform}`);
+if (amplifyApp.Repository !== "https://github.com/Truth-Index-Systems/MarketRoute-GenesisT8-CIE1") throw new Error("Build 6 Amplify repository is not exact");
+if (amplifyApp.ComputeRoleArn !== undefined) throw new Error("Build 6 compute role must be branch-scoped, not app-scoped");
+if (typeof amplifyApp.BuildSpec !== "string" || !amplifyApp.BuildSpec.includes("nvm use 22") || !amplifyApp.BuildSpec.includes("baseDirectory: .next")) {
+  throw new Error("Build 6 Amplify build spec must pin Node 22 and .next artifacts");
+}
+for (const forbidden of ["SUPABASE_", "OPENAI_", "STRIPE_", "CRON_SECRET", "FOUNDER_DASHBOARD_PASSWORD"]) {
+  if (JSON.stringify(amplifyApp).includes(forbidden)) throw new Error(`Build 6 Amplify app leaked legacy/runtime secret configuration: ${forbidden}`);
+}
+const amplifyBranch = applicationOf("AWS::Amplify::Branch")[0].Properties ?? {};
+if (amplifyBranch.BranchName !== "aws-v0") throw new Error(`Build 6 branch must be aws-v0, got ${amplifyBranch.BranchName}`);
+if (amplifyBranch.Stage !== "BETA") throw new Error(`Build 6 branch stage must be BETA, got ${amplifyBranch.Stage}`);
+if (amplifyBranch.EnableAutoBuild !== false) throw new Error("Build 6 Amplify branch auto-build must remain disabled");
+if (amplifyBranch.EnableBasicAuth !== true) throw new Error("Build 6 Amplify shadow must be basic-auth protected");
+if (amplifyBranch.EnablePullRequestPreview !== false) throw new Error("Build 6 pull-request previews must remain disabled");
+if (!amplifyBranch.ComputeRoleArn) throw new Error("Build 6 SSR compute role must be attached at branch scope");
+const basicAuth = amplifyBranch.BasicAuthConfig ?? {};
+if (basicAuth.EnableBasicAuth !== true || basicAuth.Username !== "marketroute-shadow" || !basicAuth.Password) {
+  throw new Error("Build 6 Amplify branch basic-auth configuration is incomplete");
+}
+
+const parameters = applicationTemplate.Parameters ?? {};
+for (const name of ["AmplifyGitHubAccessToken", "AmplifyShadowBasicAuthPassword", "AuroraSecretArn", "CognitoUserPoolId", "CognitoUserPoolClientId"]) {
+  if (!parameters[name]) throw new Error(`Build 6 CloudFormation parameter missing: ${name}`);
+}
+if (parameters.AmplifyGitHubAccessToken.NoEcho !== true) throw new Error("Build 6 GitHub access token parameter must be NoEcho");
+if (parameters.AmplifyShadowBasicAuthPassword.NoEcho !== true) throw new Error("Build 6 basic-auth password parameter must be NoEcho");
+
+const policyJson = JSON.stringify(applicationOf("AWS::IAM::Policy"));
+for (const action of ["rds-data:ExecuteStatement", "rds-data:BeginTransaction", "rds-data:CommitTransaction", "rds-data:RollbackTransaction", "secretsmanager:GetSecretValue"]) {
+  if (!policyJson.includes(action)) throw new Error(`Build 6 SSR compute policy missing action: ${action}`);
+}
+for (const forbidden of ["rds-data:BatchExecuteStatement", "secretsmanager:*", "rds-data:*", "AdministratorAccess", "cognito-idp:AdminCreateUser", "bedrock:", "sqs:"]) {
+  if (policyJson.includes(forbidden)) throw new Error(`Build 6 application policy contains forbidden authority: ${forbidden}`);
+}
+
+console.log("PASS AWS-V0 synthesized infrastructure boundary through Build 6");

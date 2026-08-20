@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { App } from "aws-cdk-lib";
+import { MrAwsV0ApplicationStack } from "../lib/application-stack";
 import { loadAwsV0Config } from "../lib/config";
 import { MrAwsV0CognitoStack } from "../lib/cognito-stack";
 import { MrAwsV0DatabaseStack } from "../lib/database-stack";
@@ -27,10 +28,9 @@ const database = new MrAwsV0DatabaseStack(app, "MrAwsV0DatabaseStack", {
   description: "MarketRoute AWS V0 fresh Aurora PostgreSQL foundation (Build 2)",
 });
 
-const application = new FoundationStack(app, "MrAwsV0ApplicationStack", {
+const application = new MrAwsV0ApplicationStack(app, "MrAwsV0ApplicationStack", {
   env,
-  purpose: "Reserved for AWS-V0 Build 6 application hosting",
-  description: "MarketRoute AWS V0 application boundary (Build 1 placeholder only)",
+  description: "MarketRoute AWS V0 private Amplify Hosting SSR shadow (Build 6)",
 });
 
 const research = new FoundationStack(app, "MrAwsV0ResearchStack", {

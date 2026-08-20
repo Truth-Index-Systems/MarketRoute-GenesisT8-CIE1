@@ -7,8 +7,11 @@ on:
       - "database/aws/**"
       - "platform/auth/**"
       - "platform/database/aws-data-api*"
+      - "app/api/aws-v0/**"
       - "scripts/validate-aws-v0-build5-cognito-foundation.mjs"
+      - "scripts/validate-aws-v0-build6-amplify-shadow.mjs"
       - "tests/adversarial/aws-v0-build5-cognito-foundation.mjs"
+      - "tests/adversarial/aws-v0-build6-amplify-shadow.mjs"
       - ".github/workflows/aws-v0-infrastructure.yml"
   push:
     branches:
@@ -18,8 +21,11 @@ on:
       - "database/aws/**"
       - "platform/auth/**"
       - "platform/database/aws-data-api*"
+      - "app/api/aws-v0/**"
       - "scripts/validate-aws-v0-build5-cognito-foundation.mjs"
+      - "scripts/validate-aws-v0-build6-amplify-shadow.mjs"
       - "tests/adversarial/aws-v0-build5-cognito-foundation.mjs"
+      - "tests/adversarial/aws-v0-build6-amplify-shadow.mjs"
       - ".github/workflows/aws-v0-infrastructure.yml"
   workflow_dispatch:
 
@@ -57,6 +63,10 @@ jobs:
         run: |
           node scripts/validate-aws-v0-build5-cognito-foundation.mjs
           node tests/adversarial/aws-v0-build5-cognito-foundation.mjs
+      - name: Validate Build 6 Amplify shadow hosting
+        run: |
+          node scripts/validate-aws-v0-build6-amplify-shadow.mjs
+          node tests/adversarial/aws-v0-build6-amplify-shadow.mjs
       - name: Configure short-lived AWS credentials for CDK context lookup
         if: github.ref == 'refs/heads/aws-v0' && vars.AWS_V0_DEPLOY_ROLE_ARN != ''
         uses: aws-actions/configure-aws-credentials@v6.2.3

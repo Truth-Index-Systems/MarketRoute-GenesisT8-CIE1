@@ -18,7 +18,9 @@ const required = [
   "infrastructure/aws-v0/lib/identity-stack.ts",
   "infrastructure/aws-v0/lib/cognito-stack.ts",
   "infrastructure/aws-v0/lib/database-stack.ts",
+  "infrastructure/aws-v0/lib/application-stack.ts",
   "database/aws/README.md",
+  "app/api/aws-v0/shadow/health/route.ts",
   ".github/workflows/aws-v0-infrastructure.yml",
 ];
 
@@ -39,6 +41,7 @@ for (const stack of [
 }
 if (!app.includes("new MrAwsV0DatabaseStack")) throw new Error("Build 2 database stack is not active");
 if (!app.includes("new MrAwsV0CognitoStack")) throw new Error("Build 5 Cognito stack is not active");
+if (!app.includes("new MrAwsV0ApplicationStack")) throw new Error("Build 6 application stack is not active");
 
 const tags = read("infrastructure/aws-v0/lib/tags.ts");
 for (const key of ["Project", "Environment", "Owner", "ManagedBy", "CostCentre"]) {
@@ -108,6 +111,58 @@ for (const forbidden of ["CfnUserPoolDomain", "generateSecret: true", "clientSec
   if (cognito.includes(forbidden)) throw new Error(`Build 5 Cognito boundary contains forbidden construct: ${forbidden}`);
 }
 
+const application = read("infrastructure/aws-v0/lib/application-stack.ts");
+for (const requiredSetting of [
+  "new amplify.CfnApp",
+  "new amplify.CfnBranch",
+  'platform: "WEB_COMPUTE"',
+  'branchName: BRANCH_NAME',
+  'stage: "BETA"',
+  "enableAutoBuild: false",
+  "enableBasicAuth: true",
+  "enablePullRequestPreview: false",
+  "computeRoleArn: computeRole.roleArn",
+  'repository: REPOSITORY_URL',
+  'nvm use 22',
+  'baseDirectory: .next',
+  'MARKETROUTE_AWS_SHADOW_MODE',
+  'MARKETROUTE_AWS_RDS_CLUSTER_ARN',
+  'MARKETROUTE_AWS_RDS_SECRET_ARN',
+  'MARKETROUTE_COGNITO_USER_POOL_ID',
+  'MARKETROUTE_COGNITO_USER_POOL_CLIENT_ID',
+  'rds-data:ExecuteStatement',
+  'rds-data:BeginTransaction',
+  'rds-data:CommitTransaction',
+  'rds-data:RollbackTransaction',
+  'secretsmanager:GetSecretValue',
+  'new CfnParameter(this, "AmplifyGitHubAccessToken"',
+  'new CfnParameter(this, "AmplifyShadowBasicAuthPassword"',
+  'noEcho: true',
+]) {
+  if (!application.includes(requiredSetting)) throw new Error(`Build 6 application setting missing: ${requiredSetting}`);
+}
+for (const forbidden of [
+  "CfnDomain",
+  "enableAutoBuild: true",
+  "enablePullRequestPreview: true",
+  "SUPABASE_",
+  "OPENAI_",
+  "STRIPE_",
+  "AWS_ACCESS_KEY_ID",
+  "AWS_SECRET_ACCESS_KEY",
+  "rds-data:BatchExecuteStatement",
+]) {
+  if (application.includes(forbidden)) throw new Error(`Build 6 application boundary contains forbidden construct: ${forbidden}`);
+}
+
+const shadowHealth = read("app/api/aws-v0/shadow/health/route.ts");
+if (!shadowHealth.includes('MARKETROUTE_AWS_SHADOW_MODE !== "true"')) throw new Error("Build 6 shadow health route is not fail-closed outside AWS shadow mode");
+if (!shadowHealth.includes('productionCutover: false')) throw new Error("Build 6 shadow health route does not explicitly deny production cutover");
+if (!shadowHealth.includes('genesisEnabled: false')) throw new Error("Build 6 shadow health route does not explicitly keep Genesis disabled");
+for (const forbidden of ["SUPABASE_", "OPENAI_", "STRIPE_", "secretArn:", "clientId:", "userPoolId:"]) {
+  if (shadowHealth.includes(forbidden)) throw new Error(`Build 6 shadow health route exposes forbidden detail: ${forbidden}`);
+}
+
 const workflow = read(".github/workflows/aws-v0-infrastructure.yml");
 for (const forbidden of ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "aws-access-key-id", "aws-secret-access-key"]) {
   if (workflow.includes(forbidden)) throw new Error(`Long-lived AWS credential pattern forbidden: ${forbidden}`);
@@ -116,6 +171,7 @@ if (!workflow.includes("id-token: write")) throw new Error("GitHub workflow does
 if (!workflow.includes("AWS_V0_DEPLOY_ROLE_ARN")) throw new Error("GitHub workflow is not role-ARN driven");
 if (!workflow.includes("AWS_V0_AUTODEPLOY_ENABLED")) throw new Error("GitHub workflow is missing the explicit deployment safety latch");
 if (!workflow.includes("refs/heads/aws-v0")) throw new Error("GitHub deploy workflow is not branch pinned to aws-v0");
+if (!workflow.includes("validate-aws-v0-build6-amplify-shadow.mjs")) throw new Error("GitHub workflow does not validate Build 6 Amplify shadow hosting");
 
 const identityWorkflow = read(".github/workflows/aws-v0-repository-identity.yml");
 if (!identityWorkflow.includes("id-token: write")) throw new Error("Repository identity workflow cannot request a GitHub OIDC token");
@@ -125,4 +181,4 @@ if (!identityWorkflow.includes(":ref:refs/heads/aws-v0")) throw new Error("Repos
 const databaseReadme = read("database/aws/README.md");
 if (!databaseReadme.includes("Build 3")) throw new Error("database/aws boundary does not defer canonical 0001 to Build 3");
 
-console.log("PASS AWS-V0 infrastructure source constitution through Build 5");
+console.log("PASS AWS-V0 infrastructure source constitution through Build 6");
