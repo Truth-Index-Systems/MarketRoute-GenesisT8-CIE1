@@ -1,0 +1,42 @@
+{
+  "format_version": 2,
+  "build": "AWS-V0-BUILD-3",
+  "mode": "manual-aurora-baseline-application-receipt",
+  "status": "AURORA_CANONICAL_BASELINE_APPLIED",
+  "applied_at": "2026-08-20T02:15:55.928Z",
+  "baseline_sha256": "46d9c3aee85d1021d7f514c0384aef036b7f53073a7aa78be4bfabd3266d5e5a",
+  "target": {
+    "account_id": "801132668416",
+    "region": "eu-west-2",
+    "cluster_arn": "arn:aws:rds:eu-west-2:801132668416:cluster:marketroute-aws-v0",
+    "database": "marketroute"
+  },
+  "transaction_validation": {
+    "pre_commit_smoke_validated": true,
+    "pre_commit_v1_etl_absent": true,
+    "pre_commit_truth_policy_bindings_validated": true,
+    "post_commit_state_matches_pre_commit": true
+  },
+  "smoke": {
+    "tables": 77,
+    "routines": 206,
+    "views": 5,
+    "triggers": 64,
+    "indexes_total": 227,
+    "indexes_explicit": 88,
+    "indexes_constraint_backed": 139,
+    "internal_user_fks": 13,
+    "rls_enabled": 0,
+    "users": 0,
+    "organisations": 0,
+    "companies": 0,
+    "claims": 0,
+    "opportunities": 0,
+    "genesis_growth_enabled": false,
+    "growth_limit": 3,
+    "scale_limit": 10,
+    "schema_release_rows": 0
+  },
+  "v1_etl_absent": true,
+  "truth_policy_bindings_validated": true
+}
