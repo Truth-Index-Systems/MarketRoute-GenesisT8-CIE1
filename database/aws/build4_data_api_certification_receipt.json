@@ -1,0 +1,119 @@
+{
+  "format_version": 1,
+  "build": "AWS-V0-BUILD-4",
+  "status": "CERTIFIED_FROZEN",
+  "certified_at": "2026-08-20T07:28:00Z",
+  "repository": "Truth-Index-Systems/MarketRoute-GenesisT8-CIE1",
+  "branch": "aws-v0",
+  "starting_head": "d123f1d7f0a52f4a0af73d4b28e0e97d032e4f66",
+  "implementation_commit": "6ff8f4f35f61f18254adc8bb1e893d4a8486f318",
+  "canonical_build3_baseline_sha256": "46d9c3aee85d1021d7f514c0384aef036b7f53073a7aa78be4bfabd3266d5e5a",
+  "scope": {
+    "title": "RDS Data API Adapter / Database Access Boundary",
+    "server_only": true,
+    "arbitrary_sql_exported": false,
+    "supabase_runtime_rewired": false,
+    "auth_migrated": false,
+    "database_schema_changed": false,
+    "runtime_business_data_changed": false,
+    "genesis_started": false
+  },
+  "implementation": {
+    "files_added": [
+      "platform/database/AWS_DATA_API.md",
+      "platform/database/aws-data-api-operations.ts",
+      "platform/database/aws-data-api-types.ts",
+      "platform/database/aws-data-api.ts",
+      "scripts/validate-aws-v0-build4-data-api.mjs",
+      "tests/adversarial/aws-v0-build4-data-api.mjs"
+    ],
+    "initial_named_operations": [
+      "system.health",
+      "system.currentDatabase",
+      "commercial.publicPlans",
+      "genesis.growthSettings",
+      "truth.policyBinding"
+    ]
+  },
+  "live_target": {
+    "account_id": "801132668416",
+    "region": "eu-west-2",
+    "cluster_arn": "arn:aws:rds:eu-west-2:801132668416:cluster:marketroute-aws-v0",
+    "database": "marketroute",
+    "engine": "aurora-postgresql",
+    "engine_version": "16.8",
+    "data_api_enabled": true,
+    "cluster_status": "available"
+  },
+  "live_read_proof": {
+    "system_health_ok": 1,
+    "current_database": "marketroute",
+    "public_plans": [
+      { "plan_code": "STARTER", "monthly_price_gbp": 99.0, "active_market_limit": 1 },
+      { "plan_code": "GROWTH", "monthly_price_gbp": 249.0, "active_market_limit": 3 },
+      { "plan_code": "SCALE", "monthly_price_gbp": 599.0, "active_market_limit": 10 }
+    ],
+    "genesis_growth_settings": {
+      "enabled": false,
+      "seed_target_company_count": 50,
+      "launch_target_company_count": 500,
+      "daily_budget_usd": 100.0,
+      "max_action_cost_usd": 0.5,
+      "discovery_batch_size": 10,
+      "max_actions_per_run": 1,
+      "retry_hours": 24,
+      "refresh_days": 30
+    },
+    "truth_policy_binding": {
+      "subject_type": "PERSON",
+      "claim_key": "employment.current",
+      "policy_key": "PERSON_CURRENT_EMPLOYMENT_V1",
+      "policy_version": "1.0.0",
+      "max_age_days": 180,
+      "known_support_family_requirement": 2
+    }
+  },
+  "transaction_proof": {
+    "begin_transaction": true,
+    "read_inside_transaction": true,
+    "read_database": "marketroute",
+    "read_genesis_growth_enabled": false,
+    "rollback_status": "Rollback complete",
+    "commit_performed": false
+  },
+  "post_proof_invariants": {
+    "users": 0,
+    "organisations": 0,
+    "companies": 0,
+    "claims": 0,
+    "opportunities": 0,
+    "genesis_growth_enabled": false,
+    "growth_active_market_limit": 3,
+    "scale_active_market_limit": 10
+  },
+  "ci": {
+    "implementation_commit_vercel_status": "success"
+  },
+  "gates": {
+    "4.0_exact_starting_head": "PASS",
+    "4.1_database_access_inventory": "PASS",
+    "4.2_adapter_contract": "PASS",
+    "4.3_implementation_boundary": "PASS",
+    "4.4_adversarial_safety_boundary": "PASS",
+    "4.5_server_only_boundary": "PASS",
+    "4.6_repository_compile": "PASS",
+    "4.7_live_aurora_data_api_read_smoke": "PASS",
+    "4.8_transaction_begin_read_rollback": "PASS",
+    "4.9_canonical_invariants_preserved": "PASS",
+    "4.10_certification_receipt": "PASS"
+  },
+  "freeze_rules": [
+    "Build 4 is closed and must not be reopened without a specific defect or migration requirement.",
+    "Build 5 must start from the commit containing this receipt.",
+    "The Build 3 canonical baseline must remain byte-for-byte immutable unless a future numbered migration explicitly requires change.",
+    "Do not enable Genesis growth as part of Build 5 identity work.",
+    "Do not migrate Truth, R4, R5, R6, CIE or UDOSIB semantics during identity work.",
+    "AWS_V0_AUTODEPLOY_ENABLED remains false unless explicitly changed in a later controlled build."
+  ],
+  "proof_note": "Live AWS proof was executed interactively in AWS CloudShell and supplied for certification. No secret value is recorded in this receipt."
+}
