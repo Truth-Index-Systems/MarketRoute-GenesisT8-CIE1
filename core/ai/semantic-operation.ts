@@ -30,7 +30,8 @@ export type SemanticOperationFailureCode =
   | "TIMEOUT"
   | "PROVIDER_UNAVAILABLE"
   | "INVALID_PROVIDER_RESPONSE"
-  | "OPERATION_NOT_SUPPORTED";
+  | "OPERATION_NOT_SUPPORTED"
+  | "TELEMETRY_UNAVAILABLE";
 
 export interface SemanticOperationFailure {
   code: SemanticOperationFailureCode;

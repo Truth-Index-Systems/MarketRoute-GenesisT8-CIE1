@@ -16,6 +16,8 @@ jobs:
       - run: node scripts/validate-aws-v0-build7-ai-boundary.mjs
       - run: node tests/adversarial/aws-v0-build7-ai-boundary.mjs
       - run: node scripts/validate-aws-v0-build7-bedrock-runtime.mjs
+      - run: node scripts/validate-aws-v0-build7-telemetry.mjs
+      - run: node tests/adversarial/aws-v0-build7-telemetry.mjs
       - run: npm run constitution:check
       - run: npm run typecheck
       - run: npm run build
