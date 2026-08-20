@@ -30,32 +30,42 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Syntax-check Build 3 compiler and regression test
+      - name: Syntax-check Build 3 compiler and disposition tooling
         run: |
           node --check database/aws/compile-canonical-baseline.mjs
           node --check database/aws/test-compiler-hardening.mjs
+          node --check database/aws/apply-build3-dispositions.mjs
+          node --check database/aws/test-build3-dispositions.mjs
 
       - name: Prove compiler hardening invariants
         run: node database/aws/test-compiler-hardening.mjs
 
+      - name: Prove disposition invariants
+        run: node database/aws/test-build3-dispositions.mjs
+
       - name: Run Build 3 hardened audit
         run: node database/aws/compile-canonical-baseline.mjs
 
-      - name: Validate generated audit and manifest
+      - name: Apply Build 3 canonical dispositions
+        run: node database/aws/apply-build3-dispositions.mjs
+
+      - name: Validate generated audit and manifests
         run: |
           node <<'NODE'
           const fs = require('node:fs');
           const audit = JSON.parse(fs.readFileSync('database/aws/build3_schema_audit.json', 'utf8'));
-          const manifest = JSON.parse(fs.readFileSync('database/aws/0001_marketroute_aws_schema_manifest.json', 'utf8'));
+          const schemaManifest = JSON.parse(fs.readFileSync('database/aws/0001_marketroute_aws_schema_manifest.json', 'utf8'));
+          const disposition = JSON.parse(fs.readFileSync('database/aws/build3_disposition_audit.json', 'utf8'));
+          const dispositionManifest = JSON.parse(fs.readFileSync('database/aws/0001_marketroute_aws_disposition_manifest.json', 'utf8'));
 
           if (audit.build !== 'AWS-V0-BUILD-3') throw new Error('unexpected audit build');
           if (audit.format_version !== 2 || audit.mode !== 'hardened-audit') throw new Error('hardened audit v2 required');
           if (!Number.isInteger(audit.migration_count) || audit.migration_count < 1) throw new Error('no migrations inventoried');
-          if (manifest.build !== 'AWS-V0-BUILD-3' || manifest.format_version !== 2) throw new Error('unexpected manifest format');
-          if (manifest.prohibited_historical_data_import !== true) throw new Error('historical data prohibition missing');
-          if (!manifest.excluded_migrations.includes('0019_v1_evidence_migration.sql')) throw new Error('V1 ETL exclusion missing');
+          if (schemaManifest.build !== 'AWS-V0-BUILD-3' || schemaManifest.format_version !== 2) throw new Error('unexpected schema manifest format');
+          if (schemaManifest.prohibited_historical_data_import !== true) throw new Error('historical data prohibition missing');
+          if (!schemaManifest.excluded_migrations.includes('0019_v1_evidence_migration.sql')) throw new Error('V1 ETL exclusion missing');
 
-          const v1 = manifest.source_migrations.find((m) => m.file === '0019_v1_evidence_migration.sql');
+          const v1 = schemaManifest.source_migrations.find((m) => m.file === '0019_v1_evidence_migration.sql');
           if (!v1 || v1.canonical_candidate !== false || v1.disposition !== 'EXCLUDE_V1_ETL') {
             throw new Error('V1 ETL is not structurally excluded from canonical candidates');
           }
@@ -63,20 +73,38 @@ jobs:
             throw new Error('V1 ETL object leaked into canonical candidate set');
           }
 
+          if (disposition.build !== 'AWS-V0-BUILD-3' || disposition.mode !== 'canonical-disposition') throw new Error('unexpected disposition audit');
+          if (disposition.raw_unresolved_count !== audit.unresolved_count) throw new Error('disposition input does not match hardened unresolved set');
+          if (disposition.resolved_decisions + disposition.unresolved_count !== disposition.raw_unresolved_count) throw new Error('disposition accounting mismatch');
+          if (dispositionManifest.prohibited_historical_data_import !== true) throw new Error('disposition historical-data prohibition missing');
+
+          const identity = dispositionManifest.identity_boundary;
+          if (identity?.version !== 'AWS-V0-INTERNAL-IDENTITY-1') throw new Error('AWS internal identity boundary missing');
+          if (identity.internal_user_relation !== 'public.marketroute_users') throw new Error('internal user relation mismatch');
+          if (identity.database_actor_contract !== 'EXPLICIT_INTERNAL_USER_UUID') throw new Error('explicit actor UUID contract missing');
+          if (identity.trusted_backend_contract !== 'SERVER_SIDE_DATA_API_ONLY') throw new Error('trusted backend contract missing');
+          if (identity.browser_database_access !== false || identity.supabase_auth_schema_allowed !== false || identity.supabase_roles_allowed !== false || identity.request_jwt_session_state_allowed !== false) {
+            throw new Error('Supabase/browser identity dependency leaked into AWS boundary');
+          }
+
+          const expectedStatus = disposition.unresolved_count === 0 ? 'READY_FOR_FINAL_OBJECT_RESOLUTION' : 'DISPOSITION_REVIEW_REQUIRED';
+          if (dispositionManifest.status !== expectedStatus) throw new Error('disposition manifest status mismatch');
+
           console.log(JSON.stringify({
             migration_count: audit.migration_count,
             migration_range: audit.migration_range,
-            statement_counts: audit.statement_counts,
-            disposition_counts: audit.disposition_counts,
-            unresolved: audit.unresolved_count,
-            blockers: audit.blockers.length,
-            review_items: audit.review_items.length,
-            resolved_exclusions: audit.resolved_exclusions.length,
+            hardened_unresolved: audit.unresolved_count,
+            hardened_blockers: audit.blockers.length,
+            hardened_review_items: audit.review_items.length,
+            hardened_resolved_exclusions: audit.resolved_exclusions.length,
             object_candidates: audit.final_object_candidates.length,
-            unclassified_sql: audit.review_items.filter((f) => f.code === 'UNCLASSIFIED_SQL').length,
-            hidden_do_dml: audit.review_items.filter((f) => f.code === 'HIDDEN_DO_BLOCK_DML_REVIEW').length,
-            cte_dml: audit.review_items.filter((f) => f.code === 'CTE_DML_REVIEW').length,
-            manifest_status: manifest.status,
+            disposition_resolved: disposition.resolved_decisions,
+            disposition_unresolved: disposition.unresolved_count,
+            required_transforms: disposition.required_transforms,
+            disposition_exclusions: disposition.resolved_exclusions,
+            disposition_counts: disposition.disposition_counts,
+            identity_boundary: identity.version,
+            manifest_status: dispositionManifest.status,
           }, null, 2));
           NODE
 
@@ -105,5 +133,7 @@ jobs:
           path: |
             database/aws/build3_schema_audit.json
             database/aws/0001_marketroute_aws_schema_manifest.json
+            database/aws/build3_disposition_audit.json
+            database/aws/0001_marketroute_aws_disposition_manifest.json
           if-no-files-found: error
           retention-days: 14
