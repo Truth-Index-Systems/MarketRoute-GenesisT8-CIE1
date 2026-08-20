@@ -1,3 +1,5 @@
+import "server-only";
+
 import { BedrockRuntimeClient } from "@aws-sdk/client-bedrock-runtime";
 
 export const AWS_V0_BEDROCK_REGION = "eu-west-2" as const;
@@ -8,9 +10,9 @@ export interface BedrockRuntimeClientOptions {
 }
 
 /**
- * Build 7.2 only establishes the server-side SDK boundary.
- * Credentials are deliberately omitted so AWS execution-role identity is used.
- * SDK retries are disabled here because MarketRoute owns retry policy at the application boundary.
+ * Server-side Bedrock Runtime client. Credentials are deliberately omitted so
+ * Amplify Hosting's SSR compute role supplies short-lived AWS identity.
+ * SDK retries remain disabled because MarketRoute owns retry policy.
  */
 export function createBedrockRuntimeClient(options: BedrockRuntimeClientOptions = {}): BedrockRuntimeClient {
   return new BedrockRuntimeClient({

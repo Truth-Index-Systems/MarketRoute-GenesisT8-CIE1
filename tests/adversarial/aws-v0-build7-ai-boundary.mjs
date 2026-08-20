@@ -23,7 +23,7 @@ function walk(dir) {
 const files = layers.flatMap((layer) => walk(path.join(root, layer)));
 const rel = (file) => path.relative(root, file).replaceAll(path.sep, "/");
 
-console.log("\nAWS V0 Build 7.1/7.2 — adversarial boundary gate");
+console.log("\nAWS V0 Build 7 — adversarial AI boundary through 7.5");
 check("Bedrock SDK cannot leak outside platform/ai/bedrock", () => {
   const offenders = files.filter((file) => fs.readFileSync(file, "utf8").includes("@aws-sdk/client-bedrock-runtime"))
     .map(rel)
@@ -42,12 +42,12 @@ check("UI cannot import AI transport", () => {
     .map(rel);
   assert(offenders.length === 0, `UI transport leak: ${offenders.join(", ")}`);
 });
-check("Build 7.2 contains no live Bedrock command", () => {
-  for (const file of files.filter((file) => rel(file).startsWith("platform/ai/bedrock/"))) {
-    const text = fs.readFileSync(file, "utf8");
-    for (const forbidden of ["ConverseCommand", "InvokeModelCommand", ".send("]) {
-      assert(!text.includes(forbidden), `${rel(file)} contains ${forbidden}`);
-    }
+check("7.5 Bedrock invocation exists only in certified adapter", () => {
+  const commandFiles = files.filter((file) => fs.readFileSync(file, "utf8").includes("ConverseCommand")).map(rel);
+  assert(JSON.stringify(commandFiles) === JSON.stringify(["platform/ai/bedrock/bedrock-semantic-provider.ts"]), `Converse leaked: ${commandFiles.join(", ")}`);
+  const bedrock = fs.readFileSync(path.join(root, "platform/ai/bedrock/bedrock-semantic-provider.ts"), "utf8");
+  for (const forbidden of ["ConverseStreamCommand", "InvokeModelCommand", "InvokeModelWithResponseStreamCommand"]) {
+    assert(!bedrock.includes(forbidden), `forbidden provider command: ${forbidden}`);
   }
 });
 check("semantic public contract exposes no provider internals", () => {
@@ -56,7 +56,7 @@ check("semantic public contract exposes no provider internals", () => {
     assert(!text.includes(forbidden), `public provider detail: ${forbidden}`);
   }
 });
-check("semantic boundary does not persist canonical state", () => {
+check("semantic execution boundary does not persist canonical state", () => {
   const text = fs.readFileSync(path.join(root, "application/ai/execute-semantic-operation.ts"), "utf8").toLowerCase();
   for (const forbidden of ["database", "repository", "persist", "insert", "upsert", "updatecanonical"]) {
     assert(!text.includes(forbidden), `persistence capability: ${forbidden}`);
@@ -64,4 +64,4 @@ check("semantic boundary does not persist canonical state", () => {
 });
 
 if (failures.length) process.exitCode = 1;
-else console.log("\nPASS  Build 7.1/7.2 adversarial gate");
+else console.log("\nPASS  Build 7 adversarial AI boundary through 7.5");
