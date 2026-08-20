@@ -24,7 +24,7 @@ CREATE OR REPLACE FUNCTION public.member_check(p_org uuid)
 RETURNS boolean LANGUAGE sql AS $$
   SELECT EXISTS (SELECT 1 FROM public.organisations WHERE created_by = auth.uid());
 $$;
-CREATE POLICY org_select ON public.organisations FOR SELECT TO authenticated USING (true);
+CREATE POLICY org_select ON public.organisations FOR SELECT TO authenticated USING (created_by = auth.uid());
 CREATE OR REPLACE FUNCTION public.require_backend()
 RETURNS void LANGUAGE plpgsql AS $$
 DECLARE v_role text := COALESCE(auth.role()::text, current_setting('request.jwt.claim.role', true));
@@ -41,6 +41,7 @@ fs.writeFileSync(path.join(migrationsDir, '0001_fixture.sql'), migration);
 const findings = [
   ['AWS_IDENTITY_REWRITE_REQUIRED', 'BLOCKER', 1],
   ['AWS_IDENTITY_REWRITE_REQUIRED', 'BLOCKER', 2],
+  ['AWS_IDENTITY_REWRITE_REQUIRED', 'BLOCKER', 3],
   ['SUPABASE_ROLE_REWRITE_REQUIRED', 'BLOCKER', 3],
   ['AWS_IDENTITY_REWRITE_REQUIRED', 'BLOCKER', 4],
   ['AWS_REQUEST_JWT_REWRITE_REQUIRED', 'BLOCKER', 4],
@@ -80,12 +81,14 @@ try {
   const audit = JSON.parse(fs.readFileSync(path.join(outputDir, 'build3_disposition_audit.json'), 'utf8'));
   const manifest = JSON.parse(fs.readFileSync(path.join(outputDir, '0001_marketroute_aws_disposition_manifest.json'), 'utf8'));
 
-  assert(audit.raw_unresolved_count === 10, `raw count ${audit.raw_unresolved_count}`);
+  assert(audit.raw_unresolved_count === 11, `raw count ${audit.raw_unresolved_count}`);
+  assert(audit.resolved_decisions === 10, `expected ten resolved decisions, got ${audit.resolved_decisions}`);
   assert(audit.unresolved_count === 1, `expected one canonical seed review, got ${audit.unresolved_count}`);
   assert(manifest.status === 'DISPOSITION_REVIEW_REQUIRED', 'expected review-required status');
   assert(audit.decisions.some((d) => d.disposition === 'REWRITE_AUTH_USERS_FK_TO_MARKETROUTE_USERS' && d.decision_resolved), 'auth.users rewrite missing');
   assert(audit.decisions.some((d) => d.disposition === 'REWRITE_AUTH_UID_TO_EXPLICIT_ACTOR_USER_ID' && d.decision_resolved), 'auth.uid rewrite missing');
-  assert(audit.decisions.some((d) => d.disposition === 'EXCLUDE_SUPABASE_RLS_POLICY' && d.decision_resolved), 'policy exclusion missing');
+  assert(audit.decisions.filter((d) => d.disposition === 'EXCLUDE_SUPABASE_RLS_POLICY' && d.decision_resolved).length === 2, 'policy findings must collapse to exclusions');
+  assert(!audit.decisions.some((d) => d.statement_index === 3 && d.transform_required), 'excluded RLS policy must not require a transform');
   assert(audit.decisions.filter((d) => d.disposition === 'REWRITE_TO_TRUSTED_BACKEND_EXECUTION_BOUNDARY').length === 2, 'backend boundary rewrites missing');
   assert(audit.decisions.some((d) => d.disposition === 'EXCLUDE_HISTORICAL_SCHEMA_RELEASE_ROW'), 'schema release exclusion missing');
   assert(audit.decisions.filter((d) => d.disposition === 'EXCLUDE_HISTORICAL_BACKFILL_OR_REPAIR').length === 3, 'historical backfill exclusions missing');
