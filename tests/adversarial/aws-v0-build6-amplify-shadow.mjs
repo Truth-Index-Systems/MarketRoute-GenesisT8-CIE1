@@ -36,11 +36,17 @@ for (const token of [
   "rds-data:BatchExecuteStatement",
   "rds-data:*",
   "secretsmanager:*",
-  "bedrock:",
+  "bedrock:*",
+  "bedrock:InvokeModelWithResponseStream",
+  "bedrock:CreateInferenceProfile",
+  "bedrock:DeleteInferenceProfile",
+  "bedrock:ListInferenceProfiles",
+  "bedrock:CreateModel",
+  "bedrock:DeleteModel",
   "sqs:",
   "lambda:",
   "cognito-idp:Admin",
-]) forbid(application, token, "Build 6 authority boundary");
+]) forbid(application, token, "Build 6 hosting + Build 7.4 authority boundary");
 
 if (!application.includes('enableAutoBuild: false')) throw new Error("Build 6 must not auto-build the Amplify branch");
 if (!application.includes('enableBasicAuth: true')) throw new Error("Build 6 shadow branch must be basic-auth protected");
@@ -144,4 +150,4 @@ for (const token of ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "aws-access-k
 if (!workflow.includes("AWS_V0_AUTODEPLOY_ENABLED == 'true'")) throw new Error("Build 6 CI must preserve the explicit AWS deployment latch");
 if (workflow.includes("deploy:application")) throw new Error("Build 6 CI must not automatically deploy the Amplify application stack");
 
-console.log("PASS AWS V0 Build 6 adversarial Amplify shadow + live Data API boundary checks");
+console.log("PASS AWS V0 Build 6 Amplify shadow boundary with tightly scoped Build 7.4 Bedrock extension");

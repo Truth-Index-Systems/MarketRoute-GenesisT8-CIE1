@@ -10,8 +10,10 @@ on:
       - "app/api/aws-v0/**"
       - "scripts/validate-aws-v0-build5-cognito-foundation.mjs"
       - "scripts/validate-aws-v0-build6-amplify-shadow.mjs"
+      - "scripts/validate-aws-v0-build7-bedrock-iam.mjs"
       - "tests/adversarial/aws-v0-build5-cognito-foundation.mjs"
       - "tests/adversarial/aws-v0-build6-amplify-shadow.mjs"
+      - "tests/adversarial/aws-v0-build7-bedrock-iam.mjs"
       - ".github/workflows/aws-v0-infrastructure.yml"
   push:
     branches:
@@ -24,8 +26,10 @@ on:
       - "app/api/aws-v0/**"
       - "scripts/validate-aws-v0-build5-cognito-foundation.mjs"
       - "scripts/validate-aws-v0-build6-amplify-shadow.mjs"
+      - "scripts/validate-aws-v0-build7-bedrock-iam.mjs"
       - "tests/adversarial/aws-v0-build5-cognito-foundation.mjs"
       - "tests/adversarial/aws-v0-build6-amplify-shadow.mjs"
+      - "tests/adversarial/aws-v0-build7-bedrock-iam.mjs"
       - ".github/workflows/aws-v0-infrastructure.yml"
   workflow_dispatch:
 
@@ -67,6 +71,13 @@ jobs:
         run: |
           node scripts/validate-aws-v0-build6-amplify-shadow.mjs
           node tests/adversarial/aws-v0-build6-amplify-shadow.mjs
+      - name: Validate Build 7.4 Bedrock IAM
+        run: |
+          node scripts/validate-aws-v0-build7-bedrock-iam.mjs
+          node tests/adversarial/aws-v0-build7-bedrock-iam.mjs
+      - name: Local synth and synthesized-boundary validation
+        working-directory: infrastructure/aws-v0
+        run: npm run synth && npm run validate:synth
       - name: Configure short-lived AWS credentials for CDK context lookup
         if: github.ref == 'refs/heads/aws-v0' && vars.AWS_V0_DEPLOY_ROLE_ARN != ''
         uses: aws-actions/configure-aws-credentials@v6.2.3
