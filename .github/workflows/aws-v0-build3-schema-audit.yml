@@ -20,7 +20,28 @@ concurrency:
 jobs:
   schema-audit:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: marketroute_build3
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d marketroute_build3"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: '5432'
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: marketroute_build3
+
     steps:
       - name: Checkout canonical aws-v0 branch
         uses: actions/checkout@v4
@@ -30,7 +51,7 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Syntax-check Build 3 compiler and disposition tooling
+      - name: Syntax-check Build 3 compiler and resolver tooling
         run: |
           node --check database/aws/compile-canonical-baseline.mjs
           node --check database/aws/test-compiler-hardening.mjs
@@ -38,6 +59,9 @@ jobs:
           node --check database/aws/test-build3-dispositions.mjs
           node --check database/aws/apply-build3-final-disposition-closure.mjs
           node --check database/aws/test-build3-final-disposition-closure.mjs
+          node --check database/aws/build3-final-object-replay.mjs
+          node --check database/aws/verify-build3-final-object-dump.mjs
+          node --check database/aws/test-build3-final-object-resolver.mjs
 
       - name: Prove compiler hardening invariants
         run: node database/aws/test-compiler-hardening.mjs
@@ -48,6 +72,9 @@ jobs:
       - name: Prove final disposition closure invariants
         run: node database/aws/test-build3-final-disposition-closure.mjs
 
+      - name: Prove final-object resolver invariants
+        run: node database/aws/test-build3-final-object-resolver.mjs
+
       - name: Run Build 3 hardened audit
         run: node database/aws/compile-canonical-baseline.mjs
 
@@ -57,7 +84,91 @@ jobs:
       - name: Apply reviewed final disposition closure
         run: node database/aws/apply-build3-final-disposition-closure.mjs
 
-      - name: Validate generated audit and manifests
+      - name: Build final-object reference replay
+        run: node database/aws/build3-final-object-replay.mjs
+
+      - name: Resolve final PostgreSQL objects in disposable PostgreSQL 16
+        run: |
+          psql --set=ON_ERROR_STOP=1 --file=database/aws/build3_final_object_replay.sql
+
+      - name: Prove fresh-data and final-configuration invariants
+        run: |
+          psql --set=ON_ERROR_STOP=1 <<'SQL'
+          DO $gate$
+          DECLARE
+            v_growth_enabled boolean;
+            v_growth_limit integer;
+            v_scale_limit integer;
+            v_employment_policy text;
+            v_role_policy text;
+            v_channel_policy text;
+          BEGIN
+            IF EXISTS (SELECT 1 FROM public.organisations) THEN
+              RAISE EXCEPTION 'BUILD3_HISTORICAL_ORGANISATION_DATA_PRESENT';
+            END IF;
+            IF EXISTS (SELECT 1 FROM public.companies) THEN
+              RAISE EXCEPTION 'BUILD3_HISTORICAL_COMPANY_DATA_PRESENT';
+            END IF;
+            IF EXISTS (SELECT 1 FROM public.claims) THEN
+              RAISE EXCEPTION 'BUILD3_HISTORICAL_CLAIM_DATA_PRESENT';
+            END IF;
+            IF EXISTS (SELECT 1 FROM public.opportunities) THEN
+              RAISE EXCEPTION 'BUILD3_HISTORICAL_OPPORTUNITY_DATA_PRESENT';
+            END IF;
+            IF to_regclass('public.marketroute_v1_migration_batches') IS NOT NULL
+               OR to_regclass('public.marketroute_v1_migration_id_map') IS NOT NULL
+               OR to_regclass('public.marketroute_v1_migration_rejections') IS NOT NULL
+               OR to_regclass('public.marketroute_v1_migration_audit_events') IS NOT NULL THEN
+              RAISE EXCEPTION 'BUILD3_V1_ETL_OBJECT_PRESENT';
+            END IF;
+
+            SELECT enabled INTO v_growth_enabled
+            FROM public.genesis_growth_settings
+            WHERE singleton=true;
+            IF v_growth_enabled IS DISTINCT FROM false THEN
+              RAISE EXCEPTION 'BUILD3_DEMAND_DRIVEN_GENESIS_CONFIGURATION_DRIFT';
+            END IF;
+
+            SELECT active_market_limit INTO v_growth_limit
+            FROM public.marketroute_plan_catalog WHERE plan_code='GROWTH';
+            SELECT active_market_limit INTO v_scale_limit
+            FROM public.marketroute_plan_catalog WHERE plan_code='SCALE';
+            IF v_growth_limit IS DISTINCT FROM 3 OR v_scale_limit IS DISTINCT FROM 10 THEN
+              RAISE EXCEPTION 'BUILD3_PLAN_ACTIVE_MARKET_CONFIGURATION_DRIFT';
+            END IF;
+
+            SELECT policy_key INTO v_employment_policy
+            FROM public.truth_claim_policy_bindings
+            WHERE subject_type='PERSON' AND claim_key='employment.current';
+            SELECT policy_key INTO v_role_policy
+            FROM public.truth_claim_policy_bindings
+            WHERE subject_type='PERSON' AND claim_key='role.current';
+            SELECT policy_key INTO v_channel_policy
+            FROM public.truth_claim_policy_bindings
+            WHERE subject_type='CHANNEL' AND claim_key='ownership.current';
+            IF v_employment_policy IS DISTINCT FROM 'PERSON_CURRENT_EMPLOYMENT_V1'
+               OR v_role_policy IS DISTINCT FROM 'PERSON_CURRENT_ROLE_V1'
+               OR v_channel_policy IS DISTINCT FROM 'CHANNEL_OWNERSHIP_CURRENT_V1' THEN
+              RAISE EXCEPTION 'BUILD3_TRUTH_POLICY_BINDING_CONFIGURATION_DRIFT';
+            END IF;
+          END;
+          $gate$;
+          SQL
+
+      - name: Dump resolved schema only
+        run: |
+          pg_dump \
+            --schema-only \
+            --no-owner \
+            --no-privileges \
+            --exclude-schema=auth \
+            --file=database/aws/build3_final_object_reference_schema.sql \
+            "$PGDATABASE"
+
+      - name: Verify resolved final-object reference schema
+        run: node database/aws/verify-build3-final-object-dump.mjs
+
+      - name: Validate generated audit, dispositions, and final-object manifests
         run: |
           node <<'NODE'
           const fs = require('node:fs');
@@ -68,6 +179,8 @@ jobs:
           const finalDisposition = JSON.parse(fs.readFileSync('database/aws/build3_final_disposition_audit.json', 'utf8'));
           const finalManifest = JSON.parse(fs.readFileSync('database/aws/0001_marketroute_aws_final_disposition_manifest.json', 'utf8'));
           const reviewedLedger = JSON.parse(fs.readFileSync('database/aws/BUILD3-REVIEWED-DISPOSITIONS.json', 'utf8'));
+          const replay = JSON.parse(fs.readFileSync('database/aws/build3_final_object_replay_manifest.json', 'utf8'));
+          const finalObjects = JSON.parse(fs.readFileSync('database/aws/build3_final_object_resolution_manifest.json', 'utf8'));
 
           if (audit.build !== 'AWS-V0-BUILD-3') throw new Error('unexpected audit build');
           if (audit.format_version !== 2 || audit.mode !== 'hardened-audit') throw new Error('hardened audit v2 required');
@@ -127,21 +240,38 @@ jobs:
           if (finalManifest.prohibited_historical_data_import !== true) throw new Error('final historical-data prohibition missing');
           if (finalManifest.identity_boundary?.version !== identity.version) throw new Error('identity boundary drifted during closure');
 
+          if (replay.build !== 'AWS-V0-BUILD-3' || replay.mode !== 'final-object-reference-replay') throw new Error('unexpected final-object replay manifest');
+          if (replay.status !== 'READY_FOR_EPHEMERAL_POSTGRES_REPLAY') throw new Error('final-object replay is not ready');
+          if (replay.persistent_database_execution_allowed !== false || replay.aurora_execution_allowed !== false) throw new Error('ephemeral-only replay boundary missing');
+          if (replay.expected_aws_transforms !== 35 || replay.counters.transform_source_statements !== 35) throw new Error('AWS transform-source count mismatch');
+          if (replay.expected_canonical_configuration_statements !== 19 || replay.counters.canonical_configuration_statements !== 19) throw new Error('canonical configuration replay count mismatch');
+
+          if (finalObjects.build !== 'AWS-V0-BUILD-3' || finalObjects.mode !== 'final-object-resolution') throw new Error('unexpected final-object resolution manifest');
+          if (!['FINAL_OBJECTS_RESOLVED_AWS_TRANSFORMS_PENDING','FINAL_OBJECTS_RESOLVED'].includes(finalObjects.status)) throw new Error('final-object resolver did not resolve PostgreSQL reference schema');
+          if (finalObjects.required_aws_transform_count !== 35) throw new Error('resolved object transform count mismatch');
+          if (finalObjects.canonical_configuration_statement_count !== 19) throw new Error('resolved object configuration count mismatch');
+          if (finalObjects.source_reference_schema?.schema_only !== true) throw new Error('reference schema is not schema-only');
+          if (finalObjects.source_reference_schema?.ephemeral_compatibility_schema_excluded !== true) throw new Error('ephemeral auth shim was not excluded from schema dump');
+          if (finalObjects.reference_object_counts.tables < 50 || finalObjects.reference_object_counts.routines < 150) throw new Error('resolved reference object counts unexpectedly low');
+          if (finalObjects.baseline_emission_allowed !== false || finalObjects.aurora_execution_allowed !== false) throw new Error('final-object resolver opened deployment prematurely');
+
           console.log(JSON.stringify({
             migration_count: audit.migration_count,
             migration_range: audit.migration_range,
             hardened_unresolved: audit.unresolved_count,
-            base_disposition_resolved: disposition.resolved_decisions,
-            base_disposition_unresolved: disposition.unresolved_count,
             final_disposition_resolved: finalDisposition.resolved_decisions,
             final_disposition_unresolved: finalDisposition.unresolved_count,
             reviewed_ledger_matches: `${finalDisposition.reviewed_ledger.matched_count}/${finalDisposition.reviewed_ledger.entry_count}`,
             canonical_configuration_statements: finalDisposition.canonical_configuration_statements,
             required_transforms: finalDisposition.required_transforms,
             final_exclusions: finalDisposition.resolved_exclusions,
-            disposition_counts: finalDisposition.disposition_counts,
+            replay_included_statements: replay.counters.included_statements,
+            replay_excluded_statements: replay.counters.excluded_statements,
+            reference_object_counts: finalObjects.reference_object_counts,
+            final_object_blocker_count: finalObjects.blocker_count,
+            final_object_blocker_codes: finalObjects.blockers.map((b) => b.code),
+            final_object_status: finalObjects.status,
             identity_boundary: identity.version,
-            manifest_status: finalManifest.status,
           }, null, 2));
           NODE
 
@@ -158,12 +288,12 @@ jobs:
             exit 1
           fi
           if [ -e database/aws/0001_marketroute_aws_canonical_baseline.sql ]; then
-            echo "Compiler emitted baseline before final-object resolution" >&2
+            echo "Compiler emitted baseline before AWS final-object transforms" >&2
             exit 1
           fi
           echo "Fail-closed baseline gate verified with exit $status."
 
-      - name: Upload Build 3 audit artifacts
+      - name: Upload Build 3 audit and final-object artifacts
         uses: actions/upload-artifact@v4
         with:
           name: aws-v0-build3-schema-audit
@@ -175,5 +305,9 @@ jobs:
             database/aws/build3_final_disposition_audit.json
             database/aws/0001_marketroute_aws_final_disposition_manifest.json
             database/aws/BUILD3-REVIEWED-DISPOSITIONS.json
+            database/aws/build3_final_object_replay.sql
+            database/aws/build3_final_object_replay_manifest.json
+            database/aws/build3_final_object_reference_schema.sql
+            database/aws/build3_final_object_resolution_manifest.json
           if-no-files-found: error
           retention-days: 14
