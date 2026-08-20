@@ -16,6 +16,7 @@ const required = [
   "infrastructure/aws-v0/bin/aws-v0.ts",
   "infrastructure/aws-v0/lib/config.ts",
   "infrastructure/aws-v0/lib/identity-stack.ts",
+  "infrastructure/aws-v0/lib/cognito-stack.ts",
   "infrastructure/aws-v0/lib/database-stack.ts",
   "database/aws/README.md",
   ".github/workflows/aws-v0-infrastructure.yml",
@@ -28,6 +29,7 @@ for (const file of required) {
 const app = read("infrastructure/aws-v0/bin/aws-v0.ts");
 for (const stack of [
   "MrAwsV0IdentityStack",
+  "MrAwsV0CognitoStack",
   "MrAwsV0DatabaseStack",
   "MrAwsV0ApplicationStack",
   "MrAwsV0ResearchStack",
@@ -36,6 +38,7 @@ for (const stack of [
   if (!app.includes(stack)) throw new Error(`Missing stack declaration: ${stack}`);
 }
 if (!app.includes("new MrAwsV0DatabaseStack")) throw new Error("Build 2 database stack is not active");
+if (!app.includes("new MrAwsV0CognitoStack")) throw new Error("Build 5 Cognito stack is not active");
 
 const tags = read("infrastructure/aws-v0/lib/tags.ts");
 for (const key of ["Project", "Environment", "Owner", "ManagedBy", "CostCentre"]) {
@@ -70,8 +73,6 @@ for (const requiredSetting of [
   if (!database.includes(requiredSetting)) throw new Error(`Build 2 database setting missing: ${requiredSetting}`);
 }
 
-// Reject actual forbidden constructs/configuration, not harmless words appearing in
-// safe settings such as `publiclyAccessible: false` or descriptive output strings.
 for (const forbidden of [
   "DatabaseProxy",
   "DBProxy",
@@ -85,6 +86,27 @@ for (const forbidden of [
 if (!database.includes("const MIN_ACU = 0")) throw new Error("Build 2 must allow Aurora auto-pause at 0 ACU");
 if (!database.includes("const MAX_ACU = 2")) throw new Error("Build 2 sandbox maximum must remain capped at 2 ACU");
 if (!database.includes("Duration.minutes(5)")) throw new Error("Build 2 auto-pause must remain at five minutes");
+
+const cognito = read("infrastructure/aws-v0/lib/cognito-stack.ts");
+for (const requiredSetting of [
+  "new cognito.CfnUserPool",
+  "new cognito.CfnUserPoolClient",
+  'usernameAttributes: ["email"]',
+  'autoVerifiedAttributes: ["email"]',
+  'mfaConfiguration: "OFF"',
+  "allowAdminCreateUserOnly: false",
+  "minimumLength: 8",
+  "generateSecret: false",
+  'preventUserExistenceErrors: "ENABLED"',
+  '"ALLOW_USER_PASSWORD_AUTH"',
+  '"ALLOW_REFRESH_TOKEN_AUTH"',
+  "RemovalPolicy.RETAIN",
+]) {
+  if (!cognito.includes(requiredSetting)) throw new Error(`Build 5 Cognito setting missing: ${requiredSetting}`);
+}
+for (const forbidden of ["CfnUserPoolDomain", "generateSecret: true", "clientSecret", "SUPABASE_"]) {
+  if (cognito.includes(forbidden)) throw new Error(`Build 5 Cognito boundary contains forbidden construct: ${forbidden}`);
+}
 
 const workflow = read(".github/workflows/aws-v0-infrastructure.yml");
 for (const forbidden of ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "aws-access-key-id", "aws-secret-access-key"]) {
@@ -103,4 +125,4 @@ if (!identityWorkflow.includes(":ref:refs/heads/aws-v0")) throw new Error("Repos
 const databaseReadme = read("database/aws/README.md");
 if (!databaseReadme.includes("Build 3")) throw new Error("database/aws boundary does not defer canonical 0001 to Build 3");
 
-console.log("PASS AWS-V0 Build 2 source constitution");
+console.log("PASS AWS-V0 infrastructure source constitution through Build 5");

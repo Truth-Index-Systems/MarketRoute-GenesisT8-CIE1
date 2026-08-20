@@ -6,11 +6,13 @@ This directory is the clean MarketRoute AWS database-history boundary.
 
 Do not copy or replay `supabase/migrations/` or the root `APPLY-IN-SUPABASE-*.sql` chain here. Those files remain RC 0.68 forensic/behavioural reference only.
 
-AWS database history begins with the flattened canonical baseline created in **AWS-V0 Build 3**:
+AWS database history begins with the flattened canonical baseline created and frozen in **AWS-V0 Build 3**:
 
 ```text
 0001_marketroute_aws_canonical_baseline.sql
-0002_...
+0002_marketroute_cognito_identity_mapping.sql
 ```
 
-The future `0001` must represent the final required MarketRoute state with zero development/customer/research rows. Build 2 creates the empty Aurora foundation; Build 3 compiles and validates this baseline.
+`0001` is immutable and represents the final required MarketRoute schema with zero development/customer/research rows at baseline application time. Build 2 created the empty Aurora foundation and Build 3 compiled, applied and certified the canonical baseline.
+
+Build 5 begins additive AWS migration history with `0002_marketroute_cognito_identity_mapping.sql`. It maps external Cognito identity to the canonical internal `public.marketroute_users.id` without changing Truth, CIE/UDOSIB, R4/R5/R6, tenancy, entitlement, or commercial semantics.

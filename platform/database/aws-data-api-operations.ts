@@ -5,7 +5,8 @@ export type AwsDataApiOperationName =
   | "system.currentDatabase"
   | "commercial.publicPlans"
   | "genesis.growthSettings"
-  | "truth.policyBinding";
+  | "truth.policyBinding"
+  | "identity.resolveActor";
 
 export interface AwsDataApiOperationInputMap {
   "system.health": Record<string, never>;
@@ -15,6 +16,13 @@ export interface AwsDataApiOperationInputMap {
   "truth.policyBinding": {
     subjectType: string;
     claimKey: string;
+  };
+  "identity.resolveActor": {
+    provider: "COGNITO";
+    issuer: string;
+    subject: string;
+    email: string | null;
+    emailVerified: boolean;
   };
 }
 
@@ -81,6 +89,19 @@ const OPERATIONS: Readonly<Record<AwsDataApiOperationName, AwsDataApiOperationDe
       known_support_family_requirement
     FROM public.marketroute_truth_policy_for_claim_v1(:subject_type, :claim_key)`,
     parameterNames: Object.freeze(["subject_type", "claim_key"]),
+    maxRows: 1,
+  }),
+  "identity.resolveActor": Object.freeze({
+    name: "identity.resolveActor",
+    kind: "WRITE",
+    sql: `SELECT public.marketroute_resolve_external_identity_v1(
+      :provider,
+      :issuer,
+      :subject,
+      :email,
+      :email_verified
+    )::text AS actor_user_id`,
+    parameterNames: Object.freeze(["provider", "issuer", "subject", "email", "email_verified"]),
     maxRows: 1,
   }),
 });

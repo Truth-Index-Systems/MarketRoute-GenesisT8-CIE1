@@ -16,7 +16,8 @@
     "deploy:database": "npm run build && cdk deploy MrAwsV0DatabaseStack --require-approval never",
     "deploy:all": "npm run build && cdk deploy --all --require-approval never",
     "destroy:database": "npm run build && cdk destroy MrAwsV0DatabaseStack --force",
-    "destroy:all": "npm run build && cdk destroy --all --force"
+    "destroy:all": "npm run build && cdk destroy --all --force",
+    "deploy:cognito": "npm run build && cdk deploy MrAwsV0CognitoStack --require-approval never"
   },
   "dependencies": {
     "aws-cdk-lib": "2.264.0",
