@@ -1,11 +1,11 @@
 import type {
   SemanticOperationId,
   SemanticOperationInput,
-  SemanticOperationOutput,
 } from "../../../core/ai/semantic-operation";
 import {
   SemanticProviderError,
   type SemanticProvider,
+  type SemanticProviderExecution,
 } from "../semantic-provider";
 import {
   createBedrockRuntimeClient,
@@ -27,7 +27,7 @@ export class BedrockSemanticProvider implements SemanticProvider {
     _operation: K,
     _input: SemanticOperationInput<K>,
     _signal: AbortSignal,
-  ): Promise<SemanticOperationOutput<K>> {
+  ): Promise<SemanticProviderExecution<K>> {
     throw new SemanticProviderError("NOT_LIVE", false);
   }
 
