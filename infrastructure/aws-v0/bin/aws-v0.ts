@@ -6,6 +6,7 @@ import { MrAwsV0CognitoStack } from "../lib/cognito-stack";
 import { MrAwsV0DatabaseStack } from "../lib/database-stack";
 import { FoundationStack } from "../lib/foundation-stack";
 import { MrAwsV0IdentityStack } from "../lib/identity-stack";
+import { MrAwsV0ResearchStack } from "../lib/research-stack";
 import { applyMandatoryTags } from "../lib/tags";
 
 const app = new App();
@@ -33,10 +34,9 @@ const application = new MrAwsV0ApplicationStack(app, "MrAwsV0ApplicationStack", 
   description: "MarketRoute AWS V0 private Amplify Hosting SSR shadow (Build 6)",
 });
 
-const research = new FoundationStack(app, "MrAwsV0ResearchStack", {
+const research = new MrAwsV0ResearchStack(app, "MrAwsV0ResearchStack", {
   env,
-  purpose: "Reserved for AWS-V0 Builds 8-11 research transport and execution",
-  description: "MarketRoute AWS V0 research boundary (Build 1 placeholder only)",
+  description: "MarketRoute AWS V0 research transport and worker substrate (Build 8)",
 });
 
 const observability = new FoundationStack(app, "MrAwsV0ObservabilityStack", {
