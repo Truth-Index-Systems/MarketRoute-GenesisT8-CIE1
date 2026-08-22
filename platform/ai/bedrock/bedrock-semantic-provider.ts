@@ -2,10 +2,18 @@ import "server-only";
 
 import { ConverseCommand } from "@aws-sdk/client-bedrock-runtime";
 import type {
+  CompanyUnderstandingInput,
   SemanticOperationId,
   SemanticOperationInput,
   SemanticProbeInput,
 } from "../../../core/ai/semantic-operation";
+import {
+  buildCompanyUnderstandingUserPrompt,
+  COMPANY_UNDERSTANDING_JSON_SCHEMA,
+  COMPANY_UNDERSTANDING_SCHEMA_NAME,
+  COMPANY_UNDERSTANDING_SYSTEM_INSTRUCTION,
+  parseCompanyUnderstandingOutput,
+} from "../../../core/ai/company-understanding-definition";
 import {
   buildSemanticProbeUserPrompt,
   parseSemanticProbeOutput,
@@ -64,28 +72,28 @@ function parseStructuredText(text: string | undefined): ReturnType<typeof parseS
   }
 }
 
-export class BedrockSemanticProvider implements SemanticProvider {
-  private readonly client;
-  private readonly inferenceProfileArn: string;
-
-  constructor(options: BedrockSemanticProviderOptions) {
-    if (!options.inferenceProfileArn) throw new Error("BEDROCK_SEMANTIC_INFERENCE_PROFILE_REQUIRED");
-    this.inferenceProfileArn = options.inferenceProfileArn;
-    this.client = createBedrockRuntimeClient(options);
+function parseCompanyUnderstandingStructuredText(
+  text: string | undefined,
+  companyInput: CompanyUnderstandingInput,
+): ReturnType<typeof parseCompanyUnderstandingOutput> {
+  if (!text) return null;
+  try {
+    const value: unknown = JSON.parse(text);
+    return parseCompanyUnderstandingOutput(value, companyInput);
+  } catch {
+    return null;
   }
+}
 
-  async execute<K extends SemanticOperationId>(
-    operation: K,
-    input: SemanticOperationInput<K>,
-    signal: AbortSignal,
-  ): Promise<SemanticProviderExecution<K>> {
-    if (operation !== "ai.semanticProbe") {
-      throw new SemanticProviderError("UNSUPPORTED_OPERATION", false);
-    }
-
+function buildCommand<K extends SemanticOperationId>(
+  operation: K,
+  input: SemanticOperationInput<K>,
+  inferenceProfileArn: string,
+): ConverseCommand {
+  if (operation === "ai.semanticProbe") {
     const probeInput = input as SemanticProbeInput;
-    const command = new ConverseCommand({
-      modelId: this.inferenceProfileArn,
+    return new ConverseCommand({
+      modelId: inferenceProfileArn,
       system: [{ text: SEMANTIC_PROBE_SYSTEM_INSTRUCTION }],
       messages: [
         {
@@ -110,11 +118,64 @@ export class BedrockSemanticProvider implements SemanticProvider {
         },
       },
     });
+  }
+
+  if (operation === "ai.companyUnderstanding") {
+    const companyInput = input as CompanyUnderstandingInput;
+    return new ConverseCommand({
+      modelId: inferenceProfileArn,
+      system: [{ text: COMPANY_UNDERSTANDING_SYSTEM_INSTRUCTION }],
+      messages: [
+        {
+          role: "user",
+          content: [{ text: buildCompanyUnderstandingUserPrompt(companyInput) }],
+        },
+      ],
+      inferenceConfig: {
+        maxTokens: 1_400,
+        temperature: 0,
+      },
+      outputConfig: {
+        textFormat: {
+          type: "json_schema",
+          structure: {
+            jsonSchema: {
+              schema: COMPANY_UNDERSTANDING_JSON_SCHEMA,
+              name: COMPANY_UNDERSTANDING_SCHEMA_NAME,
+              description: "MarketRoute evidence-grounded company understanding output",
+            },
+          },
+        },
+      },
+    });
+  }
+
+  throw new SemanticProviderError("UNSUPPORTED_OPERATION", false);
+}
+
+export class BedrockSemanticProvider implements SemanticProvider {
+  private readonly client;
+  private readonly inferenceProfileArn: string;
+
+  constructor(options: BedrockSemanticProviderOptions) {
+    if (!options.inferenceProfileArn) throw new Error("BEDROCK_SEMANTIC_INFERENCE_PROFILE_REQUIRED");
+    this.inferenceProfileArn = options.inferenceProfileArn;
+    this.client = createBedrockRuntimeClient(options);
+  }
+
+  async execute<K extends SemanticOperationId>(
+    operation: K,
+    input: SemanticOperationInput<K>,
+    signal: AbortSignal,
+  ): Promise<SemanticProviderExecution<K>> {
+    const command = buildCommand(operation, input, this.inferenceProfileArn);
 
     try {
       const response = await this.client.send(command, { abortSignal: signal });
       const text = response.output?.message?.content?.find((block) => typeof block.text === "string")?.text;
-      const value = parseStructuredText(text);
+      const value = operation === "ai.semanticProbe"
+        ? parseStructuredText(text)
+        : parseCompanyUnderstandingStructuredText(text, input as CompanyUnderstandingInput);
       const telemetry: SemanticProviderTelemetryMetadata = {
         modelIdentifier: BEDROCK_SEMANTIC_MODEL_IDENTIFIER,
         inferenceProfileIdentifier: this.inferenceProfileArn,
