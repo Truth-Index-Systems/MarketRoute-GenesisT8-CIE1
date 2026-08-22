@@ -1,4 +1,4 @@
-export type SemanticOperationId = "ai.semanticProbe";
+export type SemanticOperationId = "ai.semanticProbe" | "ai.companyUnderstanding";
 
 export type IntelligenceTier = "A" | "B" | "C";
 export type SemanticUncertainty = "low" | "medium" | "high";
@@ -16,10 +16,44 @@ export interface SemanticProbeOutput {
   unresolvedQuestions: string[];
 }
 
+export type SemanticEvidenceSourceType = "WEBSITE" | "REGISTRY" | "DOCUMENT" | "DATASET" | "OTHER";
+
+export interface CompanyUnderstandingEvidence {
+  evidenceId: string;
+  sourceType: SemanticEvidenceSourceType;
+  statement: string;
+  observedAt?: string;
+}
+
+export interface CompanyUnderstandingInput {
+  companyName: string;
+  evidence: CompanyUnderstandingEvidence[];
+  requestedTier?: IntelligenceTier;
+}
+
+export interface GroundedSemanticStatement {
+  text: string;
+  evidenceIds: string[];
+}
+
+export interface CompanyUnderstandingOutput {
+  overview: GroundedSemanticStatement;
+  businessActivities: GroundedSemanticStatement[];
+  offerings: GroundedSemanticStatement[];
+  customerTypes: GroundedSemanticStatement[];
+  operatingSignals: GroundedSemanticStatement[];
+  uncertainty: SemanticUncertainty;
+  unresolvedQuestions: string[];
+}
+
 export interface SemanticOperationMap {
   "ai.semanticProbe": {
     input: SemanticProbeInput;
     output: SemanticProbeOutput;
+  };
+  "ai.companyUnderstanding": {
+    input: CompanyUnderstandingInput;
+    output: CompanyUnderstandingOutput;
   };
 }
 
