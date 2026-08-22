@@ -10,15 +10,17 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "synth": "npm run build && cdk synth --quiet",
     "validate:source": "node scripts/validate-source.mjs",
-    "validate:synth": "node scripts/validate-synth.mjs",
+    "validate:synth": "node scripts/validate-synth.mjs && node scripts/validate-build8-research-synth.mjs",
     "check": "npm run validate:source && npm run typecheck && npm run synth && npm run validate:synth",
     "deploy:identity": "npm run build && cdk deploy MrAwsV0IdentityStack --require-approval never",
     "deploy:database": "npm run build && cdk deploy MrAwsV0DatabaseStack --require-approval never",
     "deploy:cognito": "npm run build && cdk deploy MrAwsV0CognitoStack --require-approval never",
     "deploy:application": "npm run build && cdk deploy MrAwsV0ApplicationStack --require-approval never",
+    "deploy:research": "npm run build && cdk deploy MrAwsV0ResearchStack --require-approval never",
     "deploy:all": "npm run build && cdk deploy --all --require-approval never",
     "destroy:database": "npm run build && cdk destroy MrAwsV0DatabaseStack --force",
     "destroy:application": "npm run build && cdk destroy MrAwsV0ApplicationStack --force",
+    "destroy:research": "npm run build && cdk destroy MrAwsV0ResearchStack --force",
     "destroy:all": "npm run build && cdk destroy --all --force"
   },
   "dependencies": {
