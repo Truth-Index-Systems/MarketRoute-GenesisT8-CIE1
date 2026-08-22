@@ -39,7 +39,8 @@ for (const token of [
   "cashAttributedOperationCount",
   "event.estimatedEquivalentCostUsd",
   "event.actualAttributedCostUsd",
-  "fundingCounts[event.creditFunding] += 1",
+  "incrementFundingCount(fundingCounts, event.creditFunding)",
+  "INVALID_SEMANTIC_ECONOMICS_CREDIT_FUNDING",
   "projection = completeEconomicCoverage",
 ]) {
   if (!marginProof.includes(token)) throw new Error(`Build 7.8 margin proof missing: ${token}`);

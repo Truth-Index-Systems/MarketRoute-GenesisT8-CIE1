@@ -34,6 +34,22 @@ function newFundingCounts(): Record<SemanticCreditFunding, number> {
   };
 }
 
+function incrementFundingCount(
+  counts: Record<SemanticCreditFunding, number>,
+  funding: unknown,
+): void {
+  switch (funding) {
+    case "UNKNOWN":
+    case "CREDIT_FUNDED":
+    case "CASH_FUNDED":
+    case "MIXED":
+      counts[funding] += 1;
+      return;
+    default:
+      throw new Error("INVALID_SEMANTIC_ECONOMICS_CREDIT_FUNDING");
+  }
+}
+
 function economicCostFor(
   event: Readonly<SemanticOperationTelemetry>,
   pricing: SemanticModelPricing,
@@ -58,7 +74,7 @@ export function buildSemanticMarginProof(input: SemanticMarginProofInput): Seman
   let cashAttributedOperationCount = 0;
 
   for (const event of input.events) {
-    fundingCounts[event.creditFunding] += 1;
+    incrementFundingCount(fundingCounts, event.creditFunding);
 
     const economicCost = economicCostFor(event, input.pricing);
     if (economicCost !== null) {
