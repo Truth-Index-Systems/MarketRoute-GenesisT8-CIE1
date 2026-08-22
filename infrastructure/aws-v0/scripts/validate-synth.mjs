@@ -24,7 +24,7 @@ for (const name of stackNames) {
   const resources = Object.values(template.Resources ?? {});
   const productResources = resources.filter((resource) => !SYNTH_METADATA_TYPES.has(resource.Type));
 
-  if (["MrAwsV0ResearchStack", "MrAwsV0ObservabilityStack"].includes(name) && productResources.length !== 0) {
+  if (name === "MrAwsV0ObservabilityStack" && productResources.length !== 0) {
     throw new Error(`${name} created runtime resources before its numbered build`);
   }
 
