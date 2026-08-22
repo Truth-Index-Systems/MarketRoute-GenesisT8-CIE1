@@ -2,9 +2,11 @@ import "server-only";
 
 import { executeSemanticOperation } from "../ai/execute-semantic-operation";
 import type { SemanticTelemetrySink } from "../ai/semantic-telemetry";
+import { estimateSemanticTokenCostUsd } from "../../core/ai/semantic-economics";
 import type { SemanticOperationFailureCode, SemanticProbeOutput } from "../../core/ai/semantic-operation";
 import type { SemanticOperationTelemetry } from "../../core/ai/semantic-telemetry";
 import { BedrockSemanticProvider } from "../../platform/ai/bedrock/bedrock-semantic-provider";
+import { SONNET45_EU_GEO_PRICING } from "../../platform/ai/bedrock/bedrock-semantic-pricing";
 import { getAwsV0BedrockSemanticInferenceProfileArn } from "./shadow-ai-runtime";
 
 const SYNTHETIC_PROBE_INPUT = Object.freeze({
@@ -12,9 +14,6 @@ const SYNTHETIC_PROBE_INPUT = Object.freeze({
   context: "Fictional UK manufacturer of industrial temperature-monitoring components for food-processing plants. The description is synthetic and contains no customer or canonical MarketRoute data.",
   requestedTier: "B" as const,
 });
-
-const SONNET45_EU_GEO_INPUT_USD_PER_MILLION_TOKENS = 3.3;
-const SONNET45_EU_GEO_OUTPUT_USD_PER_MILLION_TOKENS = 16.5;
 
 export interface AwsV0ShadowAiDiagnostics {
   usageUnit: "TOKEN" | "PROVIDER_UNIT" | "UNKNOWN";
@@ -43,10 +42,10 @@ export type AwsV0ShadowSemanticProbeResult =
 
 function estimateEquivalentCost(event: Readonly<SemanticOperationTelemetry>): number | null {
   if (event.usageUnit !== "TOKEN" || event.inputUnits === null || event.outputUnits === null) return null;
-  const estimate =
-    (event.inputUnits / 1_000_000) * SONNET45_EU_GEO_INPUT_USD_PER_MILLION_TOKENS +
-    (event.outputUnits / 1_000_000) * SONNET45_EU_GEO_OUTPUT_USD_PER_MILLION_TOKENS;
-  return Number(estimate.toFixed(8));
+  return estimateSemanticTokenCostUsd(
+    { inputUnits: event.inputUnits, outputUnits: event.outputUnits },
+    SONNET45_EU_GEO_PRICING,
+  );
 }
 
 class InMemorySemanticProbeTelemetrySink implements SemanticTelemetrySink {
