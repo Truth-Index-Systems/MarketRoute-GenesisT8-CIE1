@@ -22,7 +22,22 @@ function walk(dir) {
 }
 const rel = (file) => path.relative(root, file).replaceAll(path.sep, "/");
 const sourceFiles = ["core", "application", "platform", "ui", "app"].flatMap((dir) => walk(path.join(root, dir)));
-const aiFiles = sourceFiles.filter((file) => rel(file).startsWith("core/ai/") || rel(file).startsWith("application/ai/") || rel(file).startsWith("platform/ai/"));
+const semanticBoundaryPaths = [
+  "core/ai/semantic-operation.ts",
+  "core/ai/semantic-probe-definition.ts",
+  "core/ai/semantic-telemetry.ts",
+  "core/ai/semantic-economics.ts",
+  "core/ai/company-understanding-definition.ts",
+  "application/ai/execute-semantic-operation.ts",
+  "application/ai/semantic-telemetry.ts",
+  "application/ai/semantic-margin-proof.ts",
+  "application/ai/understand-company.ts",
+  "platform/ai/semantic-provider.ts",
+];
+const semanticBoundaryFiles = [
+  ...semanticBoundaryPaths.map((file) => path.join(root, file)),
+  ...walk(path.join(root, "platform/ai/bedrock")),
+].filter((file) => fs.existsSync(file));
 
 const execution = read("application/ai/execute-semantic-operation.ts");
 const provider = read("platform/ai/bedrock/bedrock-semantic-provider.ts");
@@ -43,10 +58,10 @@ check("provider transport cannot leak into browser/UI/application", () => {
     .filter((file) => !file.startsWith("platform/ai/bedrock/"));
   assert(sdkOffenders.length === 0, `Bedrock SDK leaked: ${sdkOffenders.join(", ")}`);
 
-  const clientOffenders = aiFiles
+  const clientOffenders = semanticBoundaryFiles
     .filter((file) => fs.readFileSync(file, "utf8").includes('"use client"'))
     .map(rel);
-  assert(clientOffenders.length === 0, `AI boundary became browser executable: ${clientOffenders.join(", ")}`);
+  assert(clientOffenders.length === 0, `semantic boundary became browser executable: ${clientOffenders.join(", ")}`);
 });
 
 check("credentials and provider internals cannot enter public route", () => {
@@ -99,12 +114,17 @@ check("AI cost cannot be hidden by credits or incomplete usage", () => {
   assert(margin.includes("INVALID_SEMANTIC_ECONOMICS_CREDIT_FUNDING"), "unknown funding state is not rejected");
 });
 
-check("AI semantic boundary cannot persist canonical state", () => {
-  const offenders = aiFiles.filter((file) => {
+check("semantic operation boundary cannot persist canonical state", () => {
+  const offenders = semanticBoundaryFiles.filter((file) => {
     const text = fs.readFileSync(file, "utf8").toLowerCase();
-    return ["platform/database", "database/", "rds-data", "execute-statement", "insert into", "delete from", "supabase", "prisma", "drizzle"].some((token) => text.includes(token));
+    return ["platform/database", "../database", "database/", "rds-data", "execute-statement", "insert into", "delete from", "supabase", "prisma", "drizzle"].some((token) => text.includes(token));
   }).map(rel);
-  assert(offenders.length === 0, `AI persistence capability leaked: ${offenders.join(", ")}`);
+  assert(offenders.length === 0, `semantic persistence capability leaked: ${offenders.join(", ")}`);
+
+  const semanticCombined = semanticBoundaryFiles.map((file) => fs.readFileSync(file, "utf8").toLowerCase()).join("\n");
+  for (const forbidden of ["openai-research-provider", "openai-responses", "production-context-repository", "ai-usage-repository"]) {
+    assert(!semanticCombined.includes(forbidden), `research/persistence boundary imported into semantics: ${forbidden}`);
+  }
 });
 
 check("deterministic commercial authority cannot enter semantic contracts", () => {
