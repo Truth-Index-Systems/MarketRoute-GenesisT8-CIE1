@@ -28,6 +28,10 @@ export interface SemanticExecutionPolicy {
   retryDelayMs: number;
 }
 
+export const MAX_SEMANTIC_TIMEOUT_MS = 120_000 as const;
+export const MAX_SEMANTIC_ATTEMPTS = 3 as const;
+export const MAX_SEMANTIC_RETRY_DELAY_MS = 5_000 as const;
+
 export const DEFAULT_SEMANTIC_EXECUTION_POLICY: Readonly<SemanticExecutionPolicy> = Object.freeze({
   timeoutMs: 8_000,
   maxAttempts: 2,
@@ -64,11 +68,15 @@ const EMPTY_PROVIDER_TELEMETRY: AggregatedProviderTelemetry = {
 
 function normalisePolicy(overrides?: Partial<SemanticExecutionPolicy>): SemanticExecutionPolicy {
   const policy = { ...DEFAULT_SEMANTIC_EXECUTION_POLICY, ...overrides };
-  if (!Number.isFinite(policy.timeoutMs) || policy.timeoutMs <= 0) throw new Error("INVALID_SEMANTIC_TIMEOUT_POLICY");
-  if (!Number.isInteger(policy.maxAttempts) || policy.maxAttempts < 1 || policy.maxAttempts > 3) {
+  if (!Number.isFinite(policy.timeoutMs) || policy.timeoutMs <= 0 || policy.timeoutMs > MAX_SEMANTIC_TIMEOUT_MS) {
+    throw new Error("INVALID_SEMANTIC_TIMEOUT_POLICY");
+  }
+  if (!Number.isInteger(policy.maxAttempts) || policy.maxAttempts < 1 || policy.maxAttempts > MAX_SEMANTIC_ATTEMPTS) {
     throw new Error("INVALID_SEMANTIC_RETRY_POLICY");
   }
-  if (!Number.isFinite(policy.retryDelayMs) || policy.retryDelayMs < 0) throw new Error("INVALID_SEMANTIC_RETRY_DELAY_POLICY");
+  if (!Number.isFinite(policy.retryDelayMs) || policy.retryDelayMs < 0 || policy.retryDelayMs > MAX_SEMANTIC_RETRY_DELAY_MS) {
+    throw new Error("INVALID_SEMANTIC_RETRY_DELAY_POLICY");
+  }
   return policy;
 }
 
