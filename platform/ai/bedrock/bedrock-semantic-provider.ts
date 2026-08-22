@@ -63,7 +63,7 @@ function isRetryableProviderError(error: unknown): boolean {
   return typeof status === "number" && status >= 500;
 }
 
-function parseJson(text: string | undefined): unknown | null {
+function parseStructuredText(text: string | undefined): unknown | null {
   if (!text) return null;
   try {
     return JSON.parse(text);
@@ -161,13 +161,13 @@ export class BedrockSemanticProvider implements SemanticProvider {
     input: SemanticOperationInput<K>,
     signal: AbortSignal,
   ): Promise<SemanticProviderExecution<K>> {
-    const prepared = buildCommand(operation, input, this.inferenceProfileArn);
+    const { command, parse } = buildCommand(operation, input, this.inferenceProfileArn);
 
     try {
-      const response = await this.client.send(prepared.command, { abortSignal: signal });
+      const response = await this.client.send(command, { abortSignal: signal });
       const text = response.output?.message?.content?.find((block) => typeof block.text === "string")?.text;
-      const rawValue = parseJson(text);
-      const value = rawValue === null ? null : prepared.parse(rawValue);
+      const rawValue = parseStructuredText(text);
+      const value = rawValue === null ? null : parse(rawValue);
       const telemetry: SemanticProviderTelemetryMetadata = {
         modelIdentifier: BEDROCK_SEMANTIC_MODEL_IDENTIFIER,
         inferenceProfileIdentifier: this.inferenceProfileArn,
