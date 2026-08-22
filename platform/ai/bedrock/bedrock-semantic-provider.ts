@@ -63,10 +63,23 @@ function isRetryableProviderError(error: unknown): boolean {
   return typeof status === "number" && status >= 500;
 }
 
-function parseStructuredText(text: string | undefined): unknown | null {
+function parseStructuredText(text: string | undefined): ReturnType<typeof parseSemanticProbeOutput> {
   if (!text) return null;
   try {
-    return JSON.parse(text);
+    return parseSemanticProbeOutput(JSON.parse(text));
+  } catch {
+    return null;
+  }
+}
+
+function parseCompanyUnderstandingStructuredText(
+  text: string | undefined,
+  companyInput: CompanyUnderstandingInput,
+): ReturnType<typeof parseCompanyUnderstandingOutput> {
+  if (!text) return null;
+  try {
+    const value: unknown = JSON.parse(text);
+    return parseCompanyUnderstandingOutput(value, companyInput);
   } catch {
     return null;
   }
@@ -76,71 +89,65 @@ function buildCommand<K extends SemanticOperationId>(
   operation: K,
   input: SemanticOperationInput<K>,
   inferenceProfileArn: string,
-): { command: ConverseCommand; parse: (value: unknown) => unknown | null } {
+): ConverseCommand {
   if (operation === "ai.semanticProbe") {
     const probeInput = input as SemanticProbeInput;
-    return {
-      command: new ConverseCommand({
-        modelId: inferenceProfileArn,
-        system: [{ text: SEMANTIC_PROBE_SYSTEM_INSTRUCTION }],
-        messages: [
-          {
-            role: "user",
-            content: [{ text: buildSemanticProbeUserPrompt(probeInput) }],
-          },
-        ],
-        inferenceConfig: {
-          maxTokens: 450,
-          temperature: 0,
+    return new ConverseCommand({
+      modelId: inferenceProfileArn,
+      system: [{ text: SEMANTIC_PROBE_SYSTEM_INSTRUCTION }],
+      messages: [
+        {
+          role: "user",
+          content: [{ text: buildSemanticProbeUserPrompt(probeInput) }],
         },
-        outputConfig: {
-          textFormat: {
-            type: "json_schema",
-            structure: {
-              jsonSchema: {
-                schema: SEMANTIC_PROBE_JSON_SCHEMA,
-                name: SEMANTIC_PROBE_SCHEMA_NAME,
-                description: "MarketRoute controlled semantic probe output",
-              },
+      ],
+      inferenceConfig: {
+        maxTokens: 450,
+        temperature: 0,
+      },
+      outputConfig: {
+        textFormat: {
+          type: "json_schema",
+          structure: {
+            jsonSchema: {
+              schema: SEMANTIC_PROBE_JSON_SCHEMA,
+              name: SEMANTIC_PROBE_SCHEMA_NAME,
+              description: "MarketRoute controlled semantic probe output",
             },
           },
         },
-      }),
-      parse: parseSemanticProbeOutput,
-    };
+      },
+    });
   }
 
   if (operation === "ai.companyUnderstanding") {
     const companyInput = input as CompanyUnderstandingInput;
-    return {
-      command: new ConverseCommand({
-        modelId: inferenceProfileArn,
-        system: [{ text: COMPANY_UNDERSTANDING_SYSTEM_INSTRUCTION }],
-        messages: [
-          {
-            role: "user",
-            content: [{ text: buildCompanyUnderstandingUserPrompt(companyInput) }],
-          },
-        ],
-        inferenceConfig: {
-          maxTokens: 1_400,
-          temperature: 0,
+    return new ConverseCommand({
+      modelId: inferenceProfileArn,
+      system: [{ text: COMPANY_UNDERSTANDING_SYSTEM_INSTRUCTION }],
+      messages: [
+        {
+          role: "user",
+          content: [{ text: buildCompanyUnderstandingUserPrompt(companyInput) }],
         },
-        outputConfig: {
-          textFormat: {
-            type: "json_schema",
-            structure: {
-              jsonSchema: {
-                schema: COMPANY_UNDERSTANDING_JSON_SCHEMA,
-                name: COMPANY_UNDERSTANDING_SCHEMA_NAME,
-                description: "MarketRoute evidence-grounded company understanding output",
-              },
+      ],
+      inferenceConfig: {
+        maxTokens: 1_400,
+        temperature: 0,
+      },
+      outputConfig: {
+        textFormat: {
+          type: "json_schema",
+          structure: {
+            jsonSchema: {
+              schema: COMPANY_UNDERSTANDING_JSON_SCHEMA,
+              name: COMPANY_UNDERSTANDING_SCHEMA_NAME,
+              description: "MarketRoute evidence-grounded company understanding output",
             },
           },
         },
-      }),
-      parse: (value: unknown) => parseCompanyUnderstandingOutput(value, companyInput),
-    };
+      },
+    });
   }
 
   throw new SemanticProviderError("UNSUPPORTED_OPERATION", false);
@@ -161,13 +168,14 @@ export class BedrockSemanticProvider implements SemanticProvider {
     input: SemanticOperationInput<K>,
     signal: AbortSignal,
   ): Promise<SemanticProviderExecution<K>> {
-    const { command, parse } = buildCommand(operation, input, this.inferenceProfileArn);
+    const command = buildCommand(operation, input, this.inferenceProfileArn);
 
     try {
       const response = await this.client.send(command, { abortSignal: signal });
       const text = response.output?.message?.content?.find((block) => typeof block.text === "string")?.text;
-      const rawValue = parseStructuredText(text);
-      const value = rawValue === null ? null : parse(rawValue);
+      const value = operation === "ai.semanticProbe"
+        ? parseStructuredText(text)
+        : parseCompanyUnderstandingStructuredText(text, input as CompanyUnderstandingInput);
       const telemetry: SemanticProviderTelemetryMetadata = {
         modelIdentifier: BEDROCK_SEMANTIC_MODEL_IDENTIFIER,
         inferenceProfileIdentifier: this.inferenceProfileArn,
