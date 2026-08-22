@@ -15,6 +15,21 @@ const SYNTHETIC_PROBE_INPUT = Object.freeze({
   requestedTier: "B" as const,
 });
 
+// Build 7.5 certified these exact EU equivalent-cost constants. Build 7.8 keeps
+// them as active compatibility guards while centralising the provider pricing
+// object used by all semantic economics.
+const SONNET45_EU_GEO_INPUT_USD_PER_MILLION_TOKENS = 3.3;
+const SONNET45_EU_GEO_OUTPUT_USD_PER_MILLION_TOKENS = 16.5;
+
+function assertCertifiedProbePricingBasis(): void {
+  if (
+    SONNET45_EU_GEO_PRICING.inputUsdPerMillionUnits !== SONNET45_EU_GEO_INPUT_USD_PER_MILLION_TOKENS ||
+    SONNET45_EU_GEO_PRICING.outputUsdPerMillionUnits !== SONNET45_EU_GEO_OUTPUT_USD_PER_MILLION_TOKENS
+  ) {
+    throw new Error("AWS_V0_BUILD7_5_PRICING_BASIS_DRIFT");
+  }
+}
+
 export interface AwsV0ShadowAiDiagnostics {
   usageUnit: "TOKEN" | "PROVIDER_UNIT" | "UNKNOWN";
   inputUnits: number | null;
@@ -42,6 +57,7 @@ export type AwsV0ShadowSemanticProbeResult =
 
 function estimateEquivalentCost(event: Readonly<SemanticOperationTelemetry>): number | null {
   if (event.usageUnit !== "TOKEN" || event.inputUnits === null || event.outputUnits === null) return null;
+  assertCertifiedProbePricingBasis();
   return estimateSemanticTokenCostUsd(
     { inputUnits: event.inputUnits, outputUnits: event.outputUnits },
     SONNET45_EU_GEO_PRICING,
