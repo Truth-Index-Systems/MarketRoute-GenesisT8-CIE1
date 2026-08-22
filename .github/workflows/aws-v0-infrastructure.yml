@@ -7,13 +7,16 @@ on:
       - "database/aws/**"
       - "platform/auth/**"
       - "platform/database/aws-data-api*"
+      - "core/research/**"
       - "app/api/aws-v0/**"
       - "scripts/validate-aws-v0-build5-cognito-foundation.mjs"
       - "scripts/validate-aws-v0-build6-amplify-shadow.mjs"
       - "scripts/validate-aws-v0-build7-bedrock-iam.mjs"
+      - "scripts/validate-aws-v0-build8-research-transport.mjs"
       - "tests/adversarial/aws-v0-build5-cognito-foundation.mjs"
       - "tests/adversarial/aws-v0-build6-amplify-shadow.mjs"
       - "tests/adversarial/aws-v0-build7-bedrock-iam.mjs"
+      - "tests/adversarial/aws-v0-build8-research-transport.mjs"
       - ".github/workflows/aws-v0-infrastructure.yml"
   push:
     branches:
@@ -23,13 +26,16 @@ on:
       - "database/aws/**"
       - "platform/auth/**"
       - "platform/database/aws-data-api*"
+      - "core/research/**"
       - "app/api/aws-v0/**"
       - "scripts/validate-aws-v0-build5-cognito-foundation.mjs"
       - "scripts/validate-aws-v0-build6-amplify-shadow.mjs"
       - "scripts/validate-aws-v0-build7-bedrock-iam.mjs"
+      - "scripts/validate-aws-v0-build8-research-transport.mjs"
       - "tests/adversarial/aws-v0-build5-cognito-foundation.mjs"
       - "tests/adversarial/aws-v0-build6-amplify-shadow.mjs"
       - "tests/adversarial/aws-v0-build7-bedrock-iam.mjs"
+      - "tests/adversarial/aws-v0-build8-research-transport.mjs"
       - ".github/workflows/aws-v0-infrastructure.yml"
   workflow_dispatch:
 
@@ -75,6 +81,10 @@ jobs:
         run: |
           node scripts/validate-aws-v0-build7-bedrock-iam.mjs
           node tests/adversarial/aws-v0-build7-bedrock-iam.mjs
+      - name: Validate Build 8 research transport
+        run: |
+          node scripts/validate-aws-v0-build8-research-transport.mjs
+          node tests/adversarial/aws-v0-build8-research-transport.mjs
       - name: Local synth and synthesized-boundary validation
         working-directory: infrastructure/aws-v0
         run: npm run synth && npm run validate:synth
