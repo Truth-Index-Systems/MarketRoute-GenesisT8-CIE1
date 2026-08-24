@@ -19,10 +19,11 @@ const TIER_ORDER: Record<ResearchTier, number> = {
 const ACTION_ORDER: Record<string, number> = {
   REVALIDATE_R4: 0,
   ACQUIRE_CLAIM_EVIDENCE: 1,
-  REVALIDATE_R5: 2,
-  DISCOVER_ROUTE_STRUCTURE: 3,
-  REVALIDATE_R6: 4,
-  RESEARCH_CONTACT_BINDING: 5,
+  SYNTHESIZE_COMPANY_UNDERSTANDING: 2,
+  REVALIDATE_R5: 3,
+  DISCOVER_ROUTE_STRUCTURE: 4,
+  REVALIDATE_R6: 5,
+  RESEARCH_CONTACT_BINDING: 6,
 };
 
 function positiveMoney(value: number, code: string): number {

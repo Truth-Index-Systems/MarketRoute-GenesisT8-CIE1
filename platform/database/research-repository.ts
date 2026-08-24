@@ -4,7 +4,7 @@ import { PostgrestRpcClient, databaseConfigFromEnvironment } from "./postgrest-r
 export interface PersistedResearchPlan { planId:string; createdWorkUnits:number; planFingerprint:string; deduplicated:boolean; }
 export interface ClaimedResearchWork {
   workUnitId:string; jobId:string; planId:string; organisationId:string; campaignId:string; companyId:string;
-  gapKey:string; layer:"R4"|"R5"|"R6"; tier:"DECISION_BLOCKER"|"CURRENTNESS_REPAIR"|"EXPIRING_SOON"|"ENRICHMENT"; action:"ACQUIRE_CLAIM_EVIDENCE"|"DISCOVER_ROUTE_STRUCTURE"|"RESEARCH_CONTACT_BINDING"|"REVALIDATE_R4"|"REVALIDATE_R5"|"REVALIDATE_R6"; subjectType:"COMPANY"|"PERSON"|"RELATIONSHIP"|"CHANNEL"|"CAMPAIGN"; subjectId:string; claimKey:string|null;
+  gapKey:string; layer:"R4"|"R5"|"R6"; tier:"DECISION_BLOCKER"|"CURRENTNESS_REPAIR"|"EXPIRING_SOON"|"ENRICHMENT"; action:"ACQUIRE_CLAIM_EVIDENCE"|"SYNTHESIZE_COMPANY_UNDERSTANDING"|"DISCOVER_ROUTE_STRUCTURE"|"RESEARCH_CONTACT_BINDING"|"REVALIDATE_R4"|"REVALIDATE_R5"|"REVALIDATE_R6"; subjectType:"COMPANY"|"PERSON"|"RELATIONSHIP"|"CHANNEL"|"CAMPAIGN"; subjectId:string; claimKey:string|null;
   reasonCode:string; queryHints:string[]; payload:Record<string,unknown>; costCeilingUsd:number; attemptNumber:number;
 }
 interface PersistRow {plan_id:string;created_work_units:number;plan_fingerprint:string;deduplicated:boolean}
@@ -25,5 +25,8 @@ export class ResearchRepository {
   queueDiagnostics(at:string):Promise<Record<string,unknown>>{return this.rpc.call("marketroute_research_queue_diagnostics_v1",{p_at:at});}
   complete(workUnitId:string,schedulerRunId:string,actualCostUsd:number,metadata:Record<string,unknown>,at:string):Promise<void>{return this.rpc.call("marketroute_complete_research_work_v1",{p_work_unit_id:workUnitId,p_scheduler_run_id:schedulerRunId,p_actual_cost_usd:actualCostUsd,p_metadata:metadata,p_at:at});}
   fail(workUnitId:string,schedulerRunId:string,errorCode:string,actualCostUsd:number,retryable:boolean,at:string):Promise<void>{return this.rpc.call("marketroute_fail_research_work_v1",{p_work_unit_id:workUnitId,p_scheduler_run_id:schedulerRunId,p_error_code:errorCode,p_actual_cost_usd:actualCostUsd,p_retryable:retryable,p_at:at});}
+  prepareAwsV0Dispatch(workUnitId:string,schedulerRunId:string,at:string):Promise<Record<string,unknown>>{return this.rpc.call("marketroute_prepare_aws_v0_research_dispatch_v1",{p_work_unit_id:workUnitId,p_scheduler_run_id:schedulerRunId,p_at:at});}
+  markAwsV0DispatchSent(workUnitId:string,schedulerRunId:string,envelopeFingerprint:string,messageId:string,at:string):Promise<void>{return this.rpc.call("marketroute_mark_aws_v0_research_dispatch_sent_v1",{p_work_unit_id:workUnitId,p_scheduler_run_id:schedulerRunId,p_envelope_fingerprint:envelopeFingerprint,p_sqs_message_id:messageId,p_at:at});}
+  failAwsV0Dispatch(workUnitId:string,schedulerRunId:string,errorCode:string,retryable:boolean,at:string):Promise<void>{return this.rpc.call("marketroute_fail_aws_v0_research_dispatch_v1",{p_work_unit_id:workUnitId,p_scheduler_run_id:schedulerRunId,p_error_code:errorCode,p_retryable:retryable,p_at:at});}
 }
 export function researchRepositoryFromEnvironment(){return ResearchRepository.fromEnvironment();}

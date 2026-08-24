@@ -10,7 +10,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "synth": "npm run build && cdk synth --quiet",
     "validate:source": "node scripts/validate-source.mjs",
-    "validate:synth": "node scripts/validate-synth.mjs && node scripts/validate-build8-research-synth.mjs && node scripts/validate-build9-research-synth.mjs",
+    "validate:synth": "node scripts/validate-synth.mjs && node scripts/validate-build8-research-synth.mjs && node scripts/validate-build9-research-synth.mjs && node scripts/validate-build10-research-synth.mjs",
     "check": "npm run validate:source && npm run typecheck && npm run synth && npm run validate:synth",
     "deploy:identity": "npm run build && cdk deploy MrAwsV0IdentityStack --require-approval never",
     "deploy:database": "npm run build && cdk deploy MrAwsV0DatabaseStack --require-approval never",

@@ -144,14 +144,14 @@ export class MrAwsV0ResearchStack extends Stack {
     }));
 
     new CfnOutput(this, "BuildStatus", {
-      value: "AWS-V0-BUILD-9-BOUNDED-RESEARCH-WORKER",
-      description: "Build 9 bounded worker is source-ready; SQS activation remains disabled until Build 10 synchronization",
+      value: "AWS-V0-BUILD-10-RESEARCH-ORCHESTRATION-SPLIT",
+      description: "Build 10 split is source-ready; SQS activation remains disabled pending planner producer and live quota proof",
     });
     new CfnOutput(this, "ResearchQueueArn", { value: queue.queueArn });
     new CfnOutput(this, "ResearchQueueUrl", { value: queue.queueUrl });
     new CfnOutput(this, "ResearchDeadLetterQueueArn", { value: dlq.queueArn });
     new CfnOutput(this, "ResearchWorkerArn", { value: worker.functionArn });
     new CfnOutput(this, "ResearchExecutionReceiptStore", { value: "AURORA_DATA_API_NON_CANONICAL" });
-    new CfnOutput(this, "ResearchEventSourceStatus", { value: "DISABLED_PENDING_BUILD10_SYNC" });
+    new CfnOutput(this, "ResearchEventSourceStatus", { value: "DISABLED_PENDING_PLANNER_AND_QUOTA_PROOF" });
   }
 }

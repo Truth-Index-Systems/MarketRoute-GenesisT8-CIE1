@@ -57,4 +57,4 @@ It does not receive generic SQL, transactions, SQS publishing, DynamoDB, marketp
 
 The Lambda executor latch is enabled in its private environment, but the SQS event source mapping remains disabled. Build 9 therefore proves the worker without allowing a semantic receipt to be mistaken for canonical research completion.
 
-Build 10 must add the planner/dispatcher/worker/sync integration, canonical budget settlement, and replay-safe result synchronization before the event source mapping may be enabled.
+Build 10 adds the planner/dispatcher/worker/sync integration, canonical budget settlement, and replay-safe result synchronization. The event source mapping still may not be enabled until the distinct synthesis action has a live deterministic planner producer and the AWS quota/economic proof passes.
