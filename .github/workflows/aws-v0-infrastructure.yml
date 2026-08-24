@@ -13,10 +13,12 @@ on:
       - "scripts/validate-aws-v0-build6-amplify-shadow.mjs"
       - "scripts/validate-aws-v0-build7-bedrock-iam.mjs"
       - "scripts/validate-aws-v0-build8-research-transport.mjs"
+      - "scripts/validate-aws-v0-build9-research-worker.mjs"
       - "tests/adversarial/aws-v0-build5-cognito-foundation.mjs"
       - "tests/adversarial/aws-v0-build6-amplify-shadow.mjs"
       - "tests/adversarial/aws-v0-build7-bedrock-iam.mjs"
       - "tests/adversarial/aws-v0-build8-research-transport.mjs"
+      - "tests/adversarial/aws-v0-build9-research-worker.mjs"
       - ".github/workflows/aws-v0-infrastructure.yml"
   push:
     branches:
@@ -32,10 +34,12 @@ on:
       - "scripts/validate-aws-v0-build6-amplify-shadow.mjs"
       - "scripts/validate-aws-v0-build7-bedrock-iam.mjs"
       - "scripts/validate-aws-v0-build8-research-transport.mjs"
+      - "scripts/validate-aws-v0-build9-research-worker.mjs"
       - "tests/adversarial/aws-v0-build5-cognito-foundation.mjs"
       - "tests/adversarial/aws-v0-build6-amplify-shadow.mjs"
       - "tests/adversarial/aws-v0-build7-bedrock-iam.mjs"
       - "tests/adversarial/aws-v0-build8-research-transport.mjs"
+      - "tests/adversarial/aws-v0-build9-research-worker.mjs"
       - ".github/workflows/aws-v0-infrastructure.yml"
   workflow_dispatch:
 
@@ -85,6 +89,10 @@ jobs:
         run: |
           node scripts/validate-aws-v0-build8-research-transport.mjs
           node tests/adversarial/aws-v0-build8-research-transport.mjs
+      - name: Validate Build 9 bounded research worker
+        run: |
+          node scripts/validate-aws-v0-build9-research-worker.mjs
+          node tests/adversarial/aws-v0-build9-research-worker.mjs
       - name: Local synth and synthesized-boundary validation
         working-directory: infrastructure/aws-v0
         run: npm run synth && npm run validate:synth

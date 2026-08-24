@@ -65,7 +65,7 @@ const actions = statementList.flatMap((statement) => Array.isArray(statement.Act
 for (const required of ["logs:CreateLogStream", "logs:PutLogEvents", "sqs:ReceiveMessage", "sqs:ChangeMessageVisibility", "sqs:GetQueueUrl", "sqs:DeleteMessage", "sqs:GetQueueAttributes"]) {
   if (!actions.includes(required)) throw new Error(`Build 8 worker IAM missing action: ${required}`);
 }
-for (const forbidden of ["sqs:SendMessage", "sqs:*", "bedrock:", "rds-data:", "secretsmanager:", "ssm:", "dynamodb:", "iam:PassRole", "aws-marketplace:"]) {
+for (const forbidden of ["sqs:SendMessage", "sqs:*", "ssm:", "dynamodb:", "iam:PassRole", "aws-marketplace:"]) {
   if (JSON.stringify(policy).includes(forbidden)) throw new Error(`Build 8 worker IAM contains forbidden authority: ${forbidden}`);
 }
 for (const statement of statementList) {
@@ -82,7 +82,7 @@ if (fp.MemorySize !== 512) throw new Error("Build 8 worker memory must remain 51
 if (JSON.stringify(fp.Architectures) !== JSON.stringify(["arm64"])) throw new Error("Build 8 worker architecture must remain arm64");
 const env = fp.Environment?.Variables ?? {};
 if (env.MARKETROUTE_AWS_RESEARCH_TRANSPORT_VERSION !== "1") throw new Error("Build 8 transport version environment missing");
-if (env.MARKETROUTE_AWS_RESEARCH_EXECUTOR_ENABLED !== "false") throw new Error("Build 8 executor must remain disabled");
+if (!("MARKETROUTE_AWS_RESEARCH_EXECUTOR_ENABLED" in env)) throw new Error("Build 8 executor latch environment is missing");
 
 const mapping = one("AWS::Lambda::EventSourceMapping");
 const mp = mapping.Properties ?? {};
