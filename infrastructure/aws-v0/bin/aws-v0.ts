@@ -36,7 +36,7 @@ const application = new MrAwsV0ApplicationStack(app, "MrAwsV0ApplicationStack", 
 
 const research = new MrAwsV0ResearchStack(app, "MrAwsV0ResearchStack", {
   env,
-  description: "MarketRoute AWS V0 research transport and worker substrate (Build 8)",
+  description: "MarketRoute AWS V0 bounded idempotent research worker (Build 9)",
 });
 
 const observability = new FoundationStack(app, "MrAwsV0ObservabilityStack", {

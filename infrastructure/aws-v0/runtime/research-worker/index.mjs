@@ -1,3 +1,5 @@
+import { executeResearchEnvelope } from "./executor.mjs";
+
 const TRANSPORT_SCHEMA_VERSION = "1";
 const TRANSPORT_NAME = "AWS_SQS";
 const MAX_MESSAGE_BYTES = 65_536;
@@ -12,7 +14,7 @@ function boundedString(value, maximumLength) {
   return trimmed.length > 0 && trimmed.length <= maximumLength ? trimmed : null;
 }
 
-function parseEnvelope(body) {
+export function parseEnvelope(body) {
   if (typeof body !== "string" || Buffer.byteLength(body, "utf8") > MAX_MESSAGE_BYTES) return null;
   let value;
   try { value = JSON.parse(body); } catch { return null; }
@@ -23,17 +25,27 @@ function parseEnvelope(body) {
   return value;
 }
 
-export async function handler(event) {
+export async function handleEvent(event, context = {}, dependencies = {}) {
   const records = Array.isArray(event?.Records) ? event.Records : [];
   const batchItemFailures = [];
   for (const record of records) {
     const messageId = boundedString(record?.messageId, 256) ?? "unknown-message";
     const envelope = parseEnvelope(record?.body);
-    if (envelope === null || process.env.MARKETROUTE_AWS_RESEARCH_EXECUTOR_ENABLED !== "false") {
+    if (envelope === null || process.env.MARKETROUTE_AWS_RESEARCH_EXECUTOR_ENABLED !== "true") {
       batchItemFailures.push({ itemIdentifier: messageId });
       continue;
     }
-    batchItemFailures.push({ itemIdentifier: messageId });
+    try {
+      const execute = dependencies.executeResearchEnvelope ?? executeResearchEnvelope;
+      const outcome = await execute(envelope, {
+        workerId: boundedString(context?.awsRequestId, 200) ?? `sqs:${messageId}`,
+      }, dependencies);
+      if (outcome?.acknowledge !== true) batchItemFailures.push({ itemIdentifier: messageId });
+    } catch {
+      batchItemFailures.push({ itemIdentifier: messageId });
+    }
   }
   return { batchItemFailures };
 }
+
+export const handler = handleEvent;

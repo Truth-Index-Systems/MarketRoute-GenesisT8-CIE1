@@ -34,7 +34,6 @@ for (const token of [
   "Architecture.ARM_64",
   "timeout: Duration.seconds(WORKER_TIMEOUT_SECONDS)",
   "memorySize: 512",
-  'MARKETROUTE_AWS_RESEARCH_EXECUTOR_ENABLED: "false"',
   "batchSize: BATCH_SIZE",
   "enabled: false",
   "reportBatchItemFailures: true",

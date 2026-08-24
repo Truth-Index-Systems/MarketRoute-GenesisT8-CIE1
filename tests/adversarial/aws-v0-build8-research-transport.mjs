@@ -67,7 +67,7 @@ for (const forbidden of ["fetch(", "@aws-sdk", "rds-data", "bedrock", "openai", 
 for (const required of ["enabled: false", "batchSize: BATCH_SIZE", "reportBatchItemFailures: true", "maxConcurrency: MAX_CONCURRENCY", "maxReceiveCount: MAX_RECEIVE_COUNT"]) {
   if (!stack.includes(required)) throw new Error(`Build 8 bounded transport control missing: ${required}`);
 }
-for (const forbidden of ["grantSendMessages", "sqs:SendMessage", "bedrock:", "rds-data:", "secretsmanager:", "iam:PassRole", "FunctionUrl", "HttpApi", "RestApi"]) {
+for (const forbidden of ["grantSendMessages", "sqs:SendMessage", "iam:PassRole", "FunctionUrl", "HttpApi", "RestApi"]) {
   if (stack.includes(forbidden)) throw new Error(`Build 8 stack gained forbidden producer/runtime authority: ${forbidden}`);
 }
 

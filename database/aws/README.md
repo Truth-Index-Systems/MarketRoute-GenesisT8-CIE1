@@ -11,8 +11,11 @@ AWS database history begins with the flattened canonical baseline created and fr
 ```text
 0001_marketroute_aws_canonical_baseline.sql
 0002_marketroute_cognito_identity_mapping.sql
+0003_marketroute_aws_build9_research_execution.sql
 ```
 
 `0001` is immutable and represents the final required MarketRoute schema with zero development/customer/research rows at baseline application time. Build 2 created the empty Aurora foundation and Build 3 compiled, applied and certified the canonical baseline.
 
 Build 5 begins additive AWS migration history with `0002_marketroute_cognito_identity_mapping.sql`. It maps external Cognito identity to the canonical internal `public.marketroute_users.id` without changing Truth, CIE/UDOSIB, R4/R5/R6, tenancy, entitlement, or commercial semantics.
+
+Build 9 adds `0003_marketroute_aws_build9_research_execution.sql`. It creates an Aurora-owned claim/idempotency ledger for the bounded Lambda worker. The ledger stores non-canonical semantic execution receipts only; Build 10 remains responsible for canonical research completion, budget settlement, and Truth/authority synchronization.
