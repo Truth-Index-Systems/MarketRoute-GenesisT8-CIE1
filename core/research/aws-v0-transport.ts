@@ -6,6 +6,7 @@ import type {
   ResearchTier,
   ResearchWorkUnit,
 } from "./contracts";
+import { sha256Hex, stableJson } from "../evidence";
 
 export const AWS_V0_RESEARCH_TRANSPORT_SCHEMA_VERSION = "1" as const;
 export const AWS_V0_RESEARCH_TRANSPORT = "AWS_SQS" as const;
@@ -34,6 +35,7 @@ const RESEARCH_LAYERS = new Set<ResearchLayer>(["R4", "R5", "R6"]);
 const RESEARCH_TIERS = new Set<ResearchTier>(["DECISION_BLOCKER", "CURRENTNESS_REPAIR", "EXPIRING_SOON", "ENRICHMENT"]);
 const RESEARCH_ACTIONS = new Set<ResearchAction>([
   "ACQUIRE_CLAIM_EVIDENCE",
+  "SYNTHESIZE_COMPANY_UNDERSTANDING",
   "DISCOVER_ROUTE_STRUCTURE",
   "RESEARCH_CONTACT_BINDING",
   "REVALIDATE_R4",
@@ -134,4 +136,10 @@ export function serialiseAwsV0ResearchWorkEnvelope(envelope: AwsV0ResearchWorkEn
   const body = JSON.stringify(validated);
   if (new TextEncoder().encode(body).byteLength > AWS_V0_RESEARCH_MAX_MESSAGE_BYTES) throw new Error("AWS_V0_RESEARCH_WORK_ENVELOPE_TOO_LARGE");
   return body;
+}
+
+export function fingerprintAwsV0ResearchWorkEnvelope(envelope: AwsV0ResearchWorkEnvelope): string {
+  const validated = parseAwsV0ResearchWorkEnvelope(envelope);
+  if (validated === null) throw new Error("INVALID_AWS_V0_RESEARCH_WORK_ENVELOPE");
+  return sha256Hex(`MR-AWS-V0-RESEARCH-ENVELOPE-1.0.0|${stableJson(validated)}`);
 }

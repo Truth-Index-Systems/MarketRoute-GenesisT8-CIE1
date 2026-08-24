@@ -127,7 +127,7 @@ export function parseCompanyUnderstandingInput(envelope) {
   if (executor.contractVersion !== AWS_V0_COMPANY_UNDERSTANDING_CONTRACT || executor.operation !== "ai.companyUnderstanding") {
     throw new AwsV0ResearchExecutionError("MARKETROUTE_AWS_V0_EXECUTOR_CAPABILITY_UNSUPPORTED", false);
   }
-  if (envelope.workUnit.action !== "ACQUIRE_CLAIM_EVIDENCE" || !isRecord(executor.input)
+  if (!new Set(["ACQUIRE_CLAIM_EVIDENCE", "SYNTHESIZE_COMPANY_UNDERSTANDING"]).has(envelope.workUnit.action) || !isRecord(executor.input)
       || !onlyKeys(executor.input, ["companyName", "evidence", "requestedTier"])) {
     throw new AwsV0ResearchExecutionError("MARKETROUTE_AWS_V0_EXECUTOR_INPUT_INVALID", false);
   }
@@ -375,8 +375,11 @@ export async function createAuroraResearchExecutionLedger() {
   }));
   return {
     async claim(envelope, fingerprint, workerId, at) {
+      const claimRoutine = envelope.workUnit.action === "SYNTHESIZE_COMPANY_UNDERSTANDING"
+        ? "marketroute_claim_aws_v0_research_execution_v2"
+        : "marketroute_claim_aws_v0_research_execution_v1";
       const response = await execute(
-        "SELECT public.marketroute_claim_aws_v0_research_execution_v1(CAST(:envelope AS jsonb), :envelope_fingerprint, :worker_id, CAST(:at AS timestamptz))::text AS result_json",
+        `SELECT public.${claimRoutine}(CAST(:envelope AS jsonb), :envelope_fingerprint, :worker_id, CAST(:at AS timestamptz))::text AS result_json`,
         [
           encodeParameter("envelope", JSON.stringify(envelope), "JSON"),
           encodeParameter("envelope_fingerprint", fingerprint),
@@ -428,6 +431,37 @@ export async function createAuroraResearchExecutionLedger() {
         throw new AwsV0ResearchExecutionError("MARKETROUTE_AWS_V0_LEDGER_FAILURE_RESPONSE_INVALID", true);
       }
       return row.failure_state;
+    },
+    async sync(workUnitId, fingerprint, resultFingerprint, at) {
+      const response = await execute(
+        "SELECT public.marketroute_sync_aws_v0_research_execution_v1(CAST(:work_unit_id AS uuid), :envelope_fingerprint, :result_fingerprint, CAST(:at AS timestamptz)) AS sync_state",
+        [
+          encodeParameter("work_unit_id", workUnitId, "UUID"),
+          encodeParameter("envelope_fingerprint", fingerprint),
+          encodeParameter("result_fingerprint", resultFingerprint),
+          encodeParameter("at", at),
+        ],
+      );
+      const row = parseFormattedRecord(response);
+      if (!row || !new Set(["SYNCED", "ALREADY_SYNCED", "BLOCKED_CAPABILITY"]).has(row.sync_state)) {
+        throw new AwsV0ResearchExecutionError("MARKETROUTE_AWS_V0_SYNC_RESPONSE_INVALID", true);
+      }
+      return row.sync_state;
+    },
+    async syncFailure(workUnitId, fingerprint, at) {
+      const response = await execute(
+        "SELECT public.marketroute_sync_aws_v0_research_failure_v1(CAST(:work_unit_id AS uuid), :envelope_fingerprint, CAST(:at AS timestamptz)) AS sync_state",
+        [
+          encodeParameter("work_unit_id", workUnitId, "UUID"),
+          encodeParameter("envelope_fingerprint", fingerprint),
+          encodeParameter("at", at),
+        ],
+      );
+      const row = parseFormattedRecord(response);
+      if (!row || !new Set(["FAILED_SYNCED", "ALREADY_FAILED", "BLOCKED_CAPABILITY"]).has(row.sync_state)) {
+        throw new AwsV0ResearchExecutionError("MARKETROUTE_AWS_V0_FAILURE_SYNC_RESPONSE_INVALID", true);
+      }
+      return row.sync_state;
     },
     destroy() { client.destroy(); },
   };
@@ -491,10 +525,16 @@ export async function executeResearchEnvelope(envelope, context = {}, dependenci
     const at = now().toISOString();
     const claim = await ledger.claim(envelope, fingerprint, workerId, at);
     if (claim.outcome === "DEDUPLICATED") {
-      return { acknowledge: true, outcome: "DEDUPLICATED", resultFingerprint: claim.resultFingerprint ?? null };
+      const resultFingerprint = boundedString(claim.resultFingerprint, 64);
+      if (resultFingerprint === null) return { acknowledge: false, outcome: "SYNC_PENDING", resultFingerprint: null };
+      const syncState = await ledger.sync(envelope.workUnitId, fingerprint, resultFingerprint, now().toISOString());
+      return { acknowledge: syncState === "SYNCED" || syncState === "ALREADY_SYNCED", outcome: syncState === "BLOCKED_CAPABILITY" ? "SYNC_BLOCKED" : "DEDUPLICATED", resultFingerprint, syncState };
     }
     if (claim.outcome === "BUSY") return { acknowledge: false, outcome: "BUSY" };
-    if (claim.outcome === "TERMINAL") return { acknowledge: false, outcome: "TERMINAL", errorCode: claim.errorCode ?? null };
+    if (claim.outcome === "TERMINAL") {
+      const syncState = await ledger.syncFailure(envelope.workUnitId, fingerprint, now().toISOString());
+      return { acknowledge: syncState === "FAILED_SYNCED" || syncState === "ALREADY_FAILED", outcome: "TERMINAL", errorCode: claim.errorCode ?? null, syncState };
+    }
     claimed = true;
     provider ??= await createBedrockCompanyUnderstandingProvider();
     const execution = await provider.execute(input);
@@ -515,11 +555,18 @@ export async function executeResearchEnvelope(envelope, context = {}, dependenci
       telemetry,
       now().toISOString(),
     );
-    return { acknowledge: true, outcome: "SUCCEEDED", resultFingerprint };
+    const syncState = await ledger.sync(envelope.workUnitId, fingerprint, resultFingerprint, now().toISOString());
+    return {
+      acknowledge: syncState === "SYNCED" || syncState === "ALREADY_SYNCED",
+      outcome: syncState === "BLOCKED_CAPABILITY" ? "SYNC_BLOCKED" : "SUCCEEDED",
+      resultFingerprint,
+      syncState,
+    };
   } catch (error) {
     const failure = failureDetails(error);
+    let failureState = null;
     if (claimed) {
-      await ledger.fail(
+      failureState = await ledger.fail(
         envelope.workUnitId,
         fingerprint,
         workerId,
@@ -527,7 +574,13 @@ export async function executeResearchEnvelope(envelope, context = {}, dependenci
         failure.retryable,
         failure.telemetry,
         now().toISOString(),
-      ).catch(() => undefined);
+      ).catch(() => null);
+    }
+    if (failureState === "FAILED_TERMINAL") {
+      const syncState = await ledger.syncFailure(envelope.workUnitId, fingerprint, now().toISOString()).catch(() => null);
+      if (syncState === "FAILED_SYNCED" || syncState === "ALREADY_FAILED") {
+        return { acknowledge: true, outcome: "FAILED_TERMINAL", errorCode: failure.code, syncState };
+      }
     }
     return { acknowledge: false, outcome: failure.retryable ? "FAILED_RETRYABLE" : "FAILED_TERMINAL", errorCode: failure.code };
   } finally {

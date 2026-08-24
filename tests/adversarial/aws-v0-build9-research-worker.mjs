@@ -95,6 +95,8 @@ class MemoryLedger {
     this.state = { status: retryable ? "FAILED_RETRYABLE" : "FAILED_TERMINAL" };
     return retryable ? "FAILED_RETRYABLE" : "FAILED_TERMINAL";
   }
+  async sync() { return "SYNCED"; }
+  async syncFailure() { return "BLOCKED_CAPABILITY"; }
   destroy() {}
 }
 
