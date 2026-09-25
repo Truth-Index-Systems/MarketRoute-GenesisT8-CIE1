@@ -1,4 +1,4 @@
-import { executeResearchEnvelope } from "./executor.mjs";
+import { executeResearchEnvelope } from "./admitted-executor.mjs";
 
 const TRANSPORT_SCHEMA_VERSION = "1";
 const TRANSPORT_NAME = "AWS_SQS";

@@ -115,6 +115,13 @@ export class MrAwsV0ResearchStack extends Stack {
       },
     }));
 
+    // Build 11: non-generating token preflight, exact regional foundation model.
+    workerRole.addToPolicy(new iam.PolicyStatement({
+      sid: "MarketRouteResearchCountTokens",
+      actions: ["bedrock:CountTokens"],
+      resources: [`arn:aws:bedrock:${this.region}::foundation-model/${BEDROCK_MODEL_ID}`],
+    }));
+
     const worker = new lambda.Function(this, "ResearchWorker", {
       functionName: "marketroute-aws-v0-research-worker",
       description: "MarketRoute AWS V0 Build 9 idempotent evidence-grounded semantic worker",

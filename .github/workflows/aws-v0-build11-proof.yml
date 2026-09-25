@@ -50,6 +50,18 @@ jobs:
         env:
           BUILD11_POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
         run: node tests/integration/aws-v0-build11-runtime.mjs
+      - name: Admission and prepared-provider invariants
+        run: |
+          node scripts/validate-aws-v0-build11-admission.mjs
+          node tests/adversarial/aws-v0-build11-admission.mjs
+      - name: PostgreSQL budget, rate and evidence admission
+        env:
+          BUILD11_POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
+        run: python3 tests/integration/aws-v0-build11-admission-db.py
+      - name: Actual handler through admission, execution and synchronization
+        env:
+          BUILD11_POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
+        run: node tests/integration/aws-v0-build11-admission-runtime.mjs
       - name: Retain exact tracked source for reproducible offline review
         if: always()
         run: |

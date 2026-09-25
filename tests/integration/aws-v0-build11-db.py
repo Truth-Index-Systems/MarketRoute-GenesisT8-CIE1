@@ -46,13 +46,14 @@ def rejected(statement, code):
     assert result.returncode != 0 and code in result.stderr, (code, result.stdout, result.stderr)
 
 
-for name in ['0001_marketroute_aws_canonical_baseline.sql',
-             '0002_marketroute_cognito_identity_mapping.sql',
-             '0003_marketroute_aws_build9_research_execution.sql',
-             '0004_marketroute_aws_build10_research_orchestration.sql']:
-    data = (ROOT / 'database/aws' / name).read_bytes()
-    sql(data.decode())
-    print('PASS restored', name, hashlib.sha256(data).hexdigest(), flush=True)
+if __name__ == '__main__':
+    for name in ['0001_marketroute_aws_canonical_baseline.sql',
+                 '0002_marketroute_cognito_identity_mapping.sql',
+                 '0003_marketroute_aws_build9_research_execution.sql',
+                 '0004_marketroute_aws_build10_research_orchestration.sql']:
+        data = (ROOT / 'database/aws' / name).read_bytes()
+        sql(data.decode())
+        print('PASS restored', name, hashlib.sha256(data).hexdigest(), flush=True)
 
 
 def fixture(job_state='SUCCEEDED', dispatch_state='SYNCED', execution_state='SUCCEEDED', expired=False):
@@ -136,79 +137,80 @@ def claim(f, worker='build11-test', envelope=None, fingerprint=None):
         f"{literal(fingerprint or f['fp'])},{literal(worker)},now())->>'outcome';"
 
 
-success = fixture()
-failure = fixture('FAILED', 'FAILED', 'FAILED_TERMINAL')
-for name, f in [('completed success', success), ('settled terminal failure', failure)]:
-    rejected(claim(f), 'MARKETROUTE_AWS_V0_RESEARCH_DISPATCH_OWNERSHIP_INVALID')
-    print('REPRODUCED Build 10 rejects redelivery after', name, flush=True)
+if __name__ == '__main__':
+    success = fixture()
+    failure = fixture('FAILED', 'FAILED', 'FAILED_TERMINAL')
+    for name, f in [('completed success', success), ('settled terminal failure', failure)]:
+        rejected(claim(f), 'MARKETROUTE_AWS_V0_RESEARCH_DISPATCH_OWNERSHIP_INVALID')
+        print('REPRODUCED Build 10 rejects redelivery after', name, flush=True)
 
-migration = ROOT / 'database/aws/0005_marketroute_aws_build11_terminal_replay.sql'
-sql(migration.read_text())
-print('PASS applied forward repair', hashlib.sha256(migration.read_bytes()).hexdigest(), flush=True)
+    migration = ROOT / 'database/aws/0005_marketroute_aws_build11_terminal_replay.sql'
+    sql(migration.read_text())
+    print('PASS applied forward repair', hashlib.sha256(migration.read_bytes()).hexdigest(), flush=True)
 
-count = 0
+    count = 0
 
-def passed(name):
-    global count
-    count += 1
-    print('PASS', name, flush=True)
+    def passed(name):
+        global count
+        count += 1
+        print('PASS', name, flush=True)
 
 
-before = sql('SELECT count(*) || \'|\' || sum(amount_usd)::text FROM public.research_budget_events;')
-for _ in range(3):
-    assert sql(claim(success)) == 'DEDUPLICATED'
-    assert sql(claim(failure)) == 'TERMINAL'
-    assert sql(f"SELECT public.marketroute_sync_aws_v0_research_execution_v1('{success['ids']['work']}', '{success['fp']}', '{success['result_fp']}', now());") == 'ALREADY_SYNCED'
-    assert sql(f"SELECT public.marketroute_sync_aws_v0_research_failure_v1('{failure['ids']['work']}', '{failure['fp']}', now());") == 'ALREADY_FAILED'
-assert before == sql('SELECT count(*) || \'|\' || sum(amount_usd)::text FROM public.research_budget_events;')
-passed('success/failure redelivery uses durable receipts; synchronization and budget settlement are not repeated')
+    before = sql('SELECT count(*) || \'|\' || sum(amount_usd)::text FROM public.research_budget_events;')
+    for _ in range(3):
+        assert sql(claim(success)) == 'DEDUPLICATED'
+        assert sql(claim(failure)) == 'TERMINAL'
+        assert sql(f"SELECT public.marketroute_sync_aws_v0_research_execution_v1('{success['ids']['work']}', '{success['fp']}', '{success['result_fp']}', now());") == 'ALREADY_SYNCED'
+        assert sql(f"SELECT public.marketroute_sync_aws_v0_research_failure_v1('{failure['ids']['work']}', '{failure['fp']}', now());") == 'ALREADY_FAILED'
+    assert before == sql('SELECT count(*) || \'|\' || sum(amount_usd)::text FROM public.research_budget_events;')
+    passed('success/failure redelivery uses durable receipts; synchronization and budget settlement are not repeated')
 
-altered = json.loads(json.dumps(success['envelope']))
-altered['organisationId'] = str(uuid.uuid4())
-rejected(claim(success, envelope=altered), 'MARKETROUTE_AWS_V0_RESEARCH_ENVELOPE_OR_ATTEMPT_MISMATCH')
-passed('cross-tenant envelope rejected')
-altered = json.loads(json.dumps(success['envelope']))
-altered['workUnit']['payload']['researchOrigin'] = 'SYSTEM_RETRY'
-rejected(claim(success, envelope=altered), 'MARKETROUTE_AWS_V0_RESEARCH_ENVELOPE_OR_ATTEMPT_MISMATCH')
-passed('altered immutable payload rejected')
-rejected(claim(success, fingerprint='f' * 64), 'MARKETROUTE_AWS_V0_RESEARCH_ENVELOPE_OR_ATTEMPT_MISMATCH')
-passed('wrong envelope fingerprint rejected')
+    altered = json.loads(json.dumps(success['envelope']))
+    altered['organisationId'] = str(uuid.uuid4())
+    rejected(claim(success, envelope=altered), 'MARKETROUTE_AWS_V0_RESEARCH_ENVELOPE_OR_ATTEMPT_MISMATCH')
+    passed('cross-tenant envelope rejected')
+    altered = json.loads(json.dumps(success['envelope']))
+    altered['workUnit']['payload']['researchOrigin'] = 'SYSTEM_RETRY'
+    rejected(claim(success, envelope=altered), 'MARKETROUTE_AWS_V0_RESEARCH_ENVELOPE_OR_ATTEMPT_MISMATCH')
+    passed('altered immutable payload rejected')
+    rejected(claim(success, fingerprint='f' * 64), 'MARKETROUTE_AWS_V0_RESEARCH_ENVELOPE_OR_ATTEMPT_MISMATCH')
+    passed('wrong envelope fingerprint rejected')
 
-active = fixture('RUNNING', 'SENT', None)
-with ThreadPoolExecutor(max_workers=2) as pool:
-    outcomes = list(pool.map(lambda worker: sql(claim(active, worker)), ['worker-a', 'worker-b']))
-assert sorted(outcomes) == ['BUSY', 'CLAIMED'], outcomes
-passed('concurrent first delivery yields exactly one CLAIMED and one BUSY')
-assert sql(claim(active)) == 'BUSY'
-passed('live execution lease prevents another claim')
+    active = fixture('RUNNING', 'SENT', None)
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        outcomes = list(pool.map(lambda worker: sql(claim(active, worker)), ['worker-a', 'worker-b']))
+    assert sorted(outcomes) == ['BUSY', 'CLAIMED'], outcomes
+    passed('concurrent first delivery yields exactly one CLAIMED and one BUSY')
+    assert sql(claim(active)) == 'BUSY'
+    passed('live execution lease prevents another claim')
 
-pending_sync = fixture('RUNNING', 'SENT', 'SUCCEEDED')
-assert sql(claim(pending_sync)) == 'DEDUPLICATED'
-passed('persisted result awaiting synchronization does not need provider re-execution')
-expired = fixture('RUNNING', 'SENT', None, expired=True)
-rejected(claim(expired), 'MARKETROUTE_AWS_V0_RESEARCH_DISPATCH_OWNERSHIP_INVALID')
-passed('expired unfinished dispatch rejected')
-null_lease = fixture('RUNNING', 'SENT', None)
-sql(f"UPDATE public.marketroute_aws_v0_research_dispatches SET ownership_expires_at=NULL WHERE work_unit_id='{null_lease['ids']['work']}';")
-rejected(claim(null_lease), 'MARKETROUTE_AWS_V0_RESEARCH_DISPATCH_OWNERSHIP_INVALID')
-passed('missing ownership deadline fails closed')
-prepared = fixture('RUNNING', 'PREPARED', None)
-rejected(claim(prepared), 'MARKETROUTE_AWS_V0_RESEARCH_DISPATCH_OWNERSHIP_INVALID')
-passed('unconfirmed send cannot start provider execution')
+    pending_sync = fixture('RUNNING', 'SENT', 'SUCCEEDED')
+    assert sql(claim(pending_sync)) == 'DEDUPLICATED'
+    passed('persisted result awaiting synchronization does not need provider re-execution')
+    expired = fixture('RUNNING', 'SENT', None, expired=True)
+    rejected(claim(expired), 'MARKETROUTE_AWS_V0_RESEARCH_DISPATCH_OWNERSHIP_INVALID')
+    passed('expired unfinished dispatch rejected')
+    null_lease = fixture('RUNNING', 'SENT', None)
+    sql(f"UPDATE public.marketroute_aws_v0_research_dispatches SET ownership_expires_at=NULL WHERE work_unit_id='{null_lease['ids']['work']}';")
+    rejected(claim(null_lease), 'MARKETROUTE_AWS_V0_RESEARCH_DISPATCH_OWNERSHIP_INVALID')
+    passed('missing ownership deadline fails closed')
+    prepared = fixture('RUNNING', 'PREPARED', None)
+    rejected(claim(prepared), 'MARKETROUTE_AWS_V0_RESEARCH_DISPATCH_OWNERSHIP_INVALID')
+    passed('unconfirmed send cannot start provider execution')
 
-late = fixture()
-sql(f"UPDATE public.background_jobs SET attempt_count=2 WHERE id='{late['ids']['job']}';")
-rejected(claim(late), 'MARKETROUTE_AWS_V0_RESEARCH_ENVELOPE_OR_ATTEMPT_MISMATCH')
-passed('older canonical attempt cannot acknowledge or settle a later attempt')
-missing_artifact = fixture()
-sql(f"DELETE FROM public.marketroute_aws_v0_company_understanding_artifacts WHERE work_unit_id='{missing_artifact['ids']['work']}';")
-rejected(claim(missing_artifact), 'MARKETROUTE_AWS_V0_RESEARCH_TERMINAL_RECEIPT_INVALID')
-passed('missing synchronized artifact cannot masquerade as completed receipt')
-terminal_expired = fixture(expired=True)
-assert sql(claim(terminal_expired)) == 'DEDUPLICATED'
-passed('already settled receipt remains replayable after former dispatch deadline')
+    late = fixture()
+    sql(f"UPDATE public.background_jobs SET attempt_count=2 WHERE id='{late['ids']['job']}';")
+    rejected(claim(late), 'MARKETROUTE_AWS_V0_RESEARCH_ENVELOPE_OR_ATTEMPT_MISMATCH')
+    passed('older canonical attempt cannot acknowledge or settle a later attempt')
+    missing_artifact = fixture()
+    sql(f"DELETE FROM public.marketroute_aws_v0_company_understanding_artifacts WHERE work_unit_id='{missing_artifact['ids']['work']}';")
+    rejected(claim(missing_artifact), 'MARKETROUTE_AWS_V0_RESEARCH_TERMINAL_RECEIPT_INVALID')
+    passed('missing synchronized artifact cannot masquerade as completed receipt')
+    terminal_expired = fixture(expired=True)
+    assert sql(claim(terminal_expired)) == 'DEDUPLICATED'
+    passed('already settled receipt remains replayable after former dispatch deadline')
 
-sql('CREATE ROLE build11_untrusted; GRANT USAGE ON SCHEMA public TO build11_untrusted;')
-rejected('SET ROLE build11_untrusted; ' + claim(success), 'permission denied for function')
-passed('public caller cannot execute the privileged claim routine')
-print(f'{count}/{count} PostgreSQL replay/ownership checks passed. Live AWS gate remains CLOSED.', flush=True)
+    sql('CREATE ROLE build11_untrusted; GRANT USAGE ON SCHEMA public TO build11_untrusted;')
+    rejected('SET ROLE build11_untrusted; ' + claim(success), 'permission denied for function')
+    passed('public caller cannot execute the privileged claim routine')
+    print(f'{count}/{count} PostgreSQL replay/ownership checks passed. Live AWS gate remains CLOSED.', flush=True)
