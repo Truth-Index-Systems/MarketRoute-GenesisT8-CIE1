@@ -9,6 +9,7 @@ on:
       - 'tests/integration/aws-v0-build11*'
       - 'tests/adversarial/aws-v0-build11*'
       - 'scripts/*build11*'
+      - 'scripts/validate-aws-v0-build9-research-worker.mjs'
       - '.github/workflows/aws-v0-build11-proof.yml'
 
 permissions:
@@ -45,3 +46,7 @@ jobs:
         env:
           BUILD11_POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
         run: python3 tests/integration/aws-v0-build11-db.py
+      - name: Actual Lambda handler and executor replay against PostgreSQL
+        env:
+          BUILD11_POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
+        run: node tests/integration/aws-v0-build11-runtime.mjs
