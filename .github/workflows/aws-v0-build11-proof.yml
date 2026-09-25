@@ -1,0 +1,47 @@
+name: AWS V0 Build 11 Execution Proof
+
+on:
+  pull_request:
+    branches: [aws-v0]
+    paths:
+      - 'database/aws/**'
+      - 'infrastructure/aws-v0/**'
+      - 'tests/integration/aws-v0-build11*'
+      - 'tests/adversarial/aws-v0-build11*'
+      - 'scripts/*build11*'
+      - '.github/workflows/aws-v0-build11-proof.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build11-proof-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  postgres-execution-proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: disposable-build11-test-only
+          POSTGRES_DB: marketroute_build11_test
+        options: >-
+          --health-cmd "pg_isready -U postgres -d marketroute_build11_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          package-manager-cache: false
+      - name: PostgreSQL baseline and execution proof (no AWS credentials)
+        env:
+          BUILD11_POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
+        run: python3 tests/integration/aws-v0-build11-db.py
