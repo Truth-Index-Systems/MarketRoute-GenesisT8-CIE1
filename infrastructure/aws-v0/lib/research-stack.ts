@@ -109,7 +109,8 @@ export class MrAwsV0ResearchStack extends Stack {
       ),
       conditions: {
         StringEquals: {
-          "aws:InferenceProfileArn": bedrockInferenceProfileArn.valueAsString,
+          // Build 11: service condition key; keep exact profile/model restrictions.
+          "bedrock:InferenceProfileArn": bedrockInferenceProfileArn.valueAsString,
         },
       },
     }));

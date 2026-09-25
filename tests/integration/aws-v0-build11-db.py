@@ -56,7 +56,7 @@ for name in ['0001_marketroute_aws_canonical_baseline.sql',
 
 
 def fixture(job_state='SUCCEEDED', dispatch_state='SYNCED', execution_state='SUCCEEDED', expired=False):
-    ids = {key: str(uuid.uuid4()) for key in ('org', 'seller', 'company', 'campaign', 'plan', 'run', 'job', 'work', 'evidence')}
+    ids = {key: str(uuid.uuid4()) for key in ('user', 'org', 'seller', 'company', 'campaign', 'plan', 'run', 'job', 'work', 'evidence')}
     dedupe = hashlib.sha256(ids['work'].encode()).hexdigest()
     now = datetime.now(timezone.utc).isoformat()
     payload = {'metadata': {
@@ -83,11 +83,14 @@ def fixture(job_state='SUCCEEDED', dispatch_state='SYNCED', execution_state='SUC
     result_fp = hashlib.sha256(json.dumps(result, sort_keys=True).encode()).hexdigest()
     q = {k: literal(v) for k, v in ids.items()}
     sql(f"""
-    INSERT INTO public.organisations(id,name,slug) VALUES({q['org']},'Build 11 fixture',{q['org']});
-    INSERT INTO public.seller_businesses(id,organisation_id,name) VALUES({q['seller']},{q['org']},'Synthetic seller');
+    INSERT INTO public.marketroute_users(id) VALUES({q['user']});
+    INSERT INTO public.organisations(id,name,slug,created_by)
+      VALUES({q['org']},'Build 11 fixture',{q['org']},{q['user']});
+    INSERT INTO public.seller_businesses(id,organisation_id,name,created_by)
+      VALUES({q['seller']},{q['org']},'Synthetic seller',{q['user']});
     INSERT INTO public.companies(id,canonical_name) VALUES({q['company']},'Synthetic company');
-    INSERT INTO public.campaigns(id,organisation_id,seller_business_id,name)
-      VALUES({q['campaign']},{q['org']},{q['seller']},'Build 11 fixture');
+    INSERT INTO public.campaigns(id,organisation_id,seller_business_id,name,created_by)
+      VALUES({q['campaign']},{q['org']},{q['seller']},'Build 11 fixture',{q['user']});
     INSERT INTO public.scheduler_runs(id,runner_key) VALUES({q['run']},'GENESIS_RESEARCH_V1');
     INSERT INTO public.research_plan_runs(id,organisation_id,campaign_id,company_id,reference_time,
       lifecycle_state,authority_envelope_fingerprint,planner_version,semantics_version,
