@@ -45,7 +45,7 @@ for (const token of [
   'actions: ["rds-data:ExecuteStatement"]',
   'actions: ["secretsmanager:GetSecretValue", "secretsmanager:DescribeSecret"]',
   'actions: ["bedrock:InvokeModel"]',
-  '"aws:InferenceProfileArn": bedrockInferenceProfileArn.valueAsString',
+  '"bedrock:InferenceProfileArn": bedrockInferenceProfileArn.valueAsString',
   'MARKETROUTE_AWS_RESEARCH_EXECUTOR_ENABLED: "true"',
   "MARKETROUTE_AWS_RDS_CLUSTER_ARN: clusterArn",
   "MARKETROUTE_AWS_RDS_SECRET_ARN: auroraSecretArn.valueAsString",
