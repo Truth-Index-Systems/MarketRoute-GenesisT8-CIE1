@@ -50,3 +50,18 @@ jobs:
         env:
           BUILD11_POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
         run: node tests/integration/aws-v0-build11-runtime.mjs
+      - name: Retain exact tracked source for reproducible offline review
+        if: always()
+        run: |
+          mkdir -p /tmp/build11-source-receipt
+          git archive --format=tar HEAD | gzip -n > /tmp/build11-source-receipt/source.tar.gz
+          git rev-parse HEAD > /tmp/build11-source-receipt/tested-commit.txt
+          cd /tmp/build11-source-receipt
+          sha256sum source.tar.gz > SHA256SUMS
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: build11-source-receipt
+          path: /tmp/build11-source-receipt/
+          if-no-files-found: error
+          retention-days: 7
