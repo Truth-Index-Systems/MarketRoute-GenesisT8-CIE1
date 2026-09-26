@@ -6,7 +6,9 @@ on:
     paths:
       - 'database/aws/000*.sql'
       - 'tests/integration/aws-v0-build11-migration-rehearsal.py'
+      - 'tests/integration/aws-v0-build11-migration-ledger.py'
       - 'infrastructure/aws-v0/BUILD11-MIGRATION-REHEARSAL.md'
+      - 'infrastructure/aws-v0/BUILD11-MIGRATION-LEDGER.md'
       - '.github/workflows/aws-v0-build11-migration-rehearsal.yml'
 
 permissions:
@@ -26,10 +28,19 @@ jobs:
           persist-credentials: false
       - name: Test migrations and rollback in an owned network-disabled PostgreSQL container
         run: python3 tests/integration/aws-v0-build11-migration-rehearsal.py
+      - name: Test transaction-coupled history and resume in a separate owned offline database
+        run: python3 tests/integration/aws-v0-build11-migration-ledger.py
       - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: build11-migration-rehearsal
           path: /tmp/build11-migration-rehearsal-*/
           if-no-files-found: error
+          retention-days: 14
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: build11-migration-ledger
+          path: /tmp/build11-migration-ledger-*/
+          if-no-files-found: warn
           retention-days: 14
