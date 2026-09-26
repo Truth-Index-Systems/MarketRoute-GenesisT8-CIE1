@@ -1,0 +1,12 @@
+{
+  "companyName": "MarketRoute Build 11 Synthetic Fixture",
+  "requestedTier": "ENRICHMENT",
+  "evidence": [
+    {
+      "evidenceId": "00000000-0000-4000-8000-000000000011",
+      "sourceType": "DOCUMENT",
+      "observedAt": "2026-09-26T00:00:00.000Z",
+      "statement": "This is a synthetic test fixture, not a real company. It provides inventory reporting software to UK warehouses."
+    }
+  ]
+}

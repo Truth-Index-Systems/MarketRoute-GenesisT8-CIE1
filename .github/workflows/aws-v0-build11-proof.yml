@@ -78,6 +78,20 @@ jobs:
           python3 tests/integration/aws-v0-build11-package-fixtures.py
           python3 tests/integration/aws-v0-build11-package.py
           node tests/integration/aws-v0-build11-recovery-package.mjs
+      - name: Live-preflight tooling safety tests (no AWS credentials)
+        env:
+          BUILD11_POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
+          BUILD11_PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          python3 tests/integration/aws-v0-build11-live-preflight.py
+          node tests/adversarial/aws-v0-build11-live-contract.mjs
+          python3 tests/integration/aws-v0-build11-live-contract.py
+      - uses: actions/upload-artifact@v7
+        with:
+          name: build11-live-validation-kit
+          path: /tmp/build11-live-validation-kit/
+          if-no-files-found: error
+          retention-days: 7
       - uses: actions/upload-artifact@v7
         with:
           name: build11-worker-package
