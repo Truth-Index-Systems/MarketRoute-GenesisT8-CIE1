@@ -1,5 +1,5 @@
 // Real, packaged SDK middleware/signing/serialization/deserialization. Only the
-// final NodeHttpHandler is replaced. No runtime dependency injection or AWS calls.
+// final HTTP/1 and HTTP/2 handlers are replaced. No runtime dependency injection or AWS calls.
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
@@ -34,20 +34,23 @@ const blockNetwork = () => { forbiddenNetwork++; throw new Error('OFFLINE_PACKAG
 http.request = https.request = net.connect = net.createConnection = tls.connect = blockNetwork;
 net.Socket.prototype.connect = blockNetwork;
 syncBuiltinESMExports();
-const { NodeHttpHandler } = require('@smithy/node-http-handler');
+const { NodeHttpHandler, NodeHttp2Handler } = require('@smithy/node-http-handler');
 let responseFor;
 const requests = [];
 const bytes = value => typeof value === 'string' ? Buffer.from(value) : Buffer.from(value ?? []);
 const response = (body, statusCode = 200, extra = {}) => ({ response: { statusCode,
   headers: { 'content-type': 'application/json', 'x-amzn-requestid': 'offline-sdk-request', ...extra },
   body: Readable.from([Buffer.from(JSON.stringify(body))]) } });
-NodeHttpHandler.prototype.handle = async function (request) {
+const interceptHttp = async function (request) {
   assert.equal(request.protocol, 'https:');
   assert(request.hostname.endsWith('.eu-west-2.amazonaws.com'));
   assert.match(request.headers.authorization ?? '', /^AWS4-HMAC-SHA256 Credential=AKIDBUILD11OFFLINEONLY\//);
   requests.push({ ...request, body: bytes(request.body) });
   return responseFor(request);
 };
+// Bedrock selects HTTP/2; Data API selects HTTP/1. Keep both actual SDK clients.
+NodeHttpHandler.prototype.handle = interceptHttp;
+NodeHttp2Handler.prototype.handle = interceptHttp;
 const load = name => import(pathToFileURL(path.join(task, name)).href);
 const { createPreparedBedrockProvider, nativeCompanyRequest, MODEL_ID } = await load('prepared-provider.mjs');
 const { createInferenceAdmissionLedger } = await load('admission-ledger.mjs');
