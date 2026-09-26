@@ -149,7 +149,7 @@ BEGIN
       ELSE
         v_sync:=public.marketroute_sync_aws_v0_research_failure_v1(w.id,p_fingerprint,v_at);
       END IF;
-      IF v_sync NOT IN('SYNCED','ALREADY_SYNCED','FAILED_SYNCED','ALREADY_FAILED') THEN RAISE EXCEPTION 'SYNC_BLOCKED'; END IF;
+      IF v_sync IS NULL OR v_sync NOT IN('SYNCED','ALREADY_SYNCED','FAILED_SYNCED','ALREADY_FAILED') THEN RAISE EXCEPTION 'SYNC_BLOCKED'; END IF;
       UPDATE public.marketroute_aws_v0_recovery_receipts SET state='RESOLVED',reason='DURABLE_RESULT_SYNCHRONIZED',lease_until=NULL,updated_at=v_at
         WHERE work_unit_id=w.id AND canonical_attempt_number=d.canonical_attempt_number;
       RETURN jsonb_build_object('outcome','RESOLVED','syncState',v_sync);
@@ -170,7 +170,7 @@ BEGIN
     IF FOUND THEN v_reason:='PROVIDER_OUTCOME_REQUIRES_REVIEW';
     ELSIF x.work_unit_id IS NOT NULL AND
       (SELECT count(*) FROM public.marketroute_aws_v0_inference_attempts WHERE work_unit_id=w.id AND canonical_attempt_number=d.canonical_attempt_number)
-        <> x.attempt_count-CASE WHEN x.state='CLAIMED' THEN 1 ELSE 0 END THEN
+        <> (x.attempt_count - (CASE WHEN x.state='CLAIMED' THEN 1 ELSE 0 END)) THEN
       v_reason:='ATTEMPT_ACCOUNTING_REQUIRES_REVIEW';
     ELSIF r.republish_count>=v_max OR d.prepared_at+interval '24 hours'<=v_at THEN
       v_reason:='RECOVERY_LIMIT_REQUIRES_REVIEW';
