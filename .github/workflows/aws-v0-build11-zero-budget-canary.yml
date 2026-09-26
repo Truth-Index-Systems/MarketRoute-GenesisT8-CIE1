@@ -1,0 +1,44 @@
+name: AWS V0 Build 11 Zero Budget Database Canary
+on:
+  pull_request:
+    branches: [aws-v0]
+    paths:
+      - 'infrastructure/aws-v0/worker-db-canary/**'
+      - 'infrastructure/aws-v0/runtime/research-worker/**'
+      - 'database/aws/000*.sql'
+      - 'tests/integration/aws-v0-build11-zero-budget*'
+      - '.github/workflows/aws-v0-build11-zero-budget-canary.yml'
+permissions:
+  contents: read
+concurrency:
+  group: build11-zero-budget-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  offline-canary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Credential-free operator boundary tests
+        run: python3 tests/integration/aws-v0-build11-zero-budget-safety.py
+      - name: Actual operator and worker source with owned PostgreSQL
+        run: python3 tests/integration/aws-v0-build11-zero-budget-db.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: build11-zero-budget-proof
+          path: /tmp/build11-zero-budget-proof-*/receipt.json
+          retention-days: 14
+          if-no-files-found: warn
+      - uses: actions/upload-artifact@v7
+        if: success()
+        with:
+          name: build11-zero-budget-canary-kit
+          path: /tmp/build11-zero-budget-proof-*/kit/
+          retention-days: 14
+          if-no-files-found: error
