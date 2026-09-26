@@ -47,7 +47,10 @@ class FakeWire:
         if a in p.ENDS:
             if self.lock_owner==tx:self.lock_owner=None
             del self.active[tx]
-            return {'transactionStatus':p.ENDS[a]}
+            # Independent API fixtures: do not derive a simulated response from
+            # the production validator's own expected value.
+            return {'transactionStatus':{'commit-transaction':'Transaction Committed',
+                                         'rollback-transaction':'Rollback Complete'}[a]}
         sql=v['sql']
         if sql==p.SQL['readOnly']:state['readOnly']='on';return {}
         if sql==p.SQL['timeout']:return {}
@@ -184,6 +187,69 @@ class Safety(unittest.TestCase):
     def test_missing_end_status_not_success(self):
         w=FakeWire();w.override=lambda s,a,v:{} if a=='commit-transaction' else None
         r,_=self.run_probe(w);self.assertEqual(r['errorCode'],'END_RESPONSE_UNVERIFIED');self.assertFalse(w.active)
+    def test_empty_end_status_is_valid_service_shape(self):
+        class EmptyStatusWire(FakeWire):
+            def __call__(self,service,action,payload):
+                value=super().__call__(service,action,payload)
+                return {'transactionStatus':''} if action in p.ENDS else value
+        r,w=self.run_probe(EmptyStatusWire())
+        self.assertEqual(r['transportReadOnlyProof'],'PASS');self.assertEqual(len(r['checks']),7)
+        self.assertFalse(w.active);self.assertEqual(len(r['transactionEndResponses']),3)
+        self.assertTrue(all(d['statusClass']=='EMPTY_STRING' for d in r['transactionEndResponses']))
+        self.assertTrue(all(d['acknowledgement']=='API_SUCCESS_RESPONSE' for d in r['transactionEndResponses']))
+    def test_other_bounded_end_text_is_not_an_enum_and_is_not_logged(self):
+        for text in ['Transaction rolled back','success','X'*128,'SENSITIVE-TX-ID-IN-STATUS']:
+            with self.subTest(length=len(text)):
+                class TextWire(FakeWire):
+                    def __call__(self,service,action,payload):
+                        value=super().__call__(service,action,payload)
+                        return {'transactionStatus':text} if action in p.ENDS else value
+                r,w=self.run_probe(TextWire());self.assertEqual(r['transportReadOnlyProof'],'PASS')
+                self.assertTrue(all(d['statusClass']=='OTHER_STRING' for d in r['transactionEndResponses']))
+                self.assertNotIn(text,json.dumps(r));self.assertFalse(w.active)
+    def test_invalid_end_shapes_remain_blocked(self):
+        for value in [None,False,1,[],{},'X'*129]:
+            with self.subTest(value=value):
+                w=FakeWire();w.override=lambda s,a,v:{'transactionStatus':value} if a=='commit-transaction' else None
+                r,_=self.run_probe(w);self.assertEqual(r['errorCode'],'END_RESPONSE_UNVERIFIED')
+                d=next(d for d in r['transactionEndResponses'] if d['action']=='commit-transaction')
+                self.assertFalse(d['statusShapeValid']);self.assertEqual(d['acknowledgement'],'UNVERIFIED')
+    def test_empty_rollback_response_does_not_bypass_lock_release(self):
+        w=FakeWire()
+        w.override=lambda s,a,v:{'transactionStatus':''} if a=='rollback-transaction' else None
+        r,_=self.run_probe(w)
+        self.assertEqual(r['transportReadOnlyProof'],'BLOCKED')
+        self.assertEqual(r['errorCode'],'ROLLBACK_LOCK_RELEASE_UNVERIFIED')
+    def test_empty_commit_response_does_not_bypass_lock_release(self):
+        w=FakeWire()
+        w.override=lambda s,a,v:{'transactionStatus':''} if a=='commit-transaction' else None
+        r,_=self.run_probe(w)
+        self.assertEqual(r['transportReadOnlyProof'],'BLOCKED')
+        self.assertEqual(r['errorCode'],'COMMIT_LOCK_RELEASE_UNVERIFIED')
+    def test_cli_failure_with_success_looking_stdout_is_rejected(self):
+        result=subprocess.CompletedProcess([],1,'{"transactionStatus":"Rollback Complete"}',
+            'An error occurred (ServiceUnavailableError) SECRET-DO-NOT-LOG')
+        with patch.object(p.subprocess,'run',return_value=result),self.assertRaises(p.ProbeError) as c:
+            p.AwsCli()('rds-data','rollback-transaction',dict(BASE,transactionId='owned-test-tx'))
+        self.assertEqual(c.exception.code,'ServiceUnavailableError')
+    def test_missing_status_is_recorded_not_promoted(self):
+        w=FakeWire();w.override=lambda s,a,v:{} if a=='commit-transaction' else None
+        r,_=self.run_probe(w)
+        d=next(d for d in r['transactionEndResponses'] if d['action']=='commit-transaction')
+        self.assertFalse(d['statusFieldPresent']);self.assertFalse(d['statusShapeValid'])
+        self.assertEqual(r['transportReadOnlyProof'],'BLOCKED')
+    def test_cleanup_accepts_valid_empty_ack_without_enabling_proof(self):
+        class CleanupWire(FakeWire):
+            def __call__(self,service,action,payload):
+                if action=='execute-statement' and payload['sql']==p.SQL['marker']:
+                    raise p.ProbeError('DatabaseErrorException')
+                value=super().__call__(service,action,payload)
+                return {'transactionStatus':''} if action in p.ENDS else value
+        r,w=self.run_probe(CleanupWire())
+        self.assertEqual(r['transportReadOnlyProof'],'BLOCKED');self.assertEqual(r['errorCode'],'DatabaseErrorException')
+        self.assertEqual(r['cleanup'],[{'transaction':'A','status':'ROLLBACK_ACKNOWLEDGED'}])
+        self.assertFalse(r['unverifiedTransactionClosures']);self.assertFalse(w.active)
+        self.assertTrue(r['transactionEndResponses'][0]['cleanup'])
     def test_cleanup_failure_preserved(self):
         w=FakeWire()
         def override(s,a,v):

@@ -104,3 +104,45 @@ proof also remain outstanding.
 - https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/data-api.troubleshooting.html
 - https://www.postgresql.org/docs/16/sql-set-transaction.html
 - https://www.postgresql.org/docs/16/functions-admin.html#FUNCTIONS-ADVISORY-LOCKS
+
+
+## Transaction-ending response correction (26 September 2026)
+
+The operator's first three checks passed before `END_RESPONSE_UNVERIFIED`.
+In this code path the first end operation is rollback of transaction A. The old
+probe required the exact CLI-example text `Rollback Complete`; its receipt did
+not preserve the returned status field. Thus the old receipt does not establish
+what AWS actually returned or prove that either cleanup operation failed at AWS.
+It must remain BLOCKED and is never retrospectively relabelled as successful.
+
+AWS's CommitTransaction and RollbackTransaction API references specify a
+successful HTTP 200 response and a transactionStatus string with length 0..128,
+not an enum of particular phrases. AwsCli already rejects nonzero CLI exit codes,
+malformed JSON and non-object responses. Following a successful API call, the
+probe now validates the status field's string shape and length, including an
+empty string, instead of matching a documentation example. Missing/non-string
+fields and strings longer than 128 remain blocked conservatively. No endpoint,
+SQL, transaction ownership, retry, model or permission setting changed.
+
+Every returned end response now records the transaction label (A/B/C), operation,
+normal/cleanup path, field presence, shape validity, length, SHA-256 and a class
+(EMPTY_STRING, CLI_EXAMPLE, OTHER_STRING, MISSING_OR_NON_STRING). Arbitrary returned
+text, raw transaction IDs and secrets are not recorded. An API acknowledgement is
+not an independent lock-release result. The normal-path rollback/commit lock
+transfer checks still must pass; a success-looking response that leaves the lock
+held fails those checks. Real API errors and uncertain responses are never
+converted to success or retried as commits. This read-only probe does not certify
+write durability or reconciliation of an unknown migration commit.
+
+The safety tests now use independent example fixtures and cover empty strings,
+other bounded strings, missing/malformed/oversized fields, redaction, cleanup,
+nonzero CLI exit with success-looking stdout, and false acknowledgements with
+locks still held. Native PostgreSQL reruns the complete probe with example,
+empty and different status text envelopes, plus a lost-commit-response case.
+These status envelopes are simulated; the rerun in CloudShell is still needed
+to establish the actual live outcome and response shape.
+
+References:
+- https://docs.aws.amazon.com/rdsdataservice/latest/APIReference/API_RollbackTransaction.html
+- https://docs.aws.amazon.com/rdsdataservice/latest/APIReference/API_CommitTransaction.html
+- https://docs.aws.amazon.com/cli/latest/reference/rds-data/rollback-transaction.html

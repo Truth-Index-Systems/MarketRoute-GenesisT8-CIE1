@@ -60,8 +60,8 @@ class Session:
 
 
 class NativeWire(s.FakeWire):
-    def __init__(self,cid,lose_commit=False):
-        super().__init__();self.cid=cid;self.sessions={};self.lose_commit=lose_commit
+    def __init__(self,cid,lose_commit=False,end_style='example'):
+        super().__init__();self.cid=cid;self.sessions={};self.lose_commit=lose_commit;self.end_style=end_style
     def __call__(self,service,action,payload):
         p.validate_request(service,action,payload)
         if service!='rds-data':return super().__call__(service,action,payload)
@@ -77,7 +77,11 @@ class NativeWire(s.FakeWire):
             session.sql('COMMIT' if action=='commit-transaction' else 'ROLLBACK')
             session.close();del self.sessions[tx]
             if action=='commit-transaction' and self.lose_commit:raise p.ProbeError('AWS_RESPONSE_UNKNOWN_TIMEOUT')
-            return {'transactionStatus':p.ENDS[action]}
+            # Successful API envelopes are simulated, independently of p.ENDS.
+            if self.end_style=='empty':return {'transactionStatus':''}
+            if self.end_style=='other':return {'transactionStatus':'Completed successfully'}
+            return {'transactionStatus':{'commit-transaction':'Transaction Committed',
+                                         'rollback-transaction':'Rollback Complete'}[action]}
         sql=payload['sql']
         # Test-only conversion of strictly validated parameters for native psql.
         for parameter in payload['parameters']:
@@ -120,14 +124,14 @@ def main():
         else:raise RuntimeError('OWNED_POSTGRES_NOT_READY')
         receipt['serverVersion']=run(['docker','exec',cid,'psql','-X','-Atq','-U',p.DB_ROLE,'-d',p.DATABASE,'-c','SHOW server_version'])
         before=schema_hash(cid)
-        for lose_commit in (False,True):
-            wire=NativeWire(cid,lose_commit)
+        for lose_commit,end_style in ((False,'example'),(False,'empty'),(False,'other'),(True,'empty')):
+            wire=NativeWire(cid,lose_commit,end_style)
             try:
                 result=p.Probe(wire,sleep=lambda _:None).run()
                 if not lose_commit:
                     assert result['transportReadOnlyProof']=='PASS',result
                     assert len(result['checks'])==7
-                    receipt['checks'].append({'name':'complete fixed probe observes transaction identity, exclusion and rollback/commit release','status':'PASS'})
+                    receipt['checks'].append({'name':'complete fixed probe observes transaction identity, exclusion and rollback/commit release ('+end_style+')','status':'PASS'})
                 else:
                     assert result['transportReadOnlyProof']=='BLOCKED',result
                     assert result['errorCode']=='AWS_RESPONSE_UNKNOWN_TIMEOUT'
@@ -136,8 +140,8 @@ def main():
                     receipt['checks'].append({'name':'discarded local commit acknowledgement remains unverified; no commit retry','status':'PASS'})
                 assert not wire.sessions
                 assert schema_hash(cid)==before
-                receipt['checks'].append({'name':'owned database schema unchanged; all native sessions closed ('+str(lose_commit)+')','status':'PASS'})
-                receipt['normalProbe'] = result if not lose_commit else receipt['normalProbe']
+                receipt['checks'].append({'name':'owned database schema unchanged; all native sessions closed ('+str(lose_commit)+','+end_style+')','status':'PASS'})
+                if not lose_commit:receipt.setdefault('normalProbes',{})[end_style]=result
             finally:wire.close()
         receipt.update(status='PASS',schemaBefore=before,schemaAfter=schema_hash(cid))
     finally:

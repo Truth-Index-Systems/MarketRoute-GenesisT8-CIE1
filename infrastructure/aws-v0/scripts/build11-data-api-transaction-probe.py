@@ -45,6 +45,7 @@ SQL = {
 ACTIONS = {('sts','get-caller-identity'), ('cloudformation','describe-stacks'),
            ('rds-data','begin-transaction'), ('rds-data','execute-statement'),
            ('rds-data','commit-transaction'), ('rds-data','rollback-transaction')}
+# These are CLI documentation EXAMPLES, not an enum in the service contract.
 ENDS = {'commit-transaction': 'Transaction Committed', 'rollback-transaction': 'Rollback Complete'}
 
 
@@ -173,7 +174,7 @@ class Probe:
                      'liveMigrationExecutor':'NOT_PROVIDED','liveWorkerProof':'NOT_RUN',
                      'productionActivation':'BLOCKED','schemaChanges':0,'businessRowWrites':0,
                      'paidInferenceCalls':0,'transientTransactionStateUsed':True,'unidentifiedTransactionMayExist':False,
-                     'checks':[],'operations':[],'cleanup':[],
+                     'checks':[],'operations':[],'cleanup':[],'transactionEndResponses':[],
                      'limits':'Not DDL, migration-history durability, unknown-write-commit, snapshot restore, worker or billing certification.'}
 
     def call(self, service, action, payload, cleanup=False):
@@ -254,7 +255,28 @@ class Probe:
         if action=='commit-transaction':
             require(tx['readOnly'],'UNVERIFIED_TRANSACTION_CANNOT_COMMIT')
         value=self.call('rds-data',action,dict(self.base(),transactionId=tx['id']),cleanup)
-        require(value.get('transactionStatus')==ENDS[action],'END_RESPONSE_UNVERIFIED')
+        # AwsCli returns only after a successful CLI call to the pinned endpoint.
+        # AWS models transactionStatus as a string of length 0..128, NOT an enum.
+        # A documentation example is not a valid exact-match acceptance rule.
+        # Keep missing/malformed fields blocked, and preserve metadata without
+        # logging arbitrary status text, transaction IDs or request payloads.
+        status=value.get('transactionStatus') if isinstance(value,dict) else None
+        valid=isinstance(status,str) and len(status)<=128
+        detail={'transaction':label,'action':action,'cleanup':cleanup,
+                'apiCallReturned':True,'statusFieldPresent':isinstance(value,dict) and 'transactionStatus' in value,
+                'statusShapeValid':valid,'acknowledgement':'UNVERIFIED'}
+        if isinstance(status,str):
+            detail.update(statusLength=len(status),statusSha256=hashlib.sha256(status.encode('utf-8',errors='surrogatepass')).hexdigest(),
+                          statusClass='EMPTY_STRING' if status=='' else
+                          ('CLI_EXAMPLE' if status==ENDS[action] else 'OTHER_STRING'))
+        else:
+            detail['statusClass']='MISSING_OR_NON_STRING'
+        self.report['transactionEndResponses'].append(detail)
+        require(valid,'END_RESPONSE_UNVERIFIED')
+        detail['acknowledgement']='API_SUCCESS_RESPONSE'
+        # This acknowledges an API response; the independent lock-transfer
+        # checks below remain mandatory before transportReadOnlyProof can PASS.
+        # It is never evidence for an unknown write-transaction commit.
         del self.active[label]
 
     def passed(self,name,**metadata):
@@ -343,6 +365,7 @@ def main():
     print(json.dumps({'report':str(out.resolve()),'transportReadOnlyProof':report['transportReadOnlyProof'],
                       'checksPassed':len(report['checks']),'errorCode':report.get('errorCode'),
                       'unverifiedTransactionClosures':report['unverifiedTransactionClosures'],
+                      'transactionEndResponses':report['transactionEndResponses'],
                       'migrationApproval':'NOT_GRANTED','schemaChanges':0,'businessRowWrites':0,
                       'paidInferenceCalls':0,'productionActivation':'BLOCKED'},indent=2))
     return 0 if report['transportReadOnlyProof']=='PASS' else 2
