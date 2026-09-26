@@ -125,7 +125,8 @@ def build():
                 fail('INSTALLED_VERSION:' + path)
         files = {}
         with zipfile.ZipFile(OUTPUT / (ZIP_NAME + '.tmp'), 'w', compression=zipfile.ZIP_STORED) as archive:
-            for path in sorted(stage.rglob('*')):
+            # Sort archive names, not Path components (foo.js must precede foo/bar.js).
+            for path in sorted(stage.rglob('*'), key=lambda p: p.relative_to(stage).as_posix()):
                 if path.is_symlink():
                     fail('SYMLINK_DEPENDENCY')
                 if path.is_dir():

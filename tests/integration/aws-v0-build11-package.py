@@ -97,10 +97,11 @@ with tempfile.TemporaryDirectory(prefix='build11-package-proof-') as tmp:
                 'AWS_EC2_METADATA_DISABLED': 'true', 'AWS_CONFIG_FILE': '/dev/null',
                 'AWS_SHARED_CREDENTIALS_FILE': '/dev/null'})
     p = subprocess.run(['node', str(ROOT / 'tests/integration/aws-v0-build11-package-wire.mjs')],
-                       cwd=temp, env=env, check=True, capture_output=True, text=True, timeout=180)
+                       cwd=temp, env=env, check=False, capture_output=True, text=True, timeout=180)
     print(p.stdout, end='', flush=True)
     if p.stderr:
         print(p.stderr, end='', flush=True)
+    p.check_returncode()  # Preserve the wire assertion output when a test fails.
     report_line = next(line for line in p.stdout.splitlines() if line.startswith('PACKAGE_PROOF_JSON='))
     wire = json.loads(report_line.split('=', 1)[1])
     assert wire['archiveSourceVerified'] and wire['liveAwsCalls'] == 0
