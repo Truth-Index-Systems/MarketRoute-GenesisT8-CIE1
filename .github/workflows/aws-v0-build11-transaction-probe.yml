@@ -1,0 +1,65 @@
+name: AWS V0 Build 11 Read-only Transaction Probe
+
+on:
+  pull_request:
+    branches: [aws-v0]
+    paths:
+      - 'infrastructure/aws-v0/scripts/build11-data-api-transaction-probe.py'
+      - 'infrastructure/aws-v0/BUILD11-DATA-API-TRANSACTION-PROBE.md'
+      - 'tests/integration/aws-v0-build11-transaction-probe-*.py'
+      - '.github/workflows/aws-v0-build11-transaction-probe.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build11-readonly-transaction-probe-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  offline-probe-proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Fixed read-only probe safety tests without AWS credentials
+        run: python3 tests/integration/aws-v0-build11-transaction-probe-safety.py
+      - name: Exact probe SQL through owned network-disabled PostgreSQL
+        env:
+          SOURCE_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: python3 tests/integration/aws-v0-build11-transaction-probe-postgres.py
+      - name: Package the read-only operator kit
+        env:
+          SOURCE_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          python3 - <<'PY'
+          import hashlib,json,os,shutil
+          from pathlib import Path
+          kit=Path('/tmp/MarketRoute_Build11_ReadOnly_Transaction_Kit')
+          (kit/'scripts').mkdir(parents=True)
+          (kit/'proof').mkdir()
+          shutil.copy('infrastructure/aws-v0/scripts/build11-data-api-transaction-probe.py',kit/'scripts/')
+          shutil.copy('infrastructure/aws-v0/BUILD11-DATA-API-TRANSACTION-PROBE.md',kit/'README.md')
+          receipts=list(Path('/tmp').glob('build11-transaction-probe-offline-*/receipt.json'))
+          assert len(receipts)==1
+          shutil.copy(receipts[0],kit/'proof/offline-postgres-receipt.json')
+          (kit/'proof/source.json').write_text(json.dumps({'headSha':os.environ['SOURCE_HEAD'],
+            'testedCommit':os.environ['GITHUB_SHA'],'liveDataApiProof':'NOT_RUN'},indent=2)+'\n')
+          files=sorted(p for p in kit.rglob('*') if p.is_file())
+          (kit/'SHA256SUMS').write_text(''.join(hashlib.sha256(p.read_bytes()).hexdigest()+'  '+p.relative_to(kit).as_posix()+'\n' for p in files))
+          PY
+      - uses: actions/upload-artifact@v7
+        with:
+          name: build11-readonly-transaction-kit
+          path: /tmp/MarketRoute_Build11_ReadOnly_Transaction_Kit/
+          if-no-files-found: error
+          retention-days: 14
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: build11-readonly-transaction-offline-proof
+          path: /tmp/build11-transaction-probe-offline-*/
+          if-no-files-found: warn
+          retention-days: 14
