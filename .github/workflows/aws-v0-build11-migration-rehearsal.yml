@@ -1,0 +1,35 @@
+name: AWS V0 Build 11 Migration Rehearsal
+
+on:
+  pull_request:
+    branches: [aws-v0]
+    paths:
+      - 'database/aws/000*.sql'
+      - 'tests/integration/aws-v0-build11-migration-rehearsal.py'
+      - 'infrastructure/aws-v0/BUILD11-MIGRATION-REHEARSAL.md'
+      - '.github/workflows/aws-v0-build11-migration-rehearsal.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build11-migration-rehearsal-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  isolated-postgres-rehearsal:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Test migrations and rollback in an owned network-disabled PostgreSQL container
+        run: python3 tests/integration/aws-v0-build11-migration-rehearsal.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: build11-migration-rehearsal
+          path: /tmp/build11-migration-rehearsal-*/
+          if-no-files-found: error
+          retention-days: 14
