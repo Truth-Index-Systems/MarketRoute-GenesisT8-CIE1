@@ -1,4 +1,9 @@
-import { executeResearchEnvelope } from "./executor.mjs";
+import { executeResearchEnvelope } from "./admitted-executor.mjs";
+import { envelopeFingerprint } from "./executor.mjs";
+import { createRecoveryLedger } from "./admission-ledger.mjs";
+import { setTimeout as sleep } from "node:timers/promises";
+
+const SOURCE_QUEUE_ARN = "arn:aws:sqs:eu-west-2:801132668416:marketroute-aws-v0-research-work";
 
 const TRANSPORT_SCHEMA_VERSION = "1";
 const TRANSPORT_NAME = "AWS_SQS";
@@ -37,15 +42,43 @@ export async function handleEvent(event, context = {}, dependencies = {}) {
     }
     try {
       const execute = dependencies.executeResearchEnvelope ?? executeResearchEnvelope;
-      const outcome = await execute(envelope, {
-        workerId: boundedString(context?.awsRequestId, 200) ?? `sqs:${messageId}`,
-      }, dependencies);
-      if (outcome?.acknowledge !== true) batchItemFailures.push({ itemIdentifier: messageId });
+      const worker = { workerId: boundedString(context?.awsRequestId, 200) ?? `sqs:${messageId}` };
+      let outcome = await execute(envelope, worker, dependencies);
+      // One short, bounded rate wait avoids spending another SQS receive simply
+      // because the other worker won this permit. Never sleep through a budget denial.
+      const delay = Date.parse(outcome?.retryAt) - Date.now() + 50;
+      if (outcome?.reason === "REQUEST_RATE_LIMIT" && Number.isFinite(delay) && delay > 0 && delay <= 12000
+          && typeof context.getRemainingTimeInMillis === "function"
+          && context.getRemainingTimeInMillis() > 180000 + delay) {
+        await (dependencies.sleep ?? sleep)(delay);
+        if (context.getRemainingTimeInMillis() > 180000) outcome = await execute(envelope, worker, dependencies);
+      }
+      if (outcome?.acknowledge !== true) {
+        await noteTransportFailure(record, envelope, outcome, dependencies);
+        batchItemFailures.push({ itemIdentifier: messageId });
+      }
     } catch {
+      await noteTransportFailure(record, envelope, { outcome: "EXECUTION_ERROR" }, dependencies);
       batchItemFailures.push({ itemIdentifier: messageId });
     }
   }
   return { batchItemFailures };
+}
+
+async function noteTransportFailure(record, envelope, outcome, dependencies) {
+  const count = Number(record?.attributes?.ApproximateReceiveCount);
+  // Only source-queue failures are noted. Poison payloads stay unacknowledged;
+  // no credentials, message body, secret or arbitrary error string is logged.
+  if (record?.eventSourceARN !== SOURCE_QUEUE_ARN || !Number.isSafeInteger(count) || count < 1 || count > 1000000) return;
+  let recovery;
+  try {
+    recovery = dependencies.recovery ?? await createRecoveryLedger();
+    const allowed = new Set(["ADMISSION_DEFERRED","FAILED_RETRYABLE","SYNC_PENDING","RESULT_PERSISTENCE_PENDING","BUSY","EXECUTION_ERROR"]);
+    await recovery.note(envelope, envelopeFingerprint(envelope), count,
+      allowed.has(outcome?.outcome) ? outcome.outcome : "EXECUTION_ERROR");
+  } catch {
+    // The original message remains unacknowledged on a failed/ambiguous note.
+  } finally { recovery?.destroy?.(); }
 }
 
 export const handler = handleEvent;

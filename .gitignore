@@ -14,3 +14,7 @@ coverage
 # AWS V0 CDK generated output
 infrastructure/aws-v0/dist/
 infrastructure/aws-v0/cdk.out/
+
+# Reproducible Build 11 worker artifact (retained by credential-free CI)
+infrastructure/aws-v0/artifacts/
+__pycache__/

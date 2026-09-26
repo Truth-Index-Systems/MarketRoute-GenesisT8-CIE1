@@ -1,0 +1,13 @@
+{
+  "name": "@marketroute/aws-v0-research-worker",
+  "version": "0.11.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": "22.x"
+  },
+  "dependencies": {
+    "@aws-sdk/client-bedrock-runtime": "3.1111.0",
+    "@aws-sdk/client-rds-data": "3.1114.0"
+  }
+}

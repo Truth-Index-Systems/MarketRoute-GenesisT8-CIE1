@@ -1,0 +1,46 @@
+name: AWS V0 Build 11 Migration Executor
+
+on:
+  pull_request:
+    branches: [aws-v0]
+    paths:
+      - 'database/aws/000*.sql'
+      - 'infrastructure/aws-v0/migration-runner/**'
+      - 'tests/integration/aws-v0-build11-executor*.py'
+      - 'tests/integration/aws-v0-build11-migration*.py'
+      - '.github/workflows/aws-v0-build11-executor.yml'
+      - 'infrastructure/aws-v0/BUILD11-MIGRATION-EXECUTOR.md'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build11-migration-executor-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  offline-executor-proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Executor boundary tests without AWS credentials
+        run: python3 tests/integration/aws-v0-build11-executor-safety.py
+      - name: Actual executor and CLI adapter against owned network-disabled PostgreSQL
+        run: python3 tests/integration/aws-v0-build11-executor.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: build11-executor-proof
+          path: /tmp/build11-executor-*/receipt.json
+          if-no-files-found: warn
+          retention-days: 14
+      - uses: actions/upload-artifact@v7
+        if: success()
+        with:
+          name: build11-migration-executor-kit
+          path: /tmp/build11-executor-*/kit/
+          if-no-files-found: error
+          retention-days: 14

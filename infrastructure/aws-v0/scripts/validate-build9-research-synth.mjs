@@ -74,8 +74,12 @@ const expectedModels = ["eu-central-1", "eu-north-1", "eu-south-1", "eu-south-2"
   .sort();
 const actualModels = (Array.isArray(model.Resource) ? model.Resource : [model.Resource]).slice().sort();
 if (JSON.stringify(actualModels) !== JSON.stringify(expectedModels)) throw new Error("Build 9 Bedrock destination model boundary drifted");
-if (!JSON.stringify(model.Condition?.StringEquals?.["aws:InferenceProfileArn"]).includes("BedrockInferenceProfileArn")) {
+// Build 11 corrects the condition key without relaxing the resource boundary.
+if (!JSON.stringify(model.Condition?.StringEquals?.["bedrock:InferenceProfileArn"]).includes("BedrockInferenceProfileArn")) {
   throw new Error("Build 9 model invocation is not conditioned on the application profile");
+}
+if (model.Condition?.StringEquals?.["aws:InferenceProfileArn"] !== undefined) {
+  throw new Error("Build 11 rejects the incorrect global inference-profile condition key");
 }
 
 const policyJson = JSON.stringify(policy);

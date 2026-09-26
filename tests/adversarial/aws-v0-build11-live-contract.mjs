@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { nativeCompanyRequest } from '../../infrastructure/aws-v0/runtime/research-worker/prepared-provider.mjs';
+const root = 'infrastructure/aws-v0/';
+const input = JSON.parse(readFileSync(root+'proof/build11-live-input.json','utf8'));
+const bytes = readFileSync(root+'proof/build11-live-native-request.json');
+assert.equal(nativeCompanyRequest(input),bytes.toString('utf8'));
+const hash = createHash('sha256').update(bytes).digest('hex');
+assert.ok(readFileSync(root+'scripts/build11-live-preflight.py','utf8').includes(`REQUEST_SHA = '${hash}'`));
+assert.equal(JSON.parse(bytes).max_tokens,1400);
+assert.equal(JSON.parse(bytes).temperature,0);
+assert.equal(input.evidence.length,1);
+assert.match(input.evidence[0].statement,/synthetic test fixture, not a real company/);
+console.log('PASS live synthetic request has byte parity with the packaged native request contract');
+console.log('PASS live request hash, output cap and synthetic-only evidence are fixed');

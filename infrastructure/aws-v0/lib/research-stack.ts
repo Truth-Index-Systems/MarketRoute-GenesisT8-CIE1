@@ -5,6 +5,7 @@ import * as lambdaEventSources from "aws-cdk-lib/aws-lambda-event-sources";
 import * as logs from "aws-cdk-lib/aws-logs";
 import * as sqs from "aws-cdk-lib/aws-sqs";
 import * as path from "node:path";
+import { execFileSync } from "node:child_process";
 import { Construct } from "constructs";
 
 const WORKER_TIMEOUT_SECONDS = 240;
@@ -109,10 +110,23 @@ export class MrAwsV0ResearchStack extends Stack {
       ),
       conditions: {
         StringEquals: {
-          "aws:InferenceProfileArn": bedrockInferenceProfileArn.valueAsString,
+          // Build 11: service condition key; keep exact profile/model restrictions.
+          "bedrock:InferenceProfileArn": bedrockInferenceProfileArn.valueAsString,
         },
       },
     }));
+
+    // Build 11: non-generating token preflight, exact regional foundation model.
+    workerRole.addToPolicy(new iam.PolicyStatement({
+      sid: "MarketRouteResearchCountTokens",
+      actions: ["bedrock:CountTokens"],
+      resources: [`arn:aws:bedrock:${this.region}::foundation-model/${BEDROCK_MODEL_ID}`],
+    }));
+
+    // Fail closed on missing/stale ZIP, including direct CDK invocation.
+    const packageReceipt = JSON.parse(execFileSync("python3", [
+      path.join(__dirname, "../../scripts/package-research-worker.py"), "verify",
+    ], { encoding: "utf8" })) as { archive: string; archiveSha256: string };
 
     const worker = new lambda.Function(this, "ResearchWorker", {
       functionName: "marketroute-aws-v0-research-worker",
@@ -120,7 +134,7 @@ export class MrAwsV0ResearchStack extends Stack {
       runtime: lambda.Runtime.NODEJS_22_X,
       architecture: lambda.Architecture.ARM_64,
       handler: "index.handler",
-      code: lambda.Code.fromAsset(path.join(__dirname, "../../runtime/research-worker")),
+      code: lambda.Code.fromAsset(packageReceipt.archive),
       timeout: Duration.seconds(WORKER_TIMEOUT_SECONDS),
       memorySize: 512,
       role: workerRole,
@@ -135,6 +149,7 @@ export class MrAwsV0ResearchStack extends Stack {
     });
 
     worker.node.addDependency(logGroup);
+    new CfnOutput(this, "ResearchWorkerPackageSha256", { value: packageReceipt.archiveSha256 });
 
     worker.addEventSource(new lambdaEventSources.SqsEventSource(queue, {
       batchSize: BATCH_SIZE,

@@ -1,0 +1,143 @@
+name: AWS V0 Build 11 Execution Proof
+
+on:
+  pull_request:
+    branches: [aws-v0]
+    paths:
+      - 'database/aws/**'
+      - 'application/research/aws-v0-dispatcher.ts'
+      - 'application/research/aws-v0-recovery.mjs'
+      - 'infrastructure/aws-v0/**'
+      - 'tests/integration/aws-v0-build11*'
+      - 'tests/adversarial/aws-v0-build11*'
+      - 'scripts/*build11*'
+      - 'scripts/validate-aws-v0-build9-research-worker.mjs'
+      - '.github/workflows/aws-v0-build11-proof.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build11-proof-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  postgres-execution-proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: disposable-build11-test-only
+          POSTGRES_DB: marketroute_build11_test
+        options: >-
+          --health-cmd "pg_isready -U postgres -d marketroute_build11_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          package-manager-cache: false
+      - name: PostgreSQL baseline and execution proof (no AWS credentials)
+        env:
+          BUILD11_POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
+        run: python3 tests/integration/aws-v0-build11-db.py
+      - name: Actual Lambda handler and executor replay against PostgreSQL
+        env:
+          BUILD11_POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
+        run: node tests/integration/aws-v0-build11-runtime.mjs
+      - name: Admission and prepared-provider invariants
+        run: |
+          node scripts/validate-aws-v0-build11-admission.mjs
+          node tests/adversarial/aws-v0-build11-admission.mjs
+      - name: PostgreSQL budget, rate and evidence admission
+        env:
+          BUILD11_POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
+        run: python3 tests/integration/aws-v0-build11-admission-db.py
+      - name: Actual handler through admission, execution and synchronization
+        env:
+          BUILD11_POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
+        run: node tests/integration/aws-v0-build11-admission-runtime.mjs
+      - name: Bounded crash and queue recovery (no AWS credentials)
+        env:
+          BUILD11_POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
+        run: |
+          node scripts/validate-aws-v0-build11-recovery.mjs
+          python3 tests/integration/aws-v0-build11-recovery-db.py
+          node tests/integration/aws-v0-build11-recovery-runtime.mjs
+      - name: Build twice and test the exact isolated Lambda package
+        env:
+          BUILD11_POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
+        run: |
+          python3 tests/integration/aws-v0-build11-package-fixtures.py
+          python3 tests/integration/aws-v0-build11-package.py
+          node tests/integration/aws-v0-build11-recovery-package.mjs
+      - name: Live-preflight tooling safety tests (no AWS credentials)
+        env:
+          BUILD11_POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
+          BUILD11_PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          python3 tests/integration/aws-v0-build11-live-preflight.py
+          node tests/adversarial/aws-v0-build11-live-contract.mjs
+          python3 tests/integration/aws-v0-build11-live-contract.py
+      - uses: actions/upload-artifact@v7
+        with:
+          name: build11-live-validation-kit
+          path: /tmp/build11-live-validation-kit/
+          if-no-files-found: error
+          retention-days: 7
+      - uses: actions/upload-artifact@v7
+        with:
+          name: build11-worker-package
+          path: infrastructure/aws-v0/artifacts/
+          if-no-files-found: error
+          retention-days: 7
+      - name: Retain exact tracked source for reproducible offline review
+        if: always()
+        run: |
+          mkdir -p /tmp/build11-source-receipt
+          git archive --format=tar HEAD | gzip -n > /tmp/build11-source-receipt/source.tar.gz
+          git rev-parse HEAD > /tmp/build11-source-receipt/tested-commit.txt
+          cd /tmp/build11-source-receipt
+          sha256sum source.tar.gz > SHA256SUMS
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: build11-source-receipt
+          path: /tmp/build11-source-receipt/
+          if-no-files-found: error
+          retention-days: 7
+
+  packaged-arm64-proof:
+    needs: postgres-execution-proof
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          package-manager-cache: false
+      - uses: actions/download-artifact@v8
+        with:
+          name: build11-worker-package
+          path: infrastructure/aws-v0/artifacts/
+      - name: Verify and execute the same ZIP on native ARM64
+        run: |
+          test "$(node -p process.arch)" = "arm64"
+          python3 tests/integration/aws-v0-build11-package.py --skip-rebuild
+          node tests/integration/aws-v0-build11-recovery-package.mjs
+      - uses: actions/upload-artifact@v7
+        with:
+          name: build11-worker-arm64-proof
+          path: infrastructure/aws-v0/artifacts/research-worker.proof-arm64.json
+          if-no-files-found: error
+          retention-days: 7

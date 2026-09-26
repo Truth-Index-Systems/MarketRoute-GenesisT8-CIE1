@@ -23,6 +23,7 @@ export class AwsV0ResearchDispatcher {
     }
 
     let envelope: AwsV0ResearchWorkEnvelope | null = null;
+    let publishAttempted = false;
     try {
       const prepared = await this.repository.prepareAwsV0Dispatch(work.workUnitId, schedulerRunId, dispatchedAt);
       envelope = parseAwsV0ResearchWorkEnvelope(prepared);
@@ -31,6 +32,8 @@ export class AwsV0ResearchDispatcher {
       }
       const body = serialiseAwsV0ResearchWorkEnvelope(envelope);
       const envelopeFingerprint = fingerprintAwsV0ResearchWorkEnvelope(envelope);
+      // Once the send starts, a timeout cannot prove that SQS rejected it.
+      publishAttempted = true;
       const sent = await this.publisher.publish(body);
       if (!sent.messageId.trim() || sent.messageId.length > 256) {
         throw new Error("MARKETROUTE_AWS_V0_DISPATCH_MESSAGE_ID_INVALID");
@@ -44,7 +47,8 @@ export class AwsV0ResearchDispatcher {
       );
       return { outcome: "DISPATCHED" as const, workUnitId: work.workUnitId, messageId: sent.messageId, envelopeFingerprint };
     } catch (error) {
-      await this.repository.failAwsV0Dispatch(
+      // Leave PREPARED/SENT ownership and its budget intact for the recovery controller.
+      if (!publishAttempted) await this.repository.failAwsV0Dispatch(
         work.workUnitId,
         schedulerRunId,
         error instanceof Error ? error.message : "MARKETROUTE_AWS_V0_DISPATCH_FAILED",
