@@ -26,8 +26,17 @@ jobs:
           node-version: '22'
       - name: Credential-free operator boundary tests
         run: python3 tests/integration/aws-v0-build11-zero-budget-safety.py
+      - name: Actual AWS CLI parser and loopback HTTP transport (no AWS credentials)
+        run: python3 tests/integration/aws-v0-build11-zero-budget-cli.py
       - name: Actual operator and worker source with owned PostgreSQL
         run: python3 tests/integration/aws-v0-build11-zero-budget-db.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: build11-zero-budget-cli-proof
+          path: /tmp/build11-zero-budget-cli-proof-*/receipt.json
+          retention-days: 14
+          if-no-files-found: warn
       - uses: actions/upload-artifact@v7
         if: always()
         with:

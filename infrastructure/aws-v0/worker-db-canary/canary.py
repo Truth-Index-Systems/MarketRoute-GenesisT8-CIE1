@@ -162,10 +162,21 @@ class Cloud:
                 require(v.get('parameters')==([{'name':'fixture','value':{'stringValue':canonical(self.f)}}] if ':fixture' in v['sql'] else []),'PARAMETERS_INVALID')
             require(set(v)==keys,'EXTRA_REQUEST_FIELDS')
         with tempfile.TemporaryDirectory(prefix='mr-db-canary-') as directory:
-            path=Path(directory)/'request.json';path.write_text(canonical(v));path.chmod(0o600)
-            cmd=['aws',s,a,'--cli-input-json','file://'+str(path),'--region',REGION,'--endpoint-url',f'https://{s}.{REGION}.amazonaws.com',
-                 '--output','json','--no-cli-pager','--cli-connect-timeout','5','--cli-read-timeout','270' if a=='invoke' else '25']
-            if output:cmd+=['--cli-binary-format','raw-in-base64-out',str(output)]
+            path=Path(directory)/'request.json'
+            cmd=['aws',s,a]
+            if (s,a)==('lambda','invoke'):
+                # Streaming-output commands do not support --cli-input-json.
+                # Keep the validated event bytes in a private binary payload file;
+                # fileb:// is independent of the caller's cli-binary-format setting.
+                path.write_bytes(v['Payload'].encode('utf-8'));path.chmod(0o600)
+                cmd+=['--function-name',v['FunctionName'],'--qualifier',v['Qualifier'],
+                      '--invocation-type',v['InvocationType'],'--log-type',v['LogType'],
+                      '--payload','fileb://'+str(path),str(output)]
+            else:
+                path.write_text(canonical(v));path.chmod(0o600)
+                cmd+=['--cli-input-json','file://'+str(path)]
+            cmd+=['--region',REGION,'--endpoint-url',f'https://{s}.{REGION}.amazonaws.com',
+                  '--output','json','--no-cli-pager','--cli-connect-timeout','5','--cli-read-timeout','270' if a=='invoke' else '25']
             env=dict(os.environ,AWS_PAGER='',AWS_CLI_AUTO_PROMPT='off',AWS_MAX_ATTEMPTS='1',AWS_RETRY_MODE='standard',AWS_IGNORE_CONFIGURED_ENDPOINT_URLS='true')
             try:r=self.run_process(cmd,env=env,capture_output=True,text=True,timeout=280 if a=='invoke' else 35,check=False)
             except (OSError,subprocess.TimeoutExpired):raise Stop('API_RESPONSE_UNKNOWN') from None

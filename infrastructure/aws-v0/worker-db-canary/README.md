@@ -25,3 +25,22 @@ On failure or lost response, preserve its folder. `python3 canary.py --inspect-e
 ## Evidence limits
 
 CI uses real native PostgreSQL 16 in a newly owned network-disabled Docker container, the actual operator request validator and actual source Lambda handler. AWS metadata/CLI responses and the Lambda transport are simulated; handler database methods are injected native-PostgreSQL adapters. This is not live worker IAM, AWS SDK network, PostgreSQL least-privilege, structured Bedrock, cost settlement, queue, planner or complete product certification. The user-run result supplies the live claim/defer evidence. No function package changes are included.
+
+## Invocation command correction
+
+Lambda `invoke` has a streaming output file and does not support
+`--cli-input-json`. The operator now passes the already validated function,
+qualifier, invocation type and log type as explicit flags, and writes the exact
+event bytes to a private temporary file used through `--payload fileb://...`.
+All other API calls retain their closed JSON argument validation. No SQL,
+fixture identifier, worker version, control setting or retry policy changed.
+The actual AWS CLI is exercised against an unsigned loopback-only HTTP test
+server; this tests CLI parsing/serialization, not AWS permission or live Lambda.
+
+An older attempt can have committed the fixture before CLI parameter validation
+stopped invocation. Preserve that folder, marker, fixture and original summary.
+Do NOT rerun `--run-zero-budget`, delete the marker, or construct a new fixture.
+`--inspect-existing <original-folder>` still reads the existing database state
+without invoking, seeding, closing work or altering model/recovery controls.
+The original dispatch ownership expires; this patch does not renew it, provide
+an automatic resume operation or authorize re-invocation of an interrupted run.

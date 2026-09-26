@@ -14,7 +14,18 @@ l=load('ledger',Path(__file__).with_name('aws-v0-build11-migration-ledger.py'))
 class Native:
  def __init__(self,lab,f,folder):self.lab=lab;self.f=f;self.folder=folder;self.sessions={};self.n=0;self.invokes=0
  def cli(self,cmd,**kwargs):
-  service,action=cmd[1:3];v=json.loads(Path(cmd[cmd.index('--cli-input-json')+1][7:]).read_text())
+  service,action=cmd[1:3]
+  if (service,action)==('lambda','invoke'):
+   assert '--cli-input-json' not in cmd
+   value=lambda flag:cmd[cmd.index(flag)+1]
+   payload=value('--payload');assert payload.startswith('fileb://')
+   v={'FunctionName':value('--function-name'),'Qualifier':value('--qualifier'),
+      'InvocationType':value('--invocation-type'),'LogType':value('--log-type'),
+      'Payload':Path(payload[8:]).read_bytes().decode('utf-8')}
+   assert v['FunctionName']==c.FUNCTION and v['Qualifier']=='1' and v['InvocationType']=='RequestResponse' and v['LogType']=='Tail'
+   outfile=cmd[cmd.index('--payload')+2]
+   assert Path(outfile)==self.folder/'handler-response.json'
+  else:v=json.loads(Path(cmd[cmd.index('--cli-input-json')+1][7:]).read_text())
   assert kwargs['env']['AWS_MAX_ATTEMPTS']=='1'
   try:
    if service=='sts':value={'Account':c.ACCOUNT,'Arn':f'arn:aws:sts::{c.ACCOUNT}:assumed-role/MarketRouteV0Administrator/offline-canary'}
@@ -47,7 +58,7 @@ class Native:
     assert json.loads(v['Payload'])=={'Records':[{'messageId':self.f['messageId'],'body':c.canonical(self.f['envelope'])}]}
     fixturepath=self.folder/'native-input.json';fixturepath.write_text(json.dumps({'fixture':self.f,'container':self.lab.container,'database':r.DB}))
     node=r.run(['node',str(ROOT/'tests/integration/aws-v0-build11-zero-budget-worker.mjs'),str(fixturepath)])
-    self.worker=json.loads(node.stdout);Path(cmd[-1]).write_text(json.dumps(self.worker['response']))
+    self.worker=json.loads(node.stdout);Path(outfile).write_text(json.dumps(self.worker['response']))
     value={'StatusCode':200,'ExecutedVersion':'1','LogResult':base64.b64encode(b'offline stub, not Lambda logs').decode()}
    else:raise AssertionError('unexpected command '+action)
    return subprocess.CompletedProcess(cmd,0,json.dumps(value),'')

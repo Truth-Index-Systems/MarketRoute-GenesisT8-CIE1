@@ -96,4 +96,47 @@ class Safety(unittest.TestCase):
     def test_status_is_not_reinvocation(self):
         self.assertNotIn('invoke',c.SQL['state'].lower())
 
+    def invocation(self):
+        return {'FunctionName':c.FUNCTION,'Qualifier':'1','InvocationType':'RequestResponse','LogType':'Tail',
+                'Payload':c.canonical({'Records':[{'messageId':self.f['messageId'],'body':c.canonical(self.f['envelope'])}]})}
+    def test_invoke_uses_explicit_args_and_private_fileb_payload(self):
+        seen=[];v=self.invocation();outfile=self.folder/'handler-response.json'
+        def run(cmd,**kw):
+            self.assertNotIn('--cli-input-json',cmd);self.assertNotIn('--cli-binary-format',cmd)
+            for flag,key in [('--function-name','FunctionName'),('--qualifier','Qualifier'),('--invocation-type','InvocationType'),('--log-type','LogType')]:
+                self.assertEqual(cmd[cmd.index(flag)+1],v[key])
+            payload=cmd[cmd.index('--payload')+1];self.assertTrue(payload.startswith('fileb://'))
+            p=Path(payload[8:]);seen.append(p);self.assertEqual(p.read_bytes(),v['Payload'].encode('utf-8'))
+            self.assertEqual(p.stat().st_mode&0o777,0o600)
+            self.assertEqual(cmd[cmd.index('--payload')+2],str(outfile))
+            self.assertNotIn(v['Payload'],cmd);self.assertNotIn(self.f['fingerprint'],' '.join(cmd))
+            self.assertEqual(kw['env']['AWS_MAX_ATTEMPTS'],'1')
+            self.assertEqual(cmd[cmd.index('--endpoint-url')+1],'https://lambda.eu-west-2.amazonaws.com')
+            return subprocess.CompletedProcess(cmd,0,'{"StatusCode":200,"ExecutedVersion":"1"}','')
+        self.cloud.run_process=run
+        self.assertEqual(self.cloud.call('lambda','invoke',v,outfile)['ExecutedVersion'],'1')
+        self.assertEqual(len(seen),1);self.assertFalse(seen[0].exists())
+    def test_invoke_wrong_qualifier_rejected_before_cli(self):
+        v=self.invocation();v['Qualifier']='2'
+        with self.assertRaises(c.Stop):self.cloud.call('lambda','invoke',v,self.folder/'handler-response.json')
+        self.assertFalse(self.calls)
+    def test_invoke_wrong_output_rejected_before_cli(self):
+        with self.assertRaises(c.Stop):self.cloud.call('lambda','invoke',self.invocation(),self.folder/'other.json')
+        self.assertFalse(self.calls)
+    def test_invoke_timeout_no_retry_and_payload_removed(self):
+        seen=[]
+        def run(cmd,**kw):
+            seen.append(Path(cmd[cmd.index('--payload')+1][8:]));raise subprocess.TimeoutExpired(cmd,280)
+        self.cloud.run_process=run
+        with self.assertRaises(c.Stop):self.cloud.call('lambda','invoke',self.invocation(),self.folder/'handler-response.json')
+        self.assertEqual(len(seen),1);self.assertFalse(seen[0].exists())
+    def test_inspection_does_not_invoke_seed_close_or_replace_fixture(self):
+        (self.folder/'fixture.json').write_text(json.dumps(self.f))
+        with patch('sys.argv',['canary.py','--inspect-existing',str(self.folder)]),patch.object(c,'Cloud') as cls,patch.object(c,'fixture') as create:
+            cls.return_value.state.return_value={'execution_rows':0}
+            self.assertEqual(c.main(),0);create.assert_not_called()
+            cls.return_value.prerequisites.assert_called_once();cls.return_value.state.assert_called_once()
+            cls.return_value.seed.assert_not_called();cls.return_value.invoke.assert_not_called();cls.return_value.close_fixture.assert_not_called()
+        self.assertEqual(json.loads((self.folder/'fixture.json').read_text()),self.f)
+
 if __name__=='__main__':unittest.main(verbosity=2)
