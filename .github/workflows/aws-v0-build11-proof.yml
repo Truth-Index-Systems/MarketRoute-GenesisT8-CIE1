@@ -5,6 +5,8 @@ on:
     branches: [aws-v0]
     paths:
       - 'database/aws/**'
+      - 'application/research/aws-v0-dispatcher.ts'
+      - 'application/research/aws-v0-recovery.mjs'
       - 'infrastructure/aws-v0/**'
       - 'tests/integration/aws-v0-build11*'
       - 'tests/adversarial/aws-v0-build11*'
@@ -62,12 +64,20 @@ jobs:
         env:
           BUILD11_POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
         run: node tests/integration/aws-v0-build11-admission-runtime.mjs
+      - name: Bounded crash and queue recovery (no AWS credentials)
+        env:
+          BUILD11_POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
+        run: |
+          node scripts/validate-aws-v0-build11-recovery.mjs
+          python3 tests/integration/aws-v0-build11-recovery-db.py
+          node tests/integration/aws-v0-build11-recovery-runtime.mjs
       - name: Build twice and test the exact isolated Lambda package
         env:
           BUILD11_POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
         run: |
           python3 tests/integration/aws-v0-build11-package-fixtures.py
           python3 tests/integration/aws-v0-build11-package.py
+          node tests/integration/aws-v0-build11-recovery-package.mjs
       - uses: actions/upload-artifact@v7
         with:
           name: build11-worker-package
@@ -110,6 +120,7 @@ jobs:
         run: |
           test "$(node -p process.arch)" = "arm64"
           python3 tests/integration/aws-v0-build11-package.py --skip-rebuild
+          node tests/integration/aws-v0-build11-recovery-package.mjs
       - uses: actions/upload-artifact@v7
         with:
           name: build11-worker-arm64-proof

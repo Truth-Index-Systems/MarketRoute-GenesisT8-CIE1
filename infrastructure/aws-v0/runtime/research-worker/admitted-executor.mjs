@@ -21,7 +21,7 @@ export async function executeResearchEnvelope(envelope, context = {}, dependenci
   const ledger = dependencies.ledger ?? await createAuroraResearchExecutionLedger();
   let admission = dependencies.admission ?? null;
   let provider = dependencies.provider ?? null;
-  let claimed = false, invoked = false, completed = false;
+  let claimed = false, invoked = false, completed = false, completionAttempted = false;
   let plan = null, grant = null, settled = null, providerTelemetry = {};
   try {
     const claim = await ledger.claim(envelope, fingerprint, workerId, now().toISOString());
@@ -81,11 +81,13 @@ export async function executeResearchEnvelope(envelope, context = {}, dependenci
       creditFunding: "UNKNOWN", economicCostRecordedEvenWhenCreditFunded: true,
       attribution: { product: "MarketRoute", organisationId: envelope.organisationId,
         campaignId: envelope.campaignId, companyId: envelope.companyId, workUnitId: envelope.workUnitId } };
+    completionAttempted = true;
     const resultFingerprint = await ledger.complete(envelope.workUnitId, fingerprint, workerId, result, telemetry, now().toISOString());
     completed = true;
     const syncState = await ledger.sync(envelope.workUnitId, fingerprint, resultFingerprint, now().toISOString());
     return { acknowledge: ["SYNCED", "ALREADY_SYNCED"].includes(syncState), outcome: "SUCCEEDED", resultFingerprint, syncState };
   } catch (error) {
+    if (completionAttempted && !completed) return { acknowledge: false, outcome: "RESULT_PERSISTENCE_PENDING", errorCode: safeCode(error) };
     if (completed) return { acknowledge: false, outcome: "SYNC_PENDING", errorCode: safeCode(error) };
     if (!claimed || grant?.outcome !== "ADMITTED") {
       if (claimed && admission) await admission.defer(envelope.workUnitId, fingerprint, workerId).catch(() => false);

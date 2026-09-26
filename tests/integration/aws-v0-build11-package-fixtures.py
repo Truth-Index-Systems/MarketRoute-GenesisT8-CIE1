@@ -39,11 +39,12 @@ def ready(budget=0.2, evidence=True):
     return item
 
 
-p = Path('/tmp/marketroute-build11-admission-fixtures.json')
-fixtures = json.loads(p.read_text())
-fixtures.update({name: ready(**options) for name, options in {
-    'packagedSuccess': {}, 'packagedInvalid': {},
-    'packagedNoBudget': {'budget': 0.05}, 'packagedNoEvidence': {'evidence': False},
-}.items()})
-p.write_text(json.dumps(fixtures))
-print('Prepared four fresh packaged-worker fixtures in disposable PostgreSQL; no AWS access')
+if __name__ == '__main__':
+    p = Path('/tmp/marketroute-build11-admission-fixtures.json')
+    fixtures = json.loads(p.read_text())
+    fixtures.update({name: ready(**options) for name, options in {
+        'packagedSuccess': {}, 'packagedInvalid': {},
+        'packagedNoBudget': {'budget': 0.05}, 'packagedNoEvidence': {'evidence': False},
+    }.items()})
+    p.write_text(json.dumps(fixtures))
+    print('Prepared four fresh packaged-worker fixtures in disposable PostgreSQL; no AWS access')
