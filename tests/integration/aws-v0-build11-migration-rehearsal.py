@@ -251,7 +251,8 @@ def exercise(lab, files, receipt):
     for table,key in [('research_work_units','work'),('research_budget_events',None),('evidence_items','evidence')]:
         where = "work_unit_id='"+ids['work']+"'" if key is None else "id='"+ids[key]+"'"
         result=lab.sql(f'DELETE FROM public.{table} WHERE {where};',ok=False)
-        check(result.returncode!=0,'append-only trigger allowed deletion')
+        check(result.returncode!=0 and 'MARKETROUTE_APPEND_ONLY_RELATION:'+table in result.stderr,
+              'expected append-only rejection was not observed: '+result.stderr)
     check(lab.rows(baseline_names)==baseline_rows,'append-only probe changed rows')
     passed('work, budget and evidence append-only protections still reject mutation')
 
@@ -264,12 +265,17 @@ def exercise(lab, files, receipt):
     # Demonstrate the hazardous success case, always ROLLBACK it in this test DB.
     signature='public.marketroute_claim_aws_v0_research_execution_v2(jsonb,text,text,timestamptz)'
     latest_hash=lab.value(f"SELECT md5(pg_get_functiondef('{signature}'::regprocedure));")
+    recovery_guard=f"SELECT position('MR-AWS-V0-RECOVERY' in prosrc)>0 FROM pg_proc WHERE oid='{signature}'::regprocedure;"
+    check(lab.value(recovery_guard)=='t','latest claim is missing the recovery guard')
     old=lab.value(migration_prefix(files[list(HASHES)[4]])+
-                  f"SELECT md5(pg_get_functiondef('{signature}'::regprocedure));\nROLLBACK;")
-    check(old!=latest_hash,'expected out-of-order overwrite was not demonstrated')
+                  f"SELECT md5(pg_get_functiondef('{signature}'::regprocedure));\n"+recovery_guard+"\nROLLBACK;")
+    old_hash,old_guard=old.splitlines()
+    check(old_guard=='f','expected old migration to omit the newer recovery guard')
+    check(old_hash!=latest_hash,'expected out-of-order overwrite was not demonstrated')
     check(lab.state()==final,'out-of-order probe was not rolled back')
     passed('0005 replay after 0007 can silently downgrade claim routine; demonstration rolled back',
-           currentDefinitionMd5=latest_hash,replayedDefinitionMd5=old)
+           currentDefinitionMd5=latest_hash,replayedDefinitionMd5=old_hash,
+           recoveryGuardPresentBefore=True,recoveryGuardPresentAfterReplay=False)
     # The source migrations do not supply an application/migration history ledger.
     check(lab.rows(['marketroute_schema_releases'])=={'marketroute_schema_releases':baseline_rows['marketroute_schema_releases']},'history changed unexpectedly')
     passed('existing schema-release history is untouched: a separate live resume ledger is still required')
