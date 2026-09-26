@@ -62,6 +62,18 @@ jobs:
         env:
           BUILD11_POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
         run: node tests/integration/aws-v0-build11-admission-runtime.mjs
+      - name: Build twice and test the exact isolated Lambda package
+        env:
+          BUILD11_POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
+        run: |
+          python3 tests/integration/aws-v0-build11-package-fixtures.py
+          python3 tests/integration/aws-v0-build11-package.py
+      - uses: actions/upload-artifact@v7
+        with:
+          name: build11-worker-package
+          path: infrastructure/aws-v0/artifacts/
+          if-no-files-found: error
+          retention-days: 7
       - name: Retain exact tracked source for reproducible offline review
         if: always()
         run: |
@@ -75,5 +87,32 @@ jobs:
         with:
           name: build11-source-receipt
           path: /tmp/build11-source-receipt/
+          if-no-files-found: error
+          retention-days: 7
+
+  packaged-arm64-proof:
+    needs: postgres-execution-proof
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          package-manager-cache: false
+      - uses: actions/download-artifact@v8
+        with:
+          name: build11-worker-package
+          path: infrastructure/aws-v0/artifacts/
+      - name: Verify and execute the same ZIP on native ARM64
+        run: |
+          test "$(node -p process.arch)" = "arm64"
+          python3 tests/integration/aws-v0-build11-package.py --skip-rebuild
+      - uses: actions/upload-artifact@v7
+        with:
+          name: build11-worker-arm64-proof
+          path: infrastructure/aws-v0/artifacts/research-worker.proof-arm64.json
           if-no-files-found: error
           retention-days: 7
