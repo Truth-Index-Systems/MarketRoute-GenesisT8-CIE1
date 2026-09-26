@@ -313,9 +313,13 @@ def main():
         receipt['networkMode']='none'
         receipt['postgresImageId']=meta['Image']
         for _ in range(40):
-            ready=run(['docker','exec',container,'pg_isready','-U','postgres','-d',DB],must_succeed=False)
-            if ready.returncode==0:
-                break
+            # pg_isready also succeeds against the image's temporary init server,
+            # before POSTGRES_DB exists. Require the final PID 1 plus a real query.
+            process=run(['docker','exec',container,'cat','/proc/1/comm'],must_succeed=False)
+            if process.returncode==0 and process.stdout.strip()=='postgres':
+                ready=Lab(container).sql('SELECT current_database();',ok=False)
+                if ready.returncode==0 and ready.stdout.strip()==DB:
+                    break
             time.sleep(0.5)
         else:
             raise RuntimeError('disposable PostgreSQL failed to start')
