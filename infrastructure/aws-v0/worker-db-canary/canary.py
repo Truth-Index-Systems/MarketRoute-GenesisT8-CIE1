@@ -124,7 +124,68 @@ CLOSE=[
  P+f"SELECT public.marketroute_finish_research_scheduler_run_v1({I('run')},'CANCELLED',jsonb_build_object('syntheticTest',v->>'label','closed',true),now()) IS NULL AS operation_returned FROM f",
  P+f"INSERT INTO public.marketroute_aws_v0_recovery_receipts(work_unit_id,canonical_attempt_number,state,reason) SELECT {I('work')},1,'RESOLVED','SYNTHETIC_ZERO_BUDGET_CANARY_CLOSED' FROM f",
 ]
-ALLOWED=set(SQL.values())|set(SEED)|set(CLOSE)
+# Retire a saved, never-executed CLI-failure fixture. This is not a retry path.
+RETIRE_ERROR='BUILD11_ZERO_BUDGET_CLI_ATTEMPT_RETIRED'
+RETIRE_REASON='SYNTHETIC_ZERO_BUDGET_CLI_ATTEMPT_RETIRED'
+RETIRE=[CLOSE[0].replace('BUILD11_ZERO_BUDGET_CANARY_CLOSED',RETIRE_ERROR),
+        CLOSE[1],CLOSE[2].replace('SYNTHETIC_ZERO_BUDGET_CANARY_CLOSED',RETIRE_REASON)]
+SQL.update({
+ 'retireWorkLock':P+f"SELECT pg_try_advisory_xact_lock(hashtextextended('MR-AWS-V0-RECOVERY|'||(v#>>'{{ids,work}}'),0)) AS acquired FROM f",
+ # Stabilise exactly the fixture's mutable parents; a conflict stops, never waits.
+ 'retireRows':P+f"""SELECT true AS locked FROM f
+ JOIN public.research_work_units w ON w.id={I('work')}
+ JOIN public.background_jobs j ON j.id=w.background_job_id
+ JOIN public.scheduler_runs r ON r.id={I('run')}
+ JOIN public.marketroute_aws_v0_research_dispatches d ON d.work_unit_id=w.id AND d.canonical_attempt_number=1
+ JOIN public.campaigns c ON c.id=w.campaign_id
+ JOIN public.organisations o ON o.id=w.organisation_id
+ JOIN public.research_budget_policies p ON p.campaign_id=c.id AND p.organisation_id=o.id
+ FOR UPDATE OF w,j,r,d,c,o,p NOWAIT""",
+ 'retireControls':"""SELECT 'model' AS control,enabled FROM public.marketroute_aws_v0_inference_scopes FOR SHARE NOWAIT""",
+ 'retireRecovery':"""SELECT 'recovery' AS control,enabled FROM public.marketroute_aws_v0_recovery_control FOR SHARE NOWAIT""",
+ 'retireState':P+f"""SELECT current_database() AS database,current_user AS role,
+   EXISTS(SELECT 1 FROM public.research_work_units w
+     JOIN public.background_jobs j ON j.id=w.background_job_id
+     JOIN public.scheduler_runs r ON r.id={I('run')}
+     JOIN public.campaigns c ON c.id=w.campaign_id AND c.organisation_id=w.organisation_id
+     JOIN public.organisations o ON o.id=c.organisation_id
+     JOIN public.companies co ON co.id=w.company_id
+     JOIN public.research_budget_policies p ON p.campaign_id=c.id AND p.organisation_id=o.id
+     JOIN public.marketroute_aws_v0_research_dispatches d ON d.work_unit_id=w.id AND d.canonical_attempt_number=1
+     WHERE w.id={I('work')} AND w.background_job_id={I('job')} AND w.plan_id={I('plan')}
+       AND w.organisation_id={I('org')} AND w.campaign_id={I('campaign')} AND w.company_id={I('company')}
+       AND w.action='SYNTHESIZE_COMPANY_UNDERSTANDING' AND w.cost_ceiling_usd=0
+       AND w.payload_json=v->'payload' AND w.payload_json#>>'{{metadata,syntheticTest}}'=v->>'label'
+       AND w.dedupe_key=v->>'dedupe' AND co.lifecycle_state='ARCHIVED' AND co.canonical_name=v->>'name'
+       AND o.name=v->>'name' AND o.created_by={I('user')}
+       AND c.workflow_state='PAUSED' AND c.name=v->>'name' AND c.created_by={I('user')} AND c.seller_business_id={I('seller')}
+       AND NOT p.enabled AND p.daily_budget_usd=0 AND p.max_job_cost_usd=0 AND p.max_concurrent_jobs=0
+       AND p.max_work_units_per_plan=0 AND p.refresh_horizon_hours=0
+       AND j.organisation_id=o.id AND j.campaign_id=c.id AND j.job_type='GENESIS_RESEARCH_V1'
+       AND j.attempt_count=1 AND j.max_attempts=1 AND j.payload_json->>'syntheticTest'=v->>'label'
+       AND r.runner_key='GENESIS_RESEARCH_V1' AND r.metadata_json->>'syntheticTest'=v->>'label'
+       AND d.scheduler_run_id=r.id AND d.state='SENT' AND d.envelope_json=v->'envelope'
+       AND d.envelope_fingerprint=v->>'fingerprint'
+       AND d.sqs_message_id='SIMULATED-DIRECT-INVOKE:'||(v#>>'{{ids,work}}')
+       AND d.ownership_expires_at<clock_timestamp()) AS fixture_matches_expired,
+   NOT EXISTS(SELECT 1 FROM public.background_jobs WHERE id<>{I('job')}
+     AND (reserved_by_run_id={I('run')} OR (job_type='GENESIS_RESEARCH_V1' AND status IN('RUNNING','RESERVED'))))
+     AND NOT EXISTS(SELECT 1 FROM public.scheduler_leases WHERE owner_run_id={I('run')}
+       OR (lease_key='GENESIS_RESEARCH_V1' AND expires_at>now())) AS no_other_work,
+   (SELECT count(*) FROM public.marketroute_aws_v0_research_dispatches WHERE work_unit_id={I('work')}) AS dispatch_rows,
+   (SELECT count(*) FROM public.background_job_attempts WHERE job_id={I('job')}) AS job_attempt_rows,
+   (SELECT status FROM public.background_job_attempts WHERE job_id={I('job')} AND attempt_number=1 AND scheduler_run_id={I('run')}) AS job_attempt_state,
+   (SELECT reserved_by_run_id={I('run')} FROM public.background_jobs WHERE id={I('job')}) AS original_owner,
+   (SELECT last_error_code FROM public.background_jobs WHERE id={I('job')}) AS job_error,
+   (SELECT count(*) FROM public.research_budget_events WHERE work_unit_id={I('work')}) AS budget_rows,
+   (SELECT count(*) FROM public.research_budget_events WHERE work_unit_id={I('work')} AND attempt_number=1
+      AND event_type='RELEASE' AND amount_usd=0 AND metadata_json->>'errorCode'='{RETIRE_ERROR}') AS retirement_release_rows,
+   (SELECT count(*) FROM public.marketroute_aws_v0_recovery_receipts WHERE work_unit_id={I('work')}) AS recovery_rows,
+   (SELECT count(*) FROM public.marketroute_aws_v0_recovery_receipts WHERE work_unit_id={I('work')}
+      AND canonical_attempt_number=1 AND state='RESOLVED' AND reason='{RETIRE_REASON}') AS retirement_recovery_rows
+ FROM f""",
+})
+ALLOWED=set(SQL.values())|set(SEED)|set(CLOSE)|set(RETIRE)
 
 class Cloud:
     def __init__(self,f,folder,run=subprocess.run,sleep=time.sleep):
@@ -270,6 +331,98 @@ class Cloud:
             if self.tx and not any(x['event']=='FIXTURE_CLOSE_COMMIT_REQUESTED' for x in self.events):self.end()
             raise
 
+def verify_uninvoked_retirement(state,detail,closed=False):
+    require(detail.get('database')==DB and detail.get('role')=='marketroute_admin','DB_IDENTITY_INVALID')
+    require(detail.get('fixture_matches_expired') is True and detail.get('no_other_work') is True
+            and detail.get('dispatch_rows')==1 and detail.get('job_attempt_rows')==1,'RETIREMENT_SCOPE_OR_OWNERSHIP_INVALID')
+    require(state.get('work_rows')==1 and state.get('campaign_state')=='PAUSED' and state.get('policy_enabled') is False
+            and all(state.get(k)==0 for k in ('execution_rows','inference_rows','artifact_rows','nonzero_budget_events')),
+            'RETIREMENT_REQUIRES_UNEXECUTED_ZERO_BUDGET')
+    if closed:
+        require(state.get('job_state')=='FAILED' and state.get('run_state')=='CANCELLED'
+                and detail.get('job_error')==RETIRE_ERROR and detail.get('job_attempt_state')=='FAILED'
+                and detail.get('budget_rows')==detail.get('retirement_release_rows')==1
+                and detail.get('recovery_rows')==detail.get('retirement_recovery_rows')==1,
+                'RETIREMENT_POSTCONDITION_FAILED')
+    else:
+        require(state.get('job_state')=='RUNNING' and state.get('run_state')=='RUNNING'
+                and detail.get('job_attempt_state')=='RUNNING' and detail.get('original_owner') is True
+                and detail.get('budget_rows')==detail.get('recovery_rows')==0,
+                'RETIREMENT_ALREADY_CHANGED')
+
+
+def retire_uninvoked(cloud):
+    """Close only a verified unexecuted fixture; no seed, lease renewal or invoke."""
+    # Exclude cloud worker claim/recovery through the same per-work lock, then
+    # lock mutable parents and disabled controls before checking their values.
+    cloud.begin()
+    commit_requested=False
+    try:
+        require(cloud.sql(SQL['lock'])==[{'acquired':True}],'CANARY_BUSY')
+        require(cloud.sql(SQL['retireWorkLock'])==[{'acquired':True}],'WORKER_OR_RECOVERY_BUSY')
+        require(cloud.sql(SQL['retireRows'])==[{'locked':True}],'RETIREMENT_ROWS_MISSING')
+        require(cloud.sql(SQL['retireControls'])==[{'control':'model','enabled':False}]
+                and cloud.sql(SQL['retireRecovery'])==[{'control':'recovery','enabled':False}],
+                'MODEL_OR_RECOVERY_NOT_DISABLED')
+        before=cloud.sql(SQL['state'])[0];detail=cloud.sql(SQL['retireState'])[0]
+        verify_uninvoked_retirement(before,detail)
+        cloud.journal('UNEXECUTED_FIXTURE_VERIFIED',databaseState=before)
+        for sql in RETIRE:cloud.sql(sql)
+        after=cloud.sql(SQL['state'])[0];detail=cloud.sql(SQL['retireState'])[0]
+        verify_uninvoked_retirement(after,detail,closed=True)
+        cloud.journal('UNEXECUTED_RETIREMENT_COMMIT_REQUESTED');commit_requested=True
+        cloud.end(commit=True)
+        cloud.journal('UNEXECUTED_RETIREMENT_COMMIT_ACKNOWLEDGED')
+    except BaseException:
+        # No automatic retry or rollback after an ambiguous commit response.
+        if cloud.tx and not commit_requested:cloud.end()
+        raise
+    cloud.begin(readonly=True)
+    try:
+        final=cloud.sql(SQL['state'])[0];detail=cloud.sql(SQL['retireState'])[0]
+        verify_uninvoked_retirement(final,detail,closed=True)
+    finally:
+        if cloud.tx:cloud.end()
+    cloud.journal('UNEXECUTED_FIXTURE_RETIRED',databaseState=final)
+    return final
+
+
+def retire_existing(folder):
+    """Explicit operator mode, preserving original failed receipts and identifiers."""
+    folder=folder.resolve()
+    for name in ('fixture.json','summary.json','journal.jsonl'):
+        p=folder/name
+        require(p.is_file() and not p.is_symlink() and p.stat().st_size<1000000,'SAVED_FIXTURE_FILE_INVALID')
+    f=json.loads((folder/'fixture.json').read_text());validate_fixture(f)
+    summary=json.loads((folder/'summary.json').read_text())
+    require(summary.get('status')=='STOPPED' and summary.get('errorCode')=='ParamValidation'
+            and summary.get('fixtureClosed') is False,'RETIREMENT_REQUIRES_REVIEWED_CLI_FAILURE')
+    events=[json.loads(line).get('event') for line in (folder/'journal.jsonl').read_text().splitlines()]
+    require(events.count('FIXTURE_COMMIT_ACKNOWLEDGED')==1 and events.count('LAMBDA_INVOCATION_REQUESTED')==1
+            and 'LAMBDA_RESPONSE_RECEIVED' not in events and 'WORKER_DATABASE_CLAIM_AND_DEFER_OBSERVED' not in events,
+            'RETIREMENT_JOURNAL_MISMATCH')
+    marker=folder/'retire-uninvoked-requested.json'
+    fd=os.open(marker,os.O_CREAT|os.O_EXCL|os.O_WRONLY|os.O_NOFOLLOW,0o600)
+    out=Path(tempfile.mkdtemp(prefix='retire-uninvoked-',dir=folder))
+    with os.fdopen(fd,'w') as stream:
+        json.dump({'evidenceFolder':str(out),'fixtureSha256':sha(canonical(f))},stream);stream.flush();os.fsync(stream.fileno())
+    cloud=Cloud(f,out)
+    result={'status':'NOT_RUN','fixtureClosed':False,'databaseClaimDeferProven':False,'bedrockExecutionProven':False,
+            'productionActivation':'BLOCKED','evidenceFolder':str(out),'originalFixtureFolder':str(folder),
+            'scope':'Retirement of one expired, unexecuted, zero-budget synthetic fixture; not a canary PASS.'}
+    print('Retirement evidence folder: '+str(out),flush=True)
+    try:
+        cloud.prerequisites();state=retire_uninvoked(cloud)
+        result.update(status='UNEXECUTED_ZERO_BUDGET_FIXTURE_RETIRED',fixtureClosed=True,observedDatabaseState=state)
+    except BaseException as exc:
+        result.update(status='STOPPED',errorCode=str(exc) if isinstance(exc,Stop) else 'LOCAL_OR_RESPONSE_ERROR')
+    result.update(transactionClosureUnverified=cloud.tx is not None,unidentifiedTransactionMayExist=cloud.begin_unknown)
+    with (out/'summary.json').open('x',encoding='utf8') as stream:
+        json.dump(result,stream,indent=2);stream.write('\n');stream.flush();os.fsync(stream.fileno())
+    print(json.dumps(result,indent=2))
+    return 0 if result['fixtureClosed'] else 2
+
+
 def verify_deferred(f,s):
     require(s.get('execution_rows')==1 and s.get('execution_state')=='FAILED_RETRYABLE' and
             s.get('execution_attempts')==0 and s.get('execution_error')=='MARKETROUTE_AWS_V0_ADMISSION_DEFERRED' and
@@ -281,9 +434,11 @@ def main():
     mode=parser.add_mutually_exclusive_group()
     mode.add_argument('--run-zero-budget',action='store_true',help='Creates retained synthetic DB records and invokes worker version 1 once; no model calls.')
     mode.add_argument('--inspect-existing',type=Path,help='Read state for a saved canary folder; never invokes or repairs.')
+    mode.add_argument('--close-uninvoked-existing',type=Path,help='Retire a reviewed ParamValidation fixture with expired ownership and no execution. Database writes; never invokes.')
     args=parser.parse_args()
-    if not args.run_zero_budget and not args.inspect_existing:parser.print_help();return 0
+    if not args.run_zero_budget and not args.inspect_existing and not args.close_uninvoked_existing:parser.print_help();return 0
     os.umask(0o077)
+    if args.close_uninvoked_existing:return retire_existing(args.close_uninvoked_existing)
     if args.inspect_existing:
         folder=args.inspect_existing.resolve();f=json.loads((folder/'fixture.json').read_text());validate_fixture(f)
         cloud=Cloud(f,folder);cloud.prerequisites();print(json.dumps(cloud.state(),indent=2));return 0
